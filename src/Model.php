@@ -32,12 +32,6 @@ abstract class Model extends DAO {
 	private $query = null;
 
 	/**
-	 * @var array model prefetch fields group
-	 * @example [`db1`.`table` => ['name', 'extra'], `db2`.`table2` => ['pro1', 'pro2'],...]
-	 */
-	private static $prefetch_groups = [];
-
-	/**
 	 * 获取当前调用ORM对象
 	 * @return static|Query
 	 */
@@ -213,61 +207,6 @@ abstract class Model extends DAO {
 	}
 
 	/**
-	 * 解析数据库配置
-	 * 分析出配置中的读、写配置
-	 * @param string $operate_type
-	 * @param array $all_config
-	 * @return array
-	 */
-	private function parseConfig($operate_type, array $all_config){
-		$read_list = array();
-		$write_list = array();
-		$depKey = 'host';
-
-		// 解析数据库读写配置
-		if($all_config[$depKey]){
-			$read_list = $write_list = array(
-				$all_config,
-			);
-		} else if($all_config['read']){
-			if($all_config['read'][$depKey]){
-				$read_list = array(
-					$all_config['read'],
-				);
-			} else{
-				$read_list = $all_config['read'];
-			}
-		}
-
-		// 写表额外判断，预防某些系统只需要读的功能
-		if(empty($write_list)){
-			if($all_config['write']){
-				if($all_config['write'][$depKey]){
-					$write_list = array(
-						$all_config['write'],
-					);
-				} else{
-					$write_list = $all_config['write'];
-				}
-			}
-		}
-
-		switch($operate_type){
-			case self::OP_WRITE:
-				$k = array_rand($write_list, 1);
-				$host_config = $write_list[$k];
-				break;
-
-			case self::OP_READ:
-			default:
-				$k = array_rand($read_list, 1);
-				$host_config = $read_list[$k];
-				break;
-		}
-		return $host_config;
-	}
-
-	/**
 	 * 设置查询SQL语句
 	 * @param string|Query $query
 	 * @return static|Query
@@ -308,7 +247,7 @@ abstract class Model extends DAO {
 			$driver->beginTransaction();
 			$ret = call_user_func($handler);
 			if($ret === false){
-				throw new Exception('Database transaction interrupt');
+				throw new Exception('Database transaction interrupted');
 			}
 			if(!$driver->commit()){
 				throw new Exception('Database commit fail');
@@ -330,54 +269,6 @@ abstract class Model extends DAO {
 	public function execute(){
 		$type = Query::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
 		return $this->getDbDriver($type)->query($this->query);
-	}
-
-	/**
-	 * 批量Model缓存处理绑定
-	 * @param Model[] $model_list
-	 * @param callable $getter
-	 * @param callable $setter
-	 * @param callable $flusher
-	 */
-	public static function bindTableCacheHandler(array $model_list, callable $getter, callable $setter, callable $flusher){
-		$check_table_hit = function ($query, $full_compare = true) use ($model_list){
-			if($query && $query instanceof Query){
-				foreach($model_list as $model){
-					$tbl = Query::escapeKey($model::meta()->getTableFullName(self::OP_READ));
-					if(($full_compare && $query->tables == [$tbl]) || in_array($tbl, $query->tables)){
-						return $model;
-					}
-				}
-			}
-			return false;
-		};
-
-		//before get list, check cache
-		Hooker::add(DBAbstract::EVENT_BEFORE_DB_GET_LIST, function($param) use ($check_table_hit, $getter){
-			$model = $check_table_hit($param['query']);
-			if($model){
-				$result = call_user_func($getter, $model, $param['query']);
-				if(isset($result)){
-					$param['result'] = $result;
-				}
-			}
-		});
-
-		//after get list, set cache
-		Hooker::add(DBAbstract::EVENT_AFTER_DB_GET_LIST, function($param) use ($check_table_hit, $setter){
-			$model = $check_table_hit($param['query']);
-			if($model){
-				call_user_func($setter, $model, $param['query'], $param['result']);
-			}
-		});
-
-		//flush table cache
-		Hooker::add(DBAbstract::EVENT_AFTER_DB_QUERY, function($query) use($check_table_hit, $flusher){
-			$model = $check_table_hit($query);
-			if($model && Query::isWriteOperation($query)){
-				call_user_func($flusher, $model, $query);
-			}
-		});
 	}
 
 	/**
@@ -429,33 +320,6 @@ abstract class Model extends DAO {
 		if(is_array($val) || strlen($val)){
 			$statement = self::parseConditionStatement($args, $this);
 			$this->query->where($statement);
-		}
-		return $this;
-	}
-
-	/**
-	 * Prefetch relate fields [via foreign keys]
-	 * @param array $fields
-	 * @return $this
-	 * @throws \LFPhp\PORM\Exception\Exception
-	 */
-	public function prefetch(array $fields){
-		if(!$fields){
-			return $this;
-		}
-		$defines = $this->getPropertiesDefine();
-		$table_full = $this->getTableFullNameWithDbName();
-		foreach($fields as $f){
-			if(!$defines[$f]){
-				throw new Exception("Prefetch field:{field} no defined", ['field'=>$f]);
-			}
-			if(!$defines[$f]['foreign'] && !$defines[$f]['has_many'] && !$defines[$f]['has_one']){
-				throw new Exception('Prefetch field:{field} must define foreign|has_one|has_many target', ['field'=>$f]);
-			}
-			if(!isset(self::$prefetch_groups[$table_full]) || !self::$prefetch_groups[$table_full]){
-				self::$prefetch_groups[$table_full] = [];
-			}
-			self::$prefetch_groups[$table_full][] = $f;
 		}
 		return $this;
 	}
@@ -556,7 +420,6 @@ abstract class Model extends DAO {
 		$obj = static::meta();
 		$pk = $obj->getPrimaryKey();
 		//只有在开启去重查询时，cache才生效，
-		//由于可能存在多方关联到当前对象，因此这里不考虑prefetch是否启用
 		if(DBAbstract::distinctQueryState()){
 			$cache_key = $obj->getTableFullNameWithDbName()."/$pk/$val";
 			if($data = CacheVar::instance()->get($cache_key)){
@@ -597,7 +460,6 @@ abstract class Model extends DAO {
 		$pk = $obj->getPrimaryKey();
 
 		//只有在开启去重查询时，cache才生效
-		//由于可能存在多方关联到当前对象，因此这里不考虑prefetch是否启用
 		if(DBAbstract::distinctQueryState()){
 			$result = $obj->_getObjectCacheList($pk, $pk_values, $as_array, $miss_matches);
 			if($miss_matches){
@@ -637,7 +499,6 @@ abstract class Model extends DAO {
 	 * @param bool $as_array
 	 * @param bool $has_many
 	 * @return $this|mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	private function _getObjectCache($field, $field_value, $as_array = false, $has_many = false){
 		$cache_key = $this->getTableFullNameWithDbName()."/$field/$field_value";
@@ -657,15 +518,6 @@ abstract class Model extends DAO {
 			return $ret;
 		}
 		return new static($data);
-	}
-
-	/**
-	 * @param $field
-	 * @param $data_list
-	 */
-	private function _setObjectCaches($field, $data_list){
-		$cache_key = $this->getTableFullNameWithDbName()."/$field/";
-		CacheVar::instance()->setDistributed($cache_key, $data_list);
 	}
 
 	/**
@@ -806,10 +658,8 @@ abstract class Model extends DAO {
 	 * @param bool $as_array 是否作为二维数组返回，默认为对象数组
 	 * @param string $unique_key 数组下标key
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	private function __handleListResult(array $list, $as_array = false, $unique_key = ''){
-		$this->__doPrefetchList($list);
 		if($as_array){
 			if($unique_key){
 				$list = array_group($list, $unique_key, true);
@@ -828,49 +678,6 @@ abstract class Model extends DAO {
 			}
 		}
 		return $result;
-	}
-
-	/**
-	 * Prefetch relate model list
-	 * @param $list
-	 * @throws \LFPhp\PORM\Exception\Exception
-	 */
-	private function __doPrefetchList($list){
-		if(!$list){
-			return;
-		}
-
-		$table_full = $this->getTableFullNameWithDbName();
-		$prefetch_fields = isset(self::$prefetch_groups[$table_full]) ? self::$prefetch_groups[$table_full] : null;
-		if(!$prefetch_fields){
-			return;
-		}
-
-		$defines = $this->getPropertiesDefine();
-		foreach($prefetch_fields as $field){
-			$def = $defines[$field];
-			if($def['foreign'] || $def['has_one'] || $def['has_many']){
-				if($def['foreign']){
-					/** @var Model $target_class */
-					$target_class = $def['foreign'];
-					$target_instance = $target_class::meta();
-					$target_field = $target_instance->getPrimaryKey();
-					$current_field = $field;
-				} else {
-					/** @var Model $target_class */
-					list($current_field, $target_class, $target_field) = $def['has_one'] ?: $def['has_many'];
-					$target_instance = $target_class::meta();
-					$target_field = $target_field ?: $target_instance->getPrimaryKey();
-				}
-
-				$field_columns = array_unique(array_column($list, $current_field));
-
-				/** @var array $tmp_data */
-				$tmp_data = $target_class::find("$target_field IN ?", $field_columns)->all(true);
-				$tmp_data = array_group($tmp_data, $target_field, isset($def['has_many']) ? !$def['has_many'] : true);
-				$target_instance->_setObjectCaches($target_field, $tmp_data);
-			}
-		}
 	}
 
 	/**
@@ -1689,7 +1496,6 @@ abstract class Model extends DAO {
 	 */
 	public function __get($key){
 		$define = $this->getPropertiesDefine($key);
-		$table_full = $this->getTableFullNameWithDbName();
 
 		if($define){
 			if(isset($define['getter']) && $define['getter']){
@@ -1703,9 +1509,7 @@ abstract class Model extends DAO {
 				$target_instance = $target_class::meta();
 				$target_field = $target_field ?: $target_instance->getPrimaryKey();
 
-				//id, variant, listing_id = listing.id
-				$prefetch_list = self::$prefetch_groups[$table_full] ?: [];
-				if(DBAbstract::distinctQueryState() && in_array($key, $prefetch_list)){
+				if(DBAbstract::distinctQueryState()){
 					$result = $target_instance->_getObjectCache($target_field, $this->{$current_field}, false, $define['has_many']);
 					if(isset($result)){
 						$this->{$key} = $result;
@@ -1720,10 +1524,12 @@ abstract class Model extends DAO {
 			}
 		}
 		$v = parent::__get($key);
-		$this->{$key} = $v; //avoid trigger virtual property getter again
+
+		//avoid trigger virtual property getter again
+		$this->{$key} = $v;
 
 		/**
-		 * @todo 这里由于在update/add模板共用情况下，很可能使用 $model->$field 进行直接拼接action，需要重新审视这里抛出exception是否合理
+		 * 这里由于在update/add模板共用情况下，很可能使用 $model->$field 进行直接拼接action，需要重新审视这里抛出exception是否合理
 		//如果当前属性未定义，或者未从数据库中获取相应字段
 		//则抛异常
 		$kvs = array_keys($this->getValues());

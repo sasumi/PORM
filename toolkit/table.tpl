@@ -4,7 +4,7 @@ namespace {$namespace};
 /**
  * User: Lite Scaffold
  */
-use Lite\DB\Model as Model;
+use LFPhp\PORM\Model as Model;
 
 /**
  * Class {$class_name}
