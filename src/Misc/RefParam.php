@@ -5,12 +5,9 @@ use Iterator;
 
 /**
  * 引用参数辅助类，用于支持5.3以上非直接调用不能引用传参的问题
- * User: sasumi
- * Date: 2014/11/18
- * Time: 9:49
  */
 class RefParam implements Iterator, ArrayAccess{
-	private $data = array();
+	private $data;
 
 	public function __construct(array $data=array()){
 		$this->data = $data;
@@ -41,23 +38,19 @@ class RefParam implements Iterator, ArrayAccess{
 	}
 
 	final public function current() {
-		$var = current($this->data);
-		return $var;
+		return current($this->data);
 	}
 
 	final public function key() {
-		$var = key($this->data);
-		return $var;
+		return key($this->data);
 	}
 
 	final public function next() {
-		$var = next($this->data);
-		return $var;
+		return next($this->data);
 	}
 
 	final public function valid() {
-		$var = $this->current() !== false;
-		return $var;
+		return $this->current() !== false;
 	}
 
 	final public function offsetSet($offset, $value) {

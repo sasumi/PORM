@@ -88,7 +88,7 @@ class Query {
 	public function select(...$fields){
 		$this->operation = self::SELECT;
 		$fields = $fields ? $fields : ['*'];
-		call_user_func_array([$this, 'field'], $fields);
+		call_user_func_array([$this, 'fields'], $fields);
 		return $this;
 	}
 
@@ -181,7 +181,7 @@ class Query {
 	 * @param array $fields 字符串，或者只使用第一个数组参数
 	 * @return \LFPhp\PORM\Model|\LFPhp\PORM\Query
 	 */
-	public function field(...$fields){
+	public function fields(...$fields){
 		if(is_array($fields[0])){
 			$fields = $fields[0];
 		}
@@ -477,7 +477,7 @@ class Query {
 						if($value === null){
 							$sets[] = "$field_name = NULL";
 						} else {
-							$sets[] = "$field_name = "."'".addslashes($value)."'";;
+							$sets[] = "$field_name = "."'".addslashes($value)."'";
 						}
 					}
 				}

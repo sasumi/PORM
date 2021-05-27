@@ -2,10 +2,12 @@
 namespace LFPhp\PORM\Driver;
 
 use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\NullOperation;
+use LFPhp\PORM\Exception\QueryException;
+use LFPhp\PORM\Misc\DBConfig;
 use LFPhp\PORM\Misc\PaginateInterface;
 use LFPhp\PORM\Misc\RefParam;
 use LFPhp\PORM\Query;
-use function LFPhp\Func\dump;
 
 abstract class DBAbstract{
 	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
@@ -43,54 +45,28 @@ abstract class DBAbstract{
 	
 	/**
 	 * database config
-	 * @var array
 	 */
-	private $config = array();
+	public DBConfig $db_config;
 
 	/**
 	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
-	 * @param array $config
-	 * @throws \Exception
+	 * @param \LFPhp\PORM\Misc\DBConfig $config
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	private function __construct($config){
-		$this->config = $config;
-		if(!$this->config['type']){
-			$this->config['type'] = 'mysql';
-		}
-		
-		if(isset($this->config['charset']) && $this->config['charset']){
-			$this->config['charset'] = static::fixCharsetCode($this->config['charset'], $this->config['type']);
-		}
-		
-		Hooker::fire(self::EVENT_ON_DB_CONNECT, $this->config);
-		try {
-			$this->connect($this->config);
-		} catch(\Exception $ex){
-			Hooker::fire(self::EVENT_ON_DB_CONNECT_FAIL, $ex->getMessage(), $this->config);
-			throw $ex;
-		}
+	private function __construct(DBConfig $config){
+		$this->db_config = $config;
+
+		$this->connect($this->db_config);
 
 		//charset
-		if(isset($this->config['charset']) && $this->config['charset']){
-			$this->setCharset($this->config['charset']);
+		if($this->db_config->charset){
+			$this->setCharset($this->db_config->charset);
 		}
 		
 		//timezone
-		if(isset($this->config['timezone']) && $this->config['timezone']){
-			$this->setTimeZone($this->config['timezone']);
+		if(isset($this->db_config['timezone']) && $this->db_config['timezone']){
+			$this->setTimeZone($this->db_config['timezone']);
 		}
-	}
-	
-	/**
-	 * debug sql
-	 */
-	public static function debug(){
-		Hooker::add(self::EVENT_ON_DB_CONNECT, function($config){
-			dump('DB connecting: '.json_encode($config));
-		});
-		Hooker::add(self::EVENT_BEFORE_DB_QUERY, function($query){
-			dump($query.'');
-		});
 	}
 	
 	/**
@@ -105,12 +81,16 @@ abstract class DBAbstract{
 		$data = $this->fetchAll($rst);
 		return $data[0];
 	}
-	
+
 	/**
 	 * 设置查询字符集
 	 * @param $charset
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function setCharset($charset){
+		if($this->db_config->type == DBConfig::TYPE_MYSQL){
+			$charset = str_replace('-', '', $charset);
+		}
 		$this->query("SET NAMES '".$charset."'");
 	}
 
@@ -128,11 +108,11 @@ abstract class DBAbstract{
 		}
 		return $charset;
 	}
-	
+
 	/**
 	 * 设置时区
 	 * @param string $timezone
-	 * @throws LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function setTimeZone($timezone){
 		if(preg_match('/[a-zA-Z]/', $timezone)){
@@ -144,15 +124,16 @@ abstract class DBAbstract{
 		}
 		$this->query("SET time_zone = '$timezone'");
 	}
-	
+
 	/**
 	 * 单例
-	 * @param array $config
+	 * @param DBConfig $db_config
 	 * @return static
-	 * @throws LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	final public static function instance(array $config){
-		$key = self::getInstanceKey($config);
+	final public static function instance(DBConfig $db_config){
+		$key = md5($db_config->toDSNString());
+
 		static $instance_list;
 		if(!$instance_list){
 			$instance_list = [];
@@ -160,52 +141,24 @@ abstract class DBAbstract{
 		
 		if(!isset($instance_list[$key]) || !$instance_list[$key]){
 			/** @var self $class */
-			$db_type = strtolower($config['type']) ?: 'mysql';
-			$driver = strtolower($config['driver']) ?: 'pdo';
-			
-			if(($driver == 'mysql' || $driver == 'mysqli') && $db_type != 'mysql'){
-				throw new Exception("database driver: [$driver] no fix type: [$db_type]");
-			}
-			
-			switch($driver){
-				case 'mysql':
-					$ins = new DriverMySQL($config);
+
+			switch($db_config->driver){
+				case DBConfig::DRIVER_MYSQLI:
+					$ins = new DriverMySQLi($db_config);
 					break;
-				
-				case 'mysqli':
-					$ins = new DriverMySQLi($config);
-					break;
-				
-				case 'pdo':
-					$ins = new DriverPDO($config);
+
+				case DBConfig::DRIVER_PDO:
+					$ins = new DriverPDO($db_config);
 					break;
 				
 				default:
-					throw new Exception("database config driver: [$driver] no support", 0, $config);
+					throw new Exception("database config driver: [$db_config->driver] no support", 0, $db_config);
 			}
 			$instance_list[$key] = $ins;
 		}
 		return $instance_list[$key];
 	}
-	
-	/**
-	 * 获取数据库配置
-	 * @param null $key
-	 * @return array|mixed
-	 */
-	public function getConfig($key = null){
-		return $key ? $this->config[$key] : $this->config;
-	}
-	
-	/**
-	 * 获取单例键值
-	 * @param array $config
-	 * @return string
-	 */
-	private static function getInstanceKey(array $config){
-		return md5(serialize($config));
-	}
-	
+
 	/**
 	 * 获取当前去重查询开启状态
 	 * @return bool
@@ -281,12 +234,13 @@ abstract class DBAbstract{
 		}
 		return $data;
 	}
-	
+
 	/**
 	 * 获取一页数据
 	 * @param \LFPhp\PORM\Query $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function getPage(Query $q, $pager = null){
 		$query = clone($q);
@@ -304,7 +258,6 @@ abstract class DBAbstract{
 			'query'  => $query,
 			'result' => null
 		));
-		Hooker::fire(self::EVENT_BEFORE_DB_GET_LIST, $param);
 		if(!is_array($param['result'])){
 			if(self::$QUERY_DISTINCT){
 				$param['result'] = isset(self::$query_cache[$query.'']) ? self::$query_cache[$query.''] : null; //todo 这里通过 isFRQuery 可以做全表cache
@@ -317,10 +270,7 @@ abstract class DBAbstract{
 						self::$query_cache[$query.''] = $param['result'];
 					}
 				}
-			} else{
-				Hooker::fire(self::EVENT_ON_DB_QUERY_DISTINCT, $param);
 			}
-			Hooker::fire(self::EVENT_AFTER_DB_GET_LIST, $param);
 		}
 		return $param['result'] ?: array();
 	}
@@ -360,23 +310,24 @@ abstract class DBAbstract{
 		}
 		return null;
 	}
-	
+
 	/**
 	 * 更新数量
 	 * @param string $table
 	 * @param string $field
 	 * @param integer $offset_count
 	 * @return boolean
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
-		$prefix = $this->config['prefix'] ?: '';
+		$prefix = $this->db_config['prefix'] ?: '';
 		$query = $this->genQuery();
 		$sql = "UPDATE {$prefix}{$table} SET {$field} = {$field}".($offset_count>0 ? " + {$offset_count}" : " - {$offset_count}");
 		$query->setSql($sql);
 		$this->query($query);
 		return $this->getAffectNum();
 	}
-	
+
 	/**
 	 * 数据更新
 	 * @param string $table
@@ -384,11 +335,13 @@ abstract class DBAbstract{
 	 * @param string $condition
 	 * @param int $limit
 	 * @return int affect line number
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\NullOperation
 	 */
 	public function update($table, array $data, $condition = '', $limit = 1){
 		if(empty($data)){
 			if(static::$THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA){
-				throw new BizException('NO UPDATE DATA FOUND');
+				throw new NullOperation('NO UPDATE DATA FOUND');
 			}
 			return false;
 		}
@@ -402,13 +355,14 @@ abstract class DBAbstract{
 	 * @param $table
 	 * @param array $data
 	 * @param string $condition
-	 * @param $limit
+	 * @param int $limit
 	 * @return mixed
 	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\NullOperation
 	 */
 	public function replace($table, array $data, $condition = '', $limit = 0){
 		if(empty($data)){
-			throw new Exception('NO REPLACE DATA FOUND');
+			throw new NullOperation('NO REPLACE DATA FOUND');
 		}
 		
 		$count = $this->getCount($this->genQuery()->select()->from($table)->where($condition)->limit(1));
@@ -422,7 +376,7 @@ abstract class DBAbstract{
 			return $this->getAffectNum();
 		}
 	}
-	
+
 	/**
 	 * @param $table
 	 * @param $field
@@ -430,6 +384,7 @@ abstract class DBAbstract{
 	 * @param string $statement
 	 * @param int $limit
 	 * @return int
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function increase($table, $field, $offset = 1, $statement = '', $limit = 0){
 		$off = $offset>0 ? "+ $offset" : "$offset";
@@ -439,13 +394,14 @@ abstract class DBAbstract{
 		$this->query($query);
 		return $this->getAffectNum();
 	}
-	
+
 	/**
 	 * 删除数据库数据
 	 * @param $table
 	 * @param $condition
 	 * @param int $limit 参数为0表示不进行限制
 	 * @return bool
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function delete($table, $condition, $limit = 0){
 		$query = $this->genQuery()->from($table)->delete()->where($condition);
@@ -463,10 +419,11 @@ abstract class DBAbstract{
 	 * @param null $condition
 	 * @return mixed
 	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\NullOperation
 	 */
 	public function insert($table, array $data, $condition = null){
 		if(empty($data)){
-			throw new Exception('NO INSERT DATA FOUND');
+			throw new NullOperation('NO INSERT DATA FOUND');
 		}
 		$query = $this->genQuery()->insert()->from($table)->setData($data)->where($condition);
 		return $this->query($query);
@@ -477,7 +434,7 @@ abstract class DBAbstract{
 	 * @return Query
 	 */
 	protected function genQuery(){
-		$prefix = isset($this->config['prefix']) ? $this->config['prefix'] : '';
+		$prefix = isset($this->db_config['prefix']) ? $this->db_config['prefix'] : '';
 		$ins = new Query();
 		$ins->setTablePrefix($prefix);
 		return $ins;
@@ -491,17 +448,12 @@ abstract class DBAbstract{
 	 */
 	final public function query($query){
 		try{
-			Hooker::fire(self::EVENT_BEFORE_DB_QUERY, $query, $this->config);
 			self::$processing_query = $query;
 			$result = $this->dbQuery($query);
 			self::$processing_query = null;
-			Hooker::fire(self::EVENT_AFTER_DB_QUERY, $query, $result);
 
 			//由于PHP对数据库查询返回结果并非报告Exception，
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
-			if($result === false){
-				Hooker::fire(self::EVENT_DB_QUERY_ERROR, '', $query.'', $this->config);
-			}
 			return $result;
 		}catch(\Exception $ex){
 			static $reconnect_count;
@@ -510,17 +462,15 @@ abstract class DBAbstract{
 				if(static::$RECONNECT_INTERVAL){
 					usleep(static::$RECONNECT_INTERVAL*1000);
 				}
-				Hooker::fire(self::EVENT_ON_DB_RECONNECT, $ex->getMessage(), $this->config);
 				$reconnect_count++;
 				try{
-					$this->connect($this->config, true);
+					$this->connect($this->db_config, true);
 				}catch(\Exception $e){
 					//ignore reconnect exception
 				}
 				return $this->query($query);
 			}
-			Hooker::fire(self::EVENT_DB_QUERY_ERROR, $ex->getMessage(), $query.'', $this->config);
-			throw new Exception($ex->getMessage(), $query.'', $this->config, $ex->getCode(), $ex);
+			throw new QueryException($query.'', $ex->getMessage(), $ex->getCode(), $ex, $this->db_config);
 		}
 	}
 	
@@ -636,14 +586,14 @@ abstract class DBAbstract{
 	 * @return mixed
 	 */
 	public abstract function cancelTransactionState();
-	
+
 	/**
 	 * 连接数据库接口
-	 * @param array $config <p>数据库连接配置，
+	 * @param \LFPhp\PORM\Misc\DBConfig $db_config <p>数据库连接配置，
 	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
 	 * </p>
 	 * @param boolean $re_connect 是否重新连接
 	 * @return resource
 	 */
-	public abstract function connect(array $config, $re_connect = false);
+	public abstract function connect(DBConfig $db_config, $re_connect = false);
 }
