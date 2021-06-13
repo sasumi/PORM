@@ -424,7 +424,7 @@ class Query {
 
 		switch($this->operation){
 			case self::SELECT:
-				$sql = 'SELECT '.implode(',', self::escapeKey($this->fields)).' FROM '.implode(',', $this->tables).$this->getJoinStr().' '.$this->getWhereStr().($this->group ? ' GROUP BY '.$this->group : '').($this->order ? ' ORDER BY '.$this->order : '');
+				$sql = 'SELECT '.(implode(',', self::escapeKey($this->fields)) ?: '*').' FROM '.implode(',', $this->tables).$this->getJoinStr().' '.$this->getWhereStr().($this->group ? ' GROUP BY '.$this->group : '').($this->order ? ' ORDER BY '.$this->order : '');
 				break;
 
 			case self::DELETE:

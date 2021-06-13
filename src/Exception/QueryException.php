@@ -6,11 +6,14 @@ use Throwable;
 
 class QueryException extends Exception {
 	private $query;
-	private $config;
 
 	public function __construct($query, $message = "", $code = 0, Throwable $previous = null, $config = null){
 		$this->query = $query;
-		$this->config = $config;
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message, $code, $previous, $config);
+	}
+
+	public function __debugInfo(){
+		$info = parent::__debugInfo();
+		return array_merge(['query'=>$this->query.''], $info);
 	}
 }

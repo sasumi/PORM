@@ -481,7 +481,7 @@ abstract class DBAbstract{
 	/**
 	 * 执行查询
 	 * 规划dbQuery代替实际的数据查询主要目的是：为了统一对数据库查询动作做统一的行为监控
-	 * @param $query
+	 * @param string $query
 	 * @return mixed|false 返回查询结果，如果查询失败，则返回false
 	 */
 	protected abstract function dbQuery($query);
