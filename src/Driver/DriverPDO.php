@@ -8,6 +8,7 @@ use LFPhp\PORM\Query;
 use PDO;
 use PDOException;
 use PDOStatement as PDOStatement;
+use function LFPhp\Func\dump;
 use function LFPhp\Func\get_max_socket_timeout;
 use function LFPhp\Func\server_in_windows;
 
@@ -19,9 +20,6 @@ use function LFPhp\Func\server_in_windows;
  *
  * 当前类不关注调用方的操作是读操作还是写入操作，
  * 这部分选择有调用方自己选择提供不同的初始化config配置
- * User: sasumi
- * Date: 2015/01/06
- * Time: 9:49
  */
 class DriverPDO extends DBAbstract {
 	/**
@@ -82,26 +80,36 @@ class DriverPDO extends DBAbstract {
 		}catch(PDOException $e){
 			$err = server_in_windows() ? mb_convert_encoding($e->getMessage(), 'utf-8', 'gb2312') : $e->getMessage();
 			$db_config->password = $db_config->password ? '******' : 'no password';
-			throw new ConnectException("Database connect failed:{$err}, HOST：{$db_config->host}",$e->getCode(), $e, $db_config);
+			throw new ConnectException("Database connect failed:{$err}", $e->getCode(), $e, $db_config);
 		}
-		$this->toggleStrictMode(isset($db_config->strict_mode) ? !!$db_config->strict_mode : false, $conn);
 		$this->conn = $conn;
+		$this->toggleStrictMode(isset($db_config->strict_mode) ? !!$db_config->strict_mode : false);
 		return $conn;
 	}
-	
+
+	public function setCharset($charset){
+		$type = $this->db_config->type;
+		if($type == DBConfig::TYPE_MYSQL){
+			if(stripos($charset, 'utf-') === 0){
+				return str_replace('-', '', $charset);
+			}
+		} else if(preg_match('/^utf\d/i', $charset, $matches)){
+			return preg_replace('/^utf(\d)/', 'UTF-$2', $charset);
+		}
+		return $charset;
+	}
+
 	/**
 	 * 是否切换到严格模式
 	 * @param bool $to_strict
-	 * @param \PDO|null $conn
 	 */
-	public function toggleStrictMode($to_strict = false, PDO $conn = null){
+	public function toggleStrictMode($to_strict = false){
 		if($to_strict){
 			$sql = "set session sql_mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'";
 		} else {
 			$sql = "set session sql_mode='NO_ENGINE_SUBSTITUTION'";
 		}
-		$conn = $conn ?: $this->conn;
-		$conn->prepare($sql);
+		$this->conn->prepare($sql);
 	}
 	
 	/**
@@ -133,7 +141,7 @@ class DriverPDO extends DBAbstract {
 	 * @param string|Query $sql
 	 * @return PDOStatement
 	 */
-	public function dbQuery($sql){
+	protected function dbQuery($sql){
 		$this->_last_query_result = null;
 		$result = $this->conn->query($sql.'');
 		$this->_last_query_result = $result;

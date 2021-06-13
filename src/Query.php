@@ -20,10 +20,10 @@ class Query {
 	public $sql = '';
 	public $table_prefix = '';
 	public $operation = self::SELECT;
-	public $fields = array('*');
-	public $tables = array();
-	public $joins = array();
-	public $where = array();
+	public $fields = [];
+	public $tables = [];
+	public $joins = [];
+	public $where = [];
 	public $order = '';
 	public $group = '';
 	public $limit;
@@ -33,7 +33,7 @@ class Query {
 	 * 构造方法，初始化SQL语句
 	 * @param string $sql
 	 */
-	public function __construct($sql=''){
+	public function __construct($sql = ''){
 		$this->sql = $sql;
 	}
 
@@ -69,7 +69,7 @@ class Query {
 	 * @param string $table_prefix
 	 * @return $this
 	 */
-	public function setTablePrefix($table_prefix=''){
+	public function setTablePrefix($table_prefix = ''){
 		$this->table_prefix = $table_prefix;
 		return $this;
 	}
@@ -78,17 +78,18 @@ class Query {
 	 * 当前查询是否为全行查询
 	 */
 	public function isFRQuery(){
-		return !$this->sql && $this->fields == array('*');
+		return !$this->sql && (!$this->fields || $this->fields == array('*'));
 	}
-	
+
 	/**
-	 * @param array $fields
+	 * @param string[] $fields
 	 * @return $this
 	 */
 	public function select(...$fields){
 		$this->operation = self::SELECT;
-		$fields = $fields ? $fields : ['*'];
-		call_user_func_array([$this, 'fields'], $fields);
+		if($fields){
+			$this->fields($fields);
+		}
 		return $this;
 	}
 
@@ -137,7 +138,7 @@ class Query {
 	/**
 	 * update query
 	 * @return \LFPhp\PORM\Query $this
-	**/
+	 **/
 	public function update(){
 		$this->operation = self::UPDATE;
 		return $this;
@@ -177,29 +178,27 @@ class Query {
 	}
 
 	/**
-	 * 字段
+	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
 	 * @return \LFPhp\PORM\Model|\LFPhp\PORM\Query
 	 */
-	public function fields(...$fields){
-		if(is_array($fields[0])){
-			$fields = $fields[0];
-		}
-		if(join(',', $fields) == '*'){
-			return $this;
-		}
-		$this->fields = $fields;
+	public function fields($fields){
+		$this->fields = array_merge($this->fields, $fields);
 		return $this;
+	}
+
+	public function field(...$fields){
+		return $this->fields($fields);
 	}
 
 	/**
 	 * 表
 	 * @param string $str
 	 * @return \LFPhp\PORM\Query $this
-	**/
+	 **/
 	public function from($str){
 		$tables = explode(',', $str);
-		foreach($tables as $key=>$table){
+		foreach($tables as $key => $table){
 			$tables[$key] = self::escapeKey($this->table_prefix.$table);
 		}
 		$this->tables = $tables;
@@ -222,28 +221,22 @@ class Query {
 		if(is_callable($field)){
 			$ws = call_user_func($field);
 			$this->where[] = array(
-				'type' => $arg1,
+				'type'  => $arg1,
 				'field' => $this->getWhereStr($ws),
 			);
-		}
-
-		//二维数组，循环添加
+		}//二维数组，循环添加
 		else if(is_array($arg1) && count($arg1, COUNT_RECURSIVE) != count($arg1)){
 			$this->where = array_merge($this->where, $arg1);
-		}
-
-		//普通数组模式
+		}//普通数组模式
 		else if(is_array($arg1)){
 			$this->where = array_merge($this->where, $arg1);
-		}
-
-		//普通模式
+		}//普通模式
 		else if($field){
 			$this->where[] = array(
-				'type' => $arg1,
-				'field' => $field,
+				'type'     => $arg1,
+				'field'    => $field,
 				'operator' => $operator,
-				'compare' => $compare
+				'compare'  => $compare,
 			);
 		}
 	}
@@ -255,7 +248,7 @@ class Query {
 	 * @param null $compare
 	 * @return $this
 	 */
-	public function where($field, $operator=null, $compare=null){
+	public function where($field, $operator = null, $compare = null){
 		return $this->andWhere($field, $operator, $compare);
 	}
 
@@ -268,7 +261,7 @@ class Query {
 	 * @param null $compare
 	 * @return $this
 	 */
-	public function andWhere($field, $operator=null, $compare=null){
+	public function andWhere($field, $operator = null, $compare = null){
 		$this->addWhere(self::OP_AND, $field, $operator, $compare);
 		return $this;
 	}
@@ -279,7 +272,7 @@ class Query {
 	 * @param null $operator
 	 * @param null $compare
 	 */
-	public function orWhere($field, $operator=null, $compare=null){
+	public function orWhere($field, $operator = null, $compare = null){
 		$this->addWhere(self::OP_OR, $field, $operator, $compare);
 	}
 
@@ -288,8 +281,8 @@ class Query {
 	 * @param array $joins
 	 * @return mixed
 	 */
-	private function getJoinStr($joins=array()){
-		$str = array();
+	private function getJoinStr($joins = []){
+		$str = [];
 		foreach($joins ?: $this->joins as $j){
 			list($table, $on, $type) = $j;
 			switch($type){
@@ -318,27 +311,27 @@ class Query {
 	 * @param array $wheres
 	 * @return string
 	 */
-	private function getWhereStr(array $wheres=array()){
+	private function getWhereStr(array $wheres = []){
 		$str = '';
-		foreach($wheres?:$this->where as $w){
+		foreach($wheres ?: $this->where as $w){
 			$f = $w['field'];
 			$k = $w['type'] == self::OP_AND ? 'AND' : 'OR';
 			if(!empty($w['operator']) && isset($w['compare'])){
 				//数组，拼接数组
 				if(is_array($w['compare'])){
 					if(!empty($w['compare'])){
-						foreach($w['compare'] as $_=>$item){
+						foreach($w['compare'] as $_ => $item){
 							$w['compare'][$_] = addslashes($item);
 						}
-						$str .= ($str ? " $k ":'').self::escapeKey($f).' '.$w['operator'].' (\''.join("','",$w['compare']).'\')';
-					} else {
-						$str .= ($str ? " $k ":'').' FALSE';
+						$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' (\''.join("','", $w['compare']).'\')';
+					}else{
+						$str .= ($str ? " $k " : '').' FALSE';
 					}
-				} else {
-					$str .= ($str ? " $k ":'').self::escapeKey($f).' '.$w['operator'].' \''.addslashes($w['compare']).'\'';
+				}else{
+					$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' \''.addslashes($w['compare']).'\'';
 				}
-			} else {
-				$str .= ($str ? " $k (":'(').$f.')';
+			}else{
+				$str .= ($str ? " $k (" : '(').$f.')';
 			}
 		}
 		return $str ? ' WHERE '.$str : '';
@@ -361,7 +354,7 @@ class Query {
 	 * 分组
 	 * @param string $str
 	 * @return Query|Model
-	**/
+	 **/
 	public function group($str){
 		$this->group = $str;
 		return $this;
@@ -376,10 +369,10 @@ class Query {
 		$p1 = isset($tmp[0]) ? $tmp[0] : 0;
 		$p2 = isset($tmp[1]) ? $tmp[1] : 0;
 		if($p2){
-			$this->limit = array($p1,$p2);
-		} else if(is_array($p1)){
+			$this->limit = array($p1, $p2);
+		}else if(is_array($p1)){
 			$this->limit = $p1;
-		} else if (is_scalar($p1) && $p1 != 0) {
+		}else if(is_scalar($p1) && $p1 != 0){
 			$this->limit = array(0, $p1);
 		}
 
@@ -387,7 +380,7 @@ class Query {
 			if(preg_match('/\slimit\s/i', $this->sql)){
 				$this->sql = preg_replace('/\slimit\s.*$/i', '', $this->sql); //移除原有limit限制信息
 			}
-			$this->sql = $this->sql . ' LIMIT ' . $this->limit[0] . ',' . $this->limit[1];
+			$this->sql = $this->sql.' LIMIT '.$this->limit[0].','.$this->limit[1];
 		}
 		return $this;
 	}
@@ -409,12 +402,12 @@ class Query {
 	 */
 	public static function escapeKey($field){
 		if(is_array($field)){
-			$ret = array();
+			$ret = [];
 			foreach($field as $val){
 				$ret[] = (strpos($val, '`') === false && strpos($val, '.') === false && strpos($val, ' ') === false && $val != '*') ? "`$val`" : $val;
 			}
 			return $ret;
-		} else {
+		}else{
 			return (strpos($field, '`') === false && strpos($field, '.') === false && strpos($field, ' ') === false && $field != '*') ? "`$field`" : $field;
 		}
 	}
@@ -431,13 +424,7 @@ class Query {
 
 		switch($this->operation){
 			case self::SELECT:
-				$sql = 'SELECT '.implode(',', self::escapeKey($this->fields)).
-					' FROM '.implode(',', $this->tables).
-					$this->getJoinStr().
-					' '.
-					$this->getWhereStr().
-					($this->group ? ' GROUP BY '.$this->group : '').
-					($this->order ? ' ORDER BY '.$this->order : '');
+				$sql = 'SELECT '.implode(',', self::escapeKey($this->fields)).' FROM '.implode(',', $this->tables).$this->getJoinStr().' '.$this->getWhereStr().($this->group ? ' GROUP BY '.$this->group : '').($this->order ? ' ORDER BY '.$this->order : '');
 				break;
 
 			case self::DELETE:
@@ -453,7 +440,7 @@ class Query {
 				$sql = "INSERT INTO ".implode(',', $this->tables)."($key_str) VALUES ";
 				$comma = '';
 				foreach($data_list as $row){
-					$str = array();
+					$str = [];
 					foreach($row as $val){
 						$str[] = $val !== null ? "'".addslashes($val)."'" : 'null';
 					}
@@ -469,14 +456,14 @@ class Query {
 					throw new Exception("No data in database update operation");
 				}
 				$data_list = count($this->data) == count($this->data, 1) ? array($this->data) : $this->data;
-				$sets = array();
+				$sets = [];
 				foreach($data_list as $row){
-					$sets = array();
+					$sets = [];
 					foreach($row as $field_name => $value){
 						$field_name = self::escapeKey($field_name);
 						if($value === null){
 							$sets[] = "$field_name = NULL";
-						} else {
+						}else{
 							$sets[] = "$field_name = "."'".addslashes($value)."'";
 						}
 					}
@@ -491,7 +478,7 @@ class Query {
 		if($this->limit && stripos(' LIMIT ', $sql) === false){
 			if(!$this->limit[0]){
 				$sql .= " LIMIT ".$this->limit[1];
-			} else {
+			}else{
 				$sql .= " LIMIT ".$this->limit[0].','.$this->limit[1];
 			}
 		}

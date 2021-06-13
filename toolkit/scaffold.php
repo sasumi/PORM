@@ -14,20 +14,6 @@ abstract class Scaffold{
 		return $map[$key];
 	}
 
-	protected static function getNameSpace(){
-		$str = file_get_contents(static::getProjectRoot() . '/public/index.php');
-		preg_match('/namespace\s*([^;]*);/', $str, $matches);
-		return trim($matches[1]);
-	}
-
-	protected static function getTableNameSpace(){
-		return static::getNameSpace()."\\db_definition";
-	}
-
-	protected static function getModelNameSpace(){
-		return static::getNameSpace()."\\model";
-	}
-
 	protected static function getTableTpl(){
 		return __DIR__.'/table.tpl';
 	}
@@ -46,8 +32,6 @@ abstract class Scaffold{
 		}
 
 		$str = static::parserTpl(file_get_contents(__DIR__.'/model.tpl'), array(
-			'namespace'       => static::getModelNameSpace(),
-			'table_namespace' => static::getTableNameSpace(). "\\{$table_model}",
 			'generate_date'   => date('Y-m-d'),
 			'generate_time'   => date('H:i:s'),
 			'table_model'     => $table_model,
@@ -57,32 +41,6 @@ abstract class Scaffold{
 		$update = is_file($file);
 		file_put_contents($file, $str);
 		echo "[DONE] model " . ($update ? 'updated' : 'created') . " >> $file -- $model_name\n";
-	}
-
-	protected static function generateCrudModel($table_name, $model_name = '', $overwrite=true){
-		static::generateTable($table_name, $overwrite);
-		$model_name = $model_name ?: static::convertClassName($table_name);
-		$table_model = 'Table' . static::convertClassName($table_name);
-
-		$file = static::getPath('model') . $model_name . '.php';
-
-		if(!$overwrite && is_file($file)){
-			echo "[IGNORE] model file exists: $file\n";
-			return;
-		}
-
-		$str = static::parserTpl(file_get_contents(__DIR__.'/crud_model.tpl'), array(
-			'namespace'       => static::getModelNameSpace(),
-			'table_namespace' => static::getTableNameSpace(),
-			'generate_date'   => date('Y-m-d'),
-			'generate_time'   => date('H:i:s'),
-			'table_model'     => $table_model,
-			'model_name'      => $model_name,
-		));
-
-		$update = is_file($file);
-		file_put_contents($file, $str);
-		echo "[DONE] CRUD model " . ($update ? 'updated' : 'created') . " >> $file -- $model_name\n";
 	}
 
 	protected static function getAllTable(){
@@ -117,12 +75,10 @@ abstract class Scaffold{
 		$fks = static::get_fks($meta_list);
 		$comment = static::getClassComment($class_name, $meta_list);
 		$model_desc = static::getTableDesc($table);
-		$ns = static::getNameSpace();
 
 		$class_const_string = static::getConstString($meta_list);
 
 		$str = static::parserTpl(file_get_contents(static::getTableTpl()), array(
-			'namespace'          => static::getTableNameSpace(),
 			'generate_date'      => date('Y-m-d'),
 			'generate_time'      => date('H:i:s'),
 			'table_name'         => $table,
@@ -482,7 +438,6 @@ abstract class Scaffold{
 	}
 
 	protected static function getDBConfig(){
-		$ns = static::getNameSpace();
 		return include static::getProjectRoot() . "/database/$ns/db.inc.php";
 	}
 
@@ -541,9 +496,6 @@ php $script_file table [-o] -t table_name
 
 generate all tables:
 php $script_file alltable [-o]
-
-generate specified crud use table:
-php $script_file crud [-o] -t table_name -m model_name
 
 generate all crud module:
 php $script_file allcrud [-o]

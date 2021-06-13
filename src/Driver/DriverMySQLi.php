@@ -16,7 +16,7 @@ class DriverMySQLi extends DBAbstract{
 	/** @var \mysqli $conn */
 	private $conn;
 
-	public function dbQuery($query){
+	protected function dbQuery($query){
 		return $this->conn->query($query.'');
 	}
 
@@ -30,6 +30,19 @@ class DriverMySQLi extends DBAbstract{
 	 */
 	public function fetchAll($resource){
 		return $resource->fetch_all(MYSQLI_ASSOC);
+	}
+
+	/**
+	 * Set charset
+	 * @param $charset
+	 * @return \LFPhp\PORM\Driver\DriverMySQLi
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public function setCharset($charset){
+		if(stripos($charset, 'utf-') === 0){
+			$charset = str_replace('-', '', $charset);
+		}
+		return parent::setCharset($charset);
 	}
 
 	public function setLimit($sql, $limit){
@@ -66,7 +79,7 @@ class DriverMySQLi extends DBAbstract{
 	 * connect to specified config database
 	 * @param \LFPhp\PORM\Misc\DBConfig $db_config
 	 * @param boolean $re_connect 是否重新连接
-	 * @return void
+	 * @return \mysqli
 	 * @throws \LFPhp\PORM\Exception\ConnectException
 	 */
 	public function connect(DBConfig $db_config, $re_connect = false){
@@ -91,5 +104,6 @@ class DriverMySQLi extends DBAbstract{
 			throw new ConnectException("Database connect failed:{$error}, HOST：{$db_config->host}", $code, null, $db_config);
 		}
 		$this->conn = $connection;
+		return $connection;
 	}
 }

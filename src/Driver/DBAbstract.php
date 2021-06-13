@@ -24,10 +24,10 @@ abstract class DBAbstract{
 	const LIKE_RESERVED_CHARS = ['%', '_'];
 
 	//最大重试次数，如果该数据配置为0，将不进行重试
-	public static $MAX_RECONNECT_COUNT = 10;
+	protected $max_reconnect_count = 0;
 	
 	//重新连接间隔时间（毫秒）
-	public static $RECONNECT_INTERVAL = 1000;
+	protected $reconnect_interval = 1000;
 
 	//是否在更新空数据时抛异常，缺省不抛异常
 	public static $THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA = false;
@@ -45,8 +45,9 @@ abstract class DBAbstract{
 	
 	/**
 	 * database config
+	 * @var DBConfig
 	 */
-	public DBConfig $db_config;
+	public $db_config;
 
 	/**
 	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
@@ -64,8 +65,8 @@ abstract class DBAbstract{
 		}
 		
 		//timezone
-		if(isset($this->db_config['timezone']) && $this->db_config['timezone']){
-			$this->setTimeZone($this->db_config['timezone']);
+		if(isset($this->db_config->timezone) && $this->db_config->timezone){
+			$this->setTimeZone($this->db_config->timezone);
 		}
 	}
 	
@@ -85,28 +86,12 @@ abstract class DBAbstract{
 	/**
 	 * 设置查询字符集
 	 * @param $charset
+	 * @return \LFPhp\PORM\Driver\DBAbstract
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function setCharset($charset){
-		if($this->db_config->type == DBConfig::TYPE_MYSQL){
-			$charset = str_replace('-', '', $charset);
-		}
 		$this->query("SET NAMES '".$charset."'");
-	}
-
-	/**
-	 * 修正MySQL数据库驱动编码问题
-	 * @param $charset
-	 * @param $type
-	 * @return string
-	 */
-	public static function fixCharsetCode($charset, $type){
-		if($type == 'mysql'){
-			$charset = str_replace('-', '', $charset);
-		} else if($charset == 'utf8'){
-			$charset = 'utf-8';
-		}
-		return $charset;
+		return $this;
 	}
 
 	/**
@@ -274,20 +259,22 @@ abstract class DBAbstract{
 		}
 		return $param['result'] ?: array();
 	}
-	
+
 	/**
 	 * 获取所有查询记录
 	 * @param Query $query
 	 * @return mixed
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function getAll(Query $query){
 		return $this->getPage($query, null);
 	}
-	
+
 	/**
 	 * 获取一条查询记录
 	 * @param Query $query
 	 * @return array | null
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function getOne(Query $query){
 		$rst = $this->getPage($query, 1);
@@ -296,12 +283,13 @@ abstract class DBAbstract{
 		}
 		return null;
 	}
-	
+
 	/**
 	 * 获取一个字段
 	 * @param Query $query
 	 * @param string $key
 	 * @return mixed|null
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function getField(Query $query, $key){
 		$rst = $this->getOne($query);
@@ -441,7 +429,7 @@ abstract class DBAbstract{
 	}
 
 	/**
-	 * sql query
+	 * SQL查询
 	 * @param $query
 	 * @return mixed
 	 * @throws \LFPhp\PORM\Exception\Exception
@@ -457,10 +445,10 @@ abstract class DBAbstract{
 			return $result;
 		}catch(\Exception $ex){
 			static $reconnect_count;
-			if($reconnect_count < static::$MAX_RECONNECT_COUNT && static::isConnectionLost($ex)){
+			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count < $this->max_reconnect_count)){
 				//间隔时间之后重新连接
-				if(static::$RECONNECT_INTERVAL){
-					usleep(static::$RECONNECT_INTERVAL*1000);
+				if($this->reconnect_interval){
+					usleep($this->reconnect_interval*1000);
 				}
 				$reconnect_count++;
 				try{
@@ -496,12 +484,13 @@ abstract class DBAbstract{
 	 * @param $query
 	 * @return mixed|false 返回查询结果，如果查询失败，则返回false
 	 */
-	public abstract function dbQuery($query);
-	
+	protected abstract function dbQuery($query);
+
 	/**
 	 * 获取条数
 	 * @param $sql
 	 * @return mixed
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function getCount($sql){
 		$sql .= '';
@@ -596,4 +585,38 @@ abstract class DBAbstract{
 	 * @return resource
 	 */
 	public abstract function connect(DBConfig $db_config, $re_connect = false);
+
+	/**
+	 * 获取最大链接重试次数
+	 * @return int
+	 */
+	public function getMaxReconnectCount(){
+		return $this->max_reconnect_count;
+	}
+
+	/**
+	 * 设置链接重试次数
+	 * @param int $max_reconnect_count
+	 * @return \LFPhp\PORM\Driver\DBAbstract
+	 */
+	public function setMaxReconnectCount($max_reconnect_count){
+		$this->max_reconnect_count = $max_reconnect_count;
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getReconnectInterval(){
+		return $this->reconnect_interval;
+	}
+
+	/**
+	 * @param int $reconnect_interval
+	 * @return \LFPhp\PORM\Driver\DBAbstract
+	 */
+	public function setReconnectInterval($reconnect_interval){
+		$this->reconnect_interval = $reconnect_interval;
+		return $this;
+	}
 }

@@ -724,7 +724,7 @@ abstract class Model extends DAO {
 		$obj = self::meta();
 		$pro_defines = $obj->getEntityPropertiesDefine();
 		if($key && $pro_defines[$key]){
-			$this->query->fields($key);
+			$this->query->field($key);
 		}
 		$data = $this->getDbDriver(self::OP_READ)->getOne($this->query);
 		return $data ? array_pop($data) : null;
@@ -761,7 +761,7 @@ abstract class Model extends DAO {
 			$str = array_merge($str,$group_by);
 			$this->query->group(implode(',',$group_by));
 		}
-		$this->query->fields(join(',', $str));
+		$this->query->fields($str);
 
 		$data = $this->getDbDriver(self::OP_READ)->getAll($this->query);
 		if($group_by){
@@ -789,7 +789,7 @@ abstract class Model extends DAO {
 	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
 		$pk = $this->getPrimaryKey();
 		$pk_v = $this->{$pk};
-		$query = static::find()->fields($pk, $sort_key);
+		$query = static::find()->field($pk, $sort_key);
 
 		//query statement
 		if($statement){
@@ -842,7 +842,7 @@ abstract class Model extends DAO {
 		$obj = self::meta();
 		$pro_defines = $obj->getEntityPropertiesDefine();
 		if(isset($pro_defines[$key]) && $pro_defines[$key]){
-			$this->query->fields($key);
+			$this->query->field($key);
 		}
 		$data = $this->getDbDriver(self::OP_READ)->getAll($this->query);
 		return $data ? array_column($data, $key) : array();
@@ -862,7 +862,7 @@ abstract class Model extends DAO {
 	 */
 	public function map($key, $val){
 		if(is_string($val)){
-			$this->query->fields($key, $val);
+			$this->query->field($key, $val);
 			$tmp = $this->getDbDriver(self::OP_READ)->getAll($this->query);
 			return array_combine(array_column($tmp, $key), array_column($tmp, $val));
 		} else if(is_array($val)){
