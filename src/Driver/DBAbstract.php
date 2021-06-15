@@ -1,15 +1,18 @@
 <?php
 namespace LFPhp\PORM\Driver;
 
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\DBConfig;
 use LFPhp\PORM\Misc\PaginateInterface;
-use LFPhp\PORM\Misc\RefParam;
 use LFPhp\PORM\Query;
 
-abstract class DBAbstract{
+/**
+ * Class DBAbstract
+ * @package LFPhp\PORM\Driver
+ */
+abstract class DBAbstract {
 	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
 	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY';
 	const EVENT_DB_QUERY_ERROR = __CLASS__.'EVENT_DB_QUERY_ERROR';
@@ -25,34 +28,33 @@ abstract class DBAbstract{
 
 	//最大重试次数，如果该数据配置为0，将不进行重试
 	protected $max_reconnect_count = 0;
-	
+
 	//重新连接间隔时间（毫秒）
 	protected $reconnect_interval = 1000;
 
 	//是否在更新空数据时抛异常，缺省不抛异常
 	public static $THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA = false;
-	
-	// select查询去重
+
+	// select查询去重，默认关闭（避免影响业务）
 	// 这部分逻辑可能针对某些业务逻辑有影响，如：做某些操作之后立即查询这种
 	// so，如果程序需要，可以通过 DBAbstract::distinctQueryOff() 关闭这个选项
-	private static $QUERY_DISTINCT = true;
-	private static $query_cache = array();
-	
+	private static $query_cache_on = false;
+	private static $query_cache_data = [];
+
 	/**
 	 * @var Query current processing db query, support for exception handle
 	 */
 	private static $processing_query;
-	
+
 	/**
-	 * database config
-	 * @var DBConfig
+	 * @var \LFPhp\PORM\Misc\DBConfig
 	 */
 	public $db_config;
 
 	/**
 	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
-	 * @param \LFPhp\PORM\Misc\DBConfig $config
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @param DBConfig $config
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private function __construct(DBConfig $config){
 		$this->db_config = $config;
@@ -63,18 +65,18 @@ abstract class DBAbstract{
 		if($this->db_config->charset){
 			$this->setCharset($this->db_config->charset);
 		}
-		
+
 		//timezone
 		if(isset($this->db_config->timezone) && $this->db_config->timezone){
 			$this->setTimeZone($this->db_config->timezone);
 		}
 	}
-	
+
 	/**
 	 * 解析SQL语句
 	 * @param $sql
 	 * @return array
-	 * @throws Exception
+	 * @throws DBException
 	 */
 	public function explain($sql){
 		$sql = "EXPLAIN $sql";
@@ -87,7 +89,7 @@ abstract class DBAbstract{
 	 * 设置查询字符集
 	 * @param $charset
 	 * @return \LFPhp\PORM\Driver\DBAbstract
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setCharset($charset){
 		$this->query("SET NAMES '".$charset."'");
@@ -97,7 +99,7 @@ abstract class DBAbstract{
 	/**
 	 * 设置时区
 	 * @param string $timezone
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setTimeZone($timezone){
 		if(preg_match('/[a-zA-Z]/', $timezone)){
@@ -114,7 +116,7 @@ abstract class DBAbstract{
 	 * 单例
 	 * @param DBConfig $db_config
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	final public static function instance(DBConfig $db_config){
 		$key = md5($db_config->toDSNString());
@@ -123,7 +125,7 @@ abstract class DBAbstract{
 		if(!$instance_list){
 			$instance_list = [];
 		}
-		
+
 		if(!isset($instance_list[$key]) || !$instance_list[$key]){
 			/** @var self $class */
 
@@ -135,9 +137,9 @@ abstract class DBAbstract{
 				case DBConfig::DRIVER_PDO:
 					$ins = new DriverPDO($db_config);
 					break;
-				
+
 				default:
-					throw new Exception("database config driver: [$db_config->driver] no support", 0, $db_config);
+					throw new DBException("database config driver: [$db_config->driver] no support", 0, null, $db_config);
 			}
 			$instance_list[$key] = $ins;
 		}
@@ -148,35 +150,35 @@ abstract class DBAbstract{
 	 * 获取当前去重查询开启状态
 	 * @return bool
 	 */
-	public static function distinctQueryState(){
-		return self::$QUERY_DISTINCT;
+	public static function queryCacheState(){
+		return self::$query_cache_on;
 	}
-	
+
 	/**
-	 * 打开去重查询模式
+	 * 打开查询缓存
 	 */
-	public static function distinctQueryOn(){
-		self::$QUERY_DISTINCT = true;
+	public static function queryCacheOn(){
+		self::$query_cache_on = true;
 	}
-	
+
 	/**
-	 * 关闭去重查询模式
+	 * 关闭查询缓存
 	 */
-	public static function distinctQueryOff(){
-		self::$QUERY_DISTINCT = false;
+	public static function queryCacheOff(){
+		self::$query_cache_on = false;
 	}
-	
+
 	/**
 	 * 以非去重模式（强制查询模式）进行查询
 	 * @param callable $callback
 	 */
-	public static function noDistinctQuery(callable $callback){
-		$st = self::$QUERY_DISTINCT;
-		self::distinctQueryOn();
+	public static function noQueryCacheMode(callable $callback){
+		$st = self::$query_cache_on;
+		self::queryCacheOff();
 		call_user_func($callback);
-		self::$QUERY_DISTINCT = $st;
+		self::$query_cache_on = $st;
 	}
-	
+
 	/**
 	 * 获取正在提交中的查询
 	 * @return mixed
@@ -184,7 +186,7 @@ abstract class DBAbstract{
 	public static function getProcessingQuery(){
 		return self::$processing_query;
 	}
-	
+
 	/**
 	 * 转义数据，缺省为统一使用字符转义
 	 * @param string $data
@@ -206,7 +208,7 @@ abstract class DBAbstract{
 		}
 		return "'".addslashes($data)."'";
 	}
-	
+
 	/**
 	 * 转义数组
 	 * @param $data
@@ -225,7 +227,7 @@ abstract class DBAbstract{
 	 * @param \LFPhp\PORM\Query $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getPage(Query $q, $pager = null){
 		$query = clone($q);
@@ -233,38 +235,34 @@ abstract class DBAbstract{
 			$total = $this->getCount($query);
 			$pager->setItemTotal($total);
 			$limit = $pager->getLimit();
-		} else{
+		}else{
 			$limit = $pager;
 		}
 		if($limit){
 			$query->limit($limit);
 		}
-		$param = new RefParam(array(
-			'query'  => $query,
-			'result' => null
-		));
-		if(!is_array($param['result'])){
-			if(self::$QUERY_DISTINCT){
-				$param['result'] = isset(self::$query_cache[$query.'']) ? self::$query_cache[$query.''] : null; //todo 这里通过 isFRQuery 可以做全表cache
-			}
-			if(!isset($param['result'])){
-				$rs = $this->query($param['query']);
-				if($rs){
-					$param['result'] = $this->fetchAll($rs);
-					if(self::$QUERY_DISTINCT){
-						self::$query_cache[$query.''] = $param['result'];
-					}
+		$cache_key = $this->db_config->toDSNString().'/'.$query->__toString();
+		$result = null;
+		if(self::$query_cache_on){
+			$result = isset(self::$query_cache_data[$cache_key]) ? self::$query_cache_data[$cache_key] : null;
+		}
+		if(!isset($result)){
+			$rs = $this->query($query);
+			if($rs){
+				$result = $this->fetchAll($rs);
+				if(self::$query_cache_on){
+					self::$query_cache_data[$cache_key] = $result;
 				}
 			}
 		}
-		return $param['result'] ?: array();
+		return $result;
 	}
 
 	/**
 	 * 获取所有查询记录
 	 * @param Query $query
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAll(Query $query){
 		return $this->getPage($query, null);
@@ -274,7 +272,7 @@ abstract class DBAbstract{
 	 * 获取一条查询记录
 	 * @param Query $query
 	 * @return array | null
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getOne(Query $query){
 		$rst = $this->getPage($query, 1);
@@ -289,7 +287,7 @@ abstract class DBAbstract{
 	 * @param Query $query
 	 * @param string $key
 	 * @return mixed|null
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getField(Query $query, $key){
 		$rst = $this->getOne($query);
@@ -303,14 +301,14 @@ abstract class DBAbstract{
 	 * 更新数量
 	 * @param string $table
 	 * @param string $field
-	 * @param integer $offset_count
-	 * @return boolean
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @param integer $offset_count 增量（实数）
+	 * @return int 更新影响条数
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
 		$prefix = $this->db_config['prefix'] ?: '';
 		$query = $this->genQuery();
-		$sql = "UPDATE {$prefix}{$table} SET {$field} = {$field}".($offset_count>0 ? " + {$offset_count}" : " - {$offset_count}");
+		$sql = "UPDATE {$prefix}{$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
 		$query->setSql($sql);
 		$this->query($query);
 		return $this->getAffectNum();
@@ -321,15 +319,15 @@ abstract class DBAbstract{
 	 * @param string $table
 	 * @param array $data
 	 * @param string $condition
-	 * @param int $limit
+	 * @param int $limit 更新影响条数
 	 * @return int affect line number
-	 * @throws \LFPhp\PORM\Exception\Exception
-	 * @throws \LFPhp\PORM\Exception\NullOperation
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws NullOperation
 	 */
 	public function update($table, array $data, $condition = '', $limit = 1){
 		if(empty($data)){
 			if(static::$THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA){
-				throw new NullOperation('NO UPDATE DATA FOUND');
+				throw new NullOperation('NO UPDATE DATA FOUND', 0, null, $table, $this->db_config);
 			}
 			return false;
 		}
@@ -344,21 +342,21 @@ abstract class DBAbstract{
 	 * @param array $data
 	 * @param string $condition
 	 * @param int $limit
-	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
-	 * @throws \LFPhp\PORM\Exception\NullOperation
+	 * @return int
+	 * @throws DBException
+	 * @throws NullOperation
 	 */
 	public function replace($table, array $data, $condition = '', $limit = 0){
 		if(empty($data)){
-			throw new NullOperation('NO REPLACE DATA FOUND');
+			throw new NullOperation('NO REPLACE DATA FOUND', 0, null, $table, $this->db_config);
 		}
-		
+
 		$count = $this->getCount($this->genQuery()->select()->from($table)->where($condition)->limit(1));
 		if($count){
 			$query = $this->genQuery()->update()->from($table)->setData($data)->where($condition)->limit($limit);
 			$this->query($query);
 			return $count;
-		} else {
+		}else{
 			$query = $this->genQuery()->insert()->from($table)->setData($data);
 			$this->query($query);
 			return $this->getAffectNum();
@@ -366,18 +364,19 @@ abstract class DBAbstract{
 	}
 
 	/**
+	 * 插入数据
 	 * @param $table
 	 * @param $field
 	 * @param int $offset
 	 * @param string $statement
 	 * @param int $limit
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws DBException
 	 */
 	public function increase($table, $field, $offset = 1, $statement = '', $limit = 0){
-		$off = $offset>0 ? "+ $offset" : "$offset";
+		$off = $offset > 0 ? "+ $offset" : "$offset";
 		$where = $statement ? "WHERE $statement" : '';
-		$limit_str = $limit>0 ? "LIMIT $limit" : '';
+		$limit_str = $limit > 0 ? "LIMIT $limit" : '';
 		$query = "UPDATE `$table` SET `$field` = `$field` $off $where $limit_str";
 		$this->query($query);
 		return $this->getAffectNum();
@@ -389,7 +388,7 @@ abstract class DBAbstract{
 	 * @param $condition
 	 * @param int $limit 参数为0表示不进行限制
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws DBException
 	 */
 	public function delete($table, $condition, $limit = 0){
 		$query = $this->genQuery()->from($table)->delete()->where($condition);
@@ -406,17 +405,17 @@ abstract class DBAbstract{
 	 * @param array $data
 	 * @param null $condition
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
-	 * @throws \LFPhp\PORM\Exception\NullOperation
+	 * @throws DBException
+	 * @throws NullOperation
 	 */
 	public function insert($table, array $data, $condition = null){
 		if(empty($data)){
-			throw new NullOperation('NO INSERT DATA FOUND');
+			throw new NullOperation('NO INSERT DATA FOUND', 0, null, $table, $this->db_config);
 		}
 		$query = $this->genQuery()->insert()->from($table)->setData($data)->where($condition);
 		return $this->query($query);
 	}
-	
+
 	/**
 	 * 产生Query对象
 	 * @return Query
@@ -429,10 +428,10 @@ abstract class DBAbstract{
 	}
 
 	/**
-	 * SQL查询
+	 * SQL查询，支持重连数据库选项
 	 * @param $query
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws DBException
 	 */
 	final public function query($query){
 		try{
@@ -444,13 +443,17 @@ abstract class DBAbstract{
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
 			return $result;
 		}catch(\Exception $ex){
-			static $reconnect_count;
-			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count < $this->max_reconnect_count)){
+			static $reconnect_count_map;
+			$k = $this->db_config->toDSNString();
+			if(!isset($reconnect_count_map[$k])){
+				$reconnect_count_map[$k] = 0;
+			}
+			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count_map[$k] < $this->max_reconnect_count)){
 				//间隔时间之后重新连接
 				if($this->reconnect_interval){
 					usleep($this->reconnect_interval*1000);
 				}
-				$reconnect_count++;
+				$reconnect_count_map[$k]++;
 				try{
 					$this->connect($this->db_config, true);
 				}catch(\Exception $e){
@@ -458,10 +461,10 @@ abstract class DBAbstract{
 				}
 				return $this->query($query);
 			}
-			throw new QueryException($query.'', $ex->getMessage(), $ex->getCode(), $ex, $this->db_config);
+			throw new QueryException($ex->getMessage(), $ex->getCode(), $ex, $query, $this->db_config);
 		}
 	}
-	
+
 	/**
 	 * 根据message检测服务器是否丢失、断开、重置链接
 	 * @param \Exception $exception
@@ -477,7 +480,7 @@ abstract class DBAbstract{
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 执行查询
 	 * 规划dbQuery代替实际的数据查询主要目的是：为了统一对数据库查询动作做统一的行为监控
@@ -489,8 +492,8 @@ abstract class DBAbstract{
 	/**
 	 * 获取条数
 	 * @param $sql
-	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @return int
+	 * @throws DBException
 	 */
 	public function getCount($sql){
 		$sql .= '';
@@ -501,15 +504,14 @@ abstract class DBAbstract{
 		$sql = preg_replace('/\sorder\s+by\s.*$/i', '', $sql);
 
 		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $sql)){
-			if(preg_match('/\sGROUP\s+by\s/i', $sql) ||
-				preg_match('/^\s*SELECT\s+DISTINCT\s/i', $sql)){
+			if(preg_match('/\sGROUP\s+by\s/i', $sql) || preg_match('/^\s*SELECT\s+DISTINCT\s/i', $sql)){
 				$sql = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($sql) AS cnt_";
-			} else {
+			}else{
 				$sql = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $sql);
 			}
 			$result = $this->getOne(new Query($sql));
 			if($result){
-				return (int) $result['__NUM_COUNT__'];
+				return (int)$result['__NUM_COUNT__'];
 			}
 		}
 		return 0;
@@ -530,14 +532,14 @@ abstract class DBAbstract{
 	 * @return integer
 	 */
 	public abstract function getAffectNum();
-	
+
 	/**
 	 * 获取所有记录
 	 * @param $resource
 	 * @return mixed
 	 */
 	public abstract function fetchAll($resource);
-	
+
 	/**
 	 * 设置SQL查询条数限制信息
 	 * @param $sql
@@ -545,31 +547,31 @@ abstract class DBAbstract{
 	 * @return mixed
 	 */
 	public abstract function setLimit($sql, $limit);
-	
+
 	/**
 	 * 获取最后插入ID
 	 * @return mixed
 	 */
 	public abstract function getLastInsertId();
-	
+
 	/**
 	 * 事务提交
 	 * @return bool
 	 */
 	public abstract function commit();
-	
+
 	/**
 	 * 事务回滚
 	 * @return bool
 	 */
 	public abstract function rollback();
-	
+
 	/**
 	 * 开始事务操作
 	 * @return mixed
 	 */
 	public abstract function beginTransaction();
-	
+
 	/**
 	 * 取消事务操作状态
 	 * @return mixed
@@ -578,7 +580,7 @@ abstract class DBAbstract{
 
 	/**
 	 * 连接数据库接口
-	 * @param \LFPhp\PORM\Misc\DBConfig $db_config <p>数据库连接配置，
+	 * @param DBConfig $db_config <p>数据库连接配置，
 	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
 	 * </p>
 	 * @param boolean $re_connect 是否重新连接
@@ -605,15 +607,17 @@ abstract class DBAbstract{
 	}
 
 	/**
-	 * @return int
+	 * 获取重连间隔时间
+	 * @return int 毫秒
 	 */
 	public function getReconnectInterval(){
 		return $this->reconnect_interval;
 	}
 
 	/**
+	 * 设置重连间隔时间（毫秒）
 	 * @param int $reconnect_interval
-	 * @return \LFPhp\PORM\Driver\DBAbstract
+	 * @return DBAbstract
 	 */
 	public function setReconnectInterval($reconnect_interval){
 		$this->reconnect_interval = $reconnect_interval;

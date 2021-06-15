@@ -1,9 +1,8 @@
 <?php
 namespace LFPhp\PORM;
 
-use LFPhp\Cache\CacheVar;
 use LFPhp\PORM\Driver\DBAbstract;
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
 use LFPhp\PORM\Misc\DAO;
 use LFPhp\PORM\Misc\DBConfig;
@@ -131,7 +130,7 @@ abstract class Model extends DAO {
 	/**
 	 * 获取数据库表主键
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getPrimaryKey(){
 		$defines = $this->getEntityPropertiesDefine();
@@ -140,13 +139,13 @@ abstract class Model extends DAO {
 				return $k;
 			}
 		}
-		throw new Exception('No primary key found in table defines');
+		throw new DBException('No primary key found in table defines');
 	}
 
 	/**
 	 * 获取主键值
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getPrimaryKeyValue(){
 		$pk = $this->getPrimaryKey();
@@ -157,7 +156,7 @@ abstract class Model extends DAO {
 	 * 获取db记录实例对象
 	 * @param int $operate_type
 	 * @return DBAbstract
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	protected function getDbDriver($operate_type = self::OP_WRITE){
 		$db_config = $this->getDBConfig($operate_type);
@@ -168,7 +167,7 @@ abstract class Model extends DAO {
 	 * 解释SQL语句
 	 * @param $query
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function explainQuery($query){
 		$obj = self::meta();
@@ -210,7 +209,7 @@ abstract class Model extends DAO {
 	 * 设置查询SQL语句
 	 * @param string|Query $query
 	 * @return static|Query
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function setQuery($query){
 		if(is_string($query)){
@@ -223,7 +222,7 @@ abstract class Model extends DAO {
 			$obj->query = $query;
 			return $obj;
 		}
-		throw new Exception('Query string required');
+		throw new DBException('Query string required');
 	}
 
 	/**
@@ -238,7 +237,7 @@ abstract class Model extends DAO {
 	 * 事务处理
 	 * @param callable $handler 处理函数，若函数返回false或抛出Exception，将停止提交，执行事务回滚
 	 * @return mixed 闭包函数返回值透传
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \Exception
 	 */
 	public static function transaction($handler){
@@ -247,10 +246,10 @@ abstract class Model extends DAO {
 			$driver->beginTransaction();
 			$ret = call_user_func($handler);
 			if($ret === false){
-				throw new Exception('Database transaction interrupted');
+				throw new DBException('Database transaction interrupted');
 			}
 			if(!$driver->commit()){
-				throw new Exception('Database commit fail');
+				throw new DBException('Database commit fail');
 			}
 			return $ret;
 		}catch(\Exception $exception){
@@ -264,7 +263,7 @@ abstract class Model extends DAO {
 	/**
 	 * 执行当前查询
 	 * @return \PDOStatement
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function execute(){
 		$type = Query::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
@@ -276,7 +275,7 @@ abstract class Model extends DAO {
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
 	 * @return static|Query
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = static::meta();
@@ -295,7 +294,7 @@ abstract class Model extends DAO {
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
 	 * @return static|Query
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, $this);
@@ -308,7 +307,7 @@ abstract class Model extends DAO {
 	 * @param $st
 	 * @param $val
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function whereOnSet($st, $val){
 		$args = func_get_args();
@@ -330,7 +329,7 @@ abstract class Model extends DAO {
 	 * @param $fields
 	 * @param $param
 	 * @return $this
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function whereEqualOnSetViaFields(array $fields, array $param = []){
 		foreach($fields as $field){
@@ -401,7 +400,7 @@ abstract class Model extends DAO {
 	 * 创建新对象
 	 * @param $data
 	 * @return bool|static|Query
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function create($data){
 		$obj = static::meta();
@@ -414,18 +413,11 @@ abstract class Model extends DAO {
 	 * @param string $val
 	 * @param bool $as_array
 	 * @return static|Query|array
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findOneByPk($val, $as_array = false){
 		$obj = static::meta();
 		$pk = $obj->getPrimaryKey();
-		//只有在开启去重查询时，cache才生效，
-		if(DBAbstract::distinctQueryState()){
-			$cache_key = $obj->getTableFullNameWithDbName()."/$pk/$val";
-			if($data = CacheVar::instance()->get($cache_key)){
-				return $as_array ? $data : new static($data);
-			}
-		}
 		return static::find($pk.'=?', $val)->one($as_array);
 	}
 
@@ -433,7 +425,7 @@ abstract class Model extends DAO {
 	 * @param $val
 	 * @param bool $as_array
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findOneByPkOrFail($val, $as_array = false){
 		$data = static::findOneByPk($val, $as_array);
@@ -449,82 +441,22 @@ abstract class Model extends DAO {
 	 * @param array $pk_values
 	 * @param bool $as_array
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findByPks(array $pk_values, $as_array = false){
 		if(!$pk_values){
 			return [];
 		}
-
 		$obj = static::meta();
 		$pk = $obj->getPrimaryKey();
-
-		//只有在开启去重查询时，cache才生效
-		if(DBAbstract::distinctQueryState()){
-			$result = $obj->_getObjectCacheList($pk, $pk_values, $as_array, $miss_matches);
-			if($miss_matches){
-				$rests = static::find($obj->getPrimaryKey().' IN ?', $miss_matches)->all($as_array);
-				$result = array_merge($result, $rests);
-			}
-			return $result;
-		}
 		return static::find("$pk IN ?", $pk_values)->all($as_array);
-	}
-
-	/**
-	 * 获取对象行缓存
-	 * @param $field
-	 * @param array $field_values
-	 * @param $as_array
-	 * @param array $miss_matches
-	 * @return array
-	 */
-	private function _getObjectCacheList($field, array $field_values, $as_array = false, &$miss_matches = []){
-		$cache_prefix_key = $this->getTableFullNameWithDbName()."/$field/";
-		$result = [];
-		foreach($field_values as $k=> $val){
-			$item = CacheVar::instance()->get($cache_prefix_key."$val");
-			if(isset($item)){
-				unset($field_values[$k]);
-				$result[] = $as_array ? $item : new static($item);
-			}
-		}
-		$miss_matches = $field_values;
-		return $result;
-	}
-
-	/**
-	 * @param $field
-	 * @param $field_value
-	 * @param bool $as_array
-	 * @param bool $has_many
-	 * @return $this|mixed
-	 */
-	private function _getObjectCache($field, $field_value, $as_array = false, $has_many = false){
-		$cache_key = $this->getTableFullNameWithDbName()."/$field/$field_value";
-		$data = CacheVar::instance()->get($cache_key);
-		//type adjust
-		if(!$data && ($has_many || $as_array)){
-			$data = [];
-		}
-		if($as_array){
-			return $data;
-		}
-		if($has_many){
-			$ret = [];
-			foreach($data as $item){
-				$ret[] = new static($item);
-			}
-			return $ret;
-		}
-		return new static($data);
 	}
 
 	/**
 	 * 根据主键值删除一条记录
 	 * @param string $val
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function delByPk($val){
 		$obj = static::meta();
@@ -537,7 +469,7 @@ abstract class Model extends DAO {
 	 * 根据主键删除记录
 	 * @param $val
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
 	public static function delByPkOrFail($val){
@@ -554,7 +486,7 @@ abstract class Model extends DAO {
 	 * @param string $val 主键值
 	 * @param array $data
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateByPk($val, array $data){
 		$obj = static::meta();
@@ -567,7 +499,7 @@ abstract class Model extends DAO {
 	 * @param $pks
 	 * @param array $data
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateByPks($pks, array $data){
 		$obj = static::meta();
@@ -581,7 +513,7 @@ abstract class Model extends DAO {
 	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制更新数量，可设置为0
 	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
 	 * @return bool;
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateWhere(array $data, $limit, $statement){
 		if(self::onBeforeChanged() === false){
@@ -601,7 +533,7 @@ abstract class Model extends DAO {
 	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制删除数量，可设置为0
 	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function deleteWhere($limit, $statement){
 		$args = func_get_args();
@@ -616,7 +548,7 @@ abstract class Model extends DAO {
 	/**
 	 * 清空数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function truncate(){
 		$obj = static::meta();
@@ -629,7 +561,7 @@ abstract class Model extends DAO {
 	 * @param bool $as_array return as array
 	 * @param string $unique_key 用于组成返回数组的唯一性key
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function all($as_array = false, $unique_key = ''){
 		$list = $this->getDbDriver(self::OP_READ)->getAll($this->query);
@@ -645,7 +577,7 @@ abstract class Model extends DAO {
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象数组
 	 * @param string $unique_key 用于组成返回数组的唯一性key
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function paginate($page = null, $as_array = false, $unique_key = ''){
 		$list = $this->getDbDriver(self::OP_READ)->getPage($this->query, $page);
@@ -684,7 +616,7 @@ abstract class Model extends DAO {
 	 * 获取一条记录
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
 	 * @return static|array|null
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function one($as_array = false){
 		$data = $this->getDbDriver(self::OP_READ)->getOne($this->query);
@@ -703,7 +635,7 @@ abstract class Model extends DAO {
 	 * 获取一条记录，为空时抛异常
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
 	public function oneOrFail($as_array = false){
@@ -718,7 +650,7 @@ abstract class Model extends DAO {
 	 * 获取一个记录字段
 	 * @param string|null $key 如字段为空，则取第一个结果
 	 * @return mixed|null
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function ceil($key = ''){
 		$obj = self::meta();
@@ -735,7 +667,7 @@ abstract class Model extends DAO {
 	 * @param string|array $fields 需要计算字段名称（列表）
 	 * @param array $group_by 使用指定字段（列表）作为合并维度
 	 * @return number|array 结果总和，或以指定字段列表作为下标的结果总和
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @example
 	 * <pre>
 	 * $report->sum('order_price', 'original_price');
@@ -784,7 +716,7 @@ abstract class Model extends DAO {
 	 * @param string $sort_key 排序字段名称，默认为sort
 	 * @param string $statement 排序范围过滤表达式，默认为所有数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
 		$pk = $this->getPrimaryKey();
@@ -836,7 +768,7 @@ abstract class Model extends DAO {
 	 * 获取指定列，作为一维数组返回
 	 * @param $key
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function column($key){
 		$obj = self::meta();
@@ -858,7 +790,7 @@ abstract class Model extends DAO {
 	 * @param $key
 	 * @param $val
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function map($key, $val){
 		if(is_string($val)){
@@ -879,7 +811,7 @@ abstract class Model extends DAO {
 			}
 			return $ret;
 		}
-		throw new Exception('Mapping parameter error', null, [$key, $val]);
+		throw new DBException("Mapping parameter error: [$key, $val]", null, null, $this->db_config);
 	}
 
 	/**
@@ -888,7 +820,7 @@ abstract class Model extends DAO {
 	 * @param callable $handler 回调函数
 	 * @param bool $as_array 查询结果作为数组格式回调
 	 * @return bool 是否执行了分块动作
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function chunk($size, $handler, $as_array = false){
 		$total = $this->count();
@@ -897,10 +829,6 @@ abstract class Model extends DAO {
 			return false;
 		}
 
-		$ds = DBAbstract::distinctQueryState();
-		if($ds){
-			DBAbstract::distinctQueryOff();
-		}
 		$page_index = 0;
 		$page_total = ceil($total/$size);
 		while($start<$total){
@@ -909,9 +837,6 @@ abstract class Model extends DAO {
 				break;
 			}
 			$start += $size;
-		}
-		if($ds){
-			DBAbstract::distinctQueryOn();
 		}
 		return true;
 	}
@@ -923,7 +848,7 @@ abstract class Model extends DAO {
 	 * @param int $sleep_interval_sec 无数据时睡眠时长（秒）
 	 * @param bool|callable|null $debugger 数据信息调试器
 	 * @return bool 是否正常执行
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
 		if($debugger === true) {
@@ -934,8 +859,8 @@ abstract class Model extends DAO {
 			$debugger = function(){};
 		}
 
-		$dist_status = DBAbstract::distinctQueryState();
-		DBAbstract::distinctQueryOff();
+		$cache_on = DBAbstract::queryCacheState();
+		DBAbstract::queryCacheOff();
 		while(true){
 			$obj = clone($this);
 			$break = false;
@@ -967,8 +892,8 @@ abstract class Model extends DAO {
 				sleep($sleep_interval_sec);
 			}
 		}
-		if($dist_status){
-			DBAbstract::distinctQueryOn();
+		if($cache_on){
+			DBAbstract::queryCacheOn();
 		}
 		return true;
 	}
@@ -976,7 +901,7 @@ abstract class Model extends DAO {
 	/**
 	 * 获取当前查询条数
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function count(){
 		$driver = $this->getDbDriver(self::OP_READ);
@@ -986,7 +911,7 @@ abstract class Model extends DAO {
 	/**
 	 * 裁剪属性字符串长度，使得对象属性符合定义
 	 * @return array 被裁减字段结果列表信息 [field1=> [define length, cut length], ...]
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function trimPropertiesData(){
 		$match_fields = [];
@@ -1009,7 +934,7 @@ abstract class Model extends DAO {
 	 * 更新当前对象
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return bool|number
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function update($flush_all = false){
 		if($this->onBeforeUpdate() === false || self::onBeforeChanged() === false){
@@ -1033,7 +958,7 @@ abstract class Model extends DAO {
 	 * 插入当前对象
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return string|bool 返回插入的id，或者失败(false)
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function insert($flush_all = false){
 		if($this->onBeforeInsert() === false || self::onBeforeChanged() === false){
@@ -1059,7 +984,7 @@ abstract class Model extends DAO {
 	 * @param int $limit
 	 * @param array ...$args 查询条件
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function replace(array $data, $limit = 0, ...$args){
 		$obj = self::meta();
@@ -1076,7 +1001,7 @@ abstract class Model extends DAO {
 	 * @param int $limit 条数限制，默认为0表示不限制更新条数
 	 * @param array ...$args 查询条件
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function increase($field, $offset, $limit = 0, ...$args){
 		$obj = self::meta();
@@ -1107,7 +1032,7 @@ abstract class Model extends DAO {
 	 * @param string $query_type 数据库操作类型
 	 * @param bool $flush_all 是否校验全部数据，包含readonly数据
 	 * @return array $data
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private function validate($src_data = array(), $query_type = Query::INSERT, $flush_all = false){
 		$pro_defines = $this->getEntityPropertiesDefine();
@@ -1135,7 +1060,7 @@ abstract class Model extends DAO {
 					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 				}
 				if($count){
-					throw new Exception("{$def['alias']}：{$data[$field]}已经存在，不能重复添加");
+					throw new DBException("{$def['alias']}：{$data[$field]}已经存在，不能重复添加");
 				}
 			}
 		}
@@ -1188,7 +1113,7 @@ abstract class Model extends DAO {
 		foreach($pro_defines as $k => $def){
 			if(!$def['readonly'] || $flush_all){
 				if($msg = $this->validateField($data[$k], $k)){
-					throw new Exception($msg, null, array('field' => $k, 'value'=>$data[$k], 'row' => $data));
+					throw new DBException($msg, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
 				}
 			}
 		}
@@ -1200,7 +1125,7 @@ abstract class Model extends DAO {
 	 * @param $value
 	 * @param $field
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private function validateField(&$value, $field){
 		$define = $this->getPropertiesDefine($field);
@@ -1277,12 +1202,12 @@ abstract class Model extends DAO {
 	 * @param $data_list
 	 * @param bool $break_on_fail
 	 * @return array|bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \Exception
 	 */
 	public static function insertMany($data_list, $break_on_fail = true){
 		if(count($data_list, COUNT_RECURSIVE) == count($data_list)){
-			throw new Exception('Two dimension array needed');
+			throw new DBException('Two dimension array needed');
 		}
 		$obj = static::meta();
 		$return_list = array();
@@ -1308,7 +1233,7 @@ abstract class Model extends DAO {
 	 * 快速批量插入数据，不进行ORM检查
 	 * @param $data_list
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function insertManyQuick($data_list){
 		if(self::onBeforeChanged() === false){
@@ -1321,7 +1246,7 @@ abstract class Model extends DAO {
 	/**
 	 * 从数据库从删除当前对象对应的记录
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function delete(){
 		if($this->onBeforeDelete() === false){
@@ -1339,7 +1264,7 @@ abstract class Model extends DAO {
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
 	 * @param \LFPhp\PORM\Model $obj
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private static function parseConditionStatement($args, Model $obj){
 		$statement = isset($args[0]) ? $args[0] : null;
@@ -1372,7 +1297,7 @@ abstract class Model extends DAO {
 	 * 保存当前对象变更之后的数值
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function save($flush_all = false){
 		if($this->onBeforeSave() === false){
@@ -1396,7 +1321,7 @@ abstract class Model extends DAO {
 	/**
 	 * 获取影响条数
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAffectNum(){
 		$type = Query::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
@@ -1448,7 +1373,7 @@ abstract class Model extends DAO {
 	 * @param $method_name
 	 * @param $params
 	 * @return static|Query
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	final public function __call($method_name, $params){
 		if(method_exists($this->query, $method_name)){
@@ -1456,7 +1381,7 @@ abstract class Model extends DAO {
 			return $this;
 		}
 
-		throw new Exception("Method no exist:".$method_name);
+		throw new DBException("Method no exist:".$method_name);
 	}
 
 	/**
@@ -1492,7 +1417,7 @@ abstract class Model extends DAO {
 	 * </p>
 	 * @param $key
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function __get($key){
 		$define = $this->getPropertiesDefine($key);
@@ -1508,14 +1433,6 @@ abstract class Model extends DAO {
 				list($current_field, $target_class, $target_field) = $define['has_one'] ?: $define['has_many'];
 				$target_instance = $target_class::meta();
 				$target_field = $target_field ?: $target_instance->getPrimaryKey();
-
-				if(DBAbstract::distinctQueryState()){
-					$result = $target_instance->_getObjectCache($target_field, $this->{$current_field}, false, $define['has_many']);
-					if(isset($result)){
-						$this->{$key} = $result;
-						return $result;
-					}
-				}
 				$ret = $define['has_one'] ?
 					$target_class::find("$target_field=?", $this->{$current_field})->one() :
 					$target_class::find("$target_field=?", $this->{$current_field})->all();

@@ -2,7 +2,7 @@
 
 namespace LFPhp\PORM\Misc;
 
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 
 /**
  * 数据库配置对象
@@ -38,7 +38,7 @@ class DBConfig {
 	/**
 	 * @param array $config
 	 * @return \LFPhp\PORM\Misc\DBConfig
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function createFromConfig(array $config){
 		$ins = new self();
@@ -64,7 +64,7 @@ class DBConfig {
 	 * @param string $database
 	 * @param int $port
 	 * @return \LFPhp\PORM\Misc\DBConfig
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function createMySQLConfig($host, $user, $password, $database, $port = 3306){
 		$ins = new self();
@@ -83,7 +83,7 @@ class DBConfig {
 	 * 优先使用PDO扩展
 	 * @param $type
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private static function detectDriver($type){
 		$extensions = get_loaded_extensions();
@@ -105,7 +105,7 @@ class DBConfig {
 				}
 				break;
 		}
-		throw new Exception('No driver found for:'.$type);
+		throw new DBException('No driver found for:'.$type);
 	}
 
 	/**
@@ -128,7 +128,7 @@ class DBConfig {
 	/**
 	 * 转化成DSN
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function toDSNString(){
 		switch($this->type){
@@ -148,7 +148,7 @@ class DBConfig {
 
 			case self::TYPE_SQLITE:
 			default:
-				throw new Exception('no support now');
+				throw new DBException('no support now');
 		}
 	}
 

@@ -20,7 +20,6 @@
 	"ext-mbstring": "*",
 	"ext-pdo": "*",
 	"lfphp/func": "^1.0",
-	"lfphp/cache": "~1.0.0",
 	"ext-json": "*",
 	"ext-mysqli": "*"
   },

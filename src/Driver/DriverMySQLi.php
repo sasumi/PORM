@@ -2,7 +2,7 @@
 namespace LFPhp\PORM\Driver;
 
 use LFPhp\PORM\Exception\ConnectException;
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Misc\DBConfig;
 use mysqli_result;
 use function LFPhp\Func\get_max_socket_timeout;
@@ -36,7 +36,7 @@ class DriverMySQLi extends DBAbstract{
 	 * Set charset
 	 * @param $charset
 	 * @return \LFPhp\PORM\Driver\DriverMySQLi
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setCharset($charset){
 		if(stripos($charset, 'utf-') === 0){
@@ -47,7 +47,7 @@ class DriverMySQLi extends DBAbstract{
 
 	public function setLimit($sql, $limit){
 		if(preg_match('/\sLIMIT\s/i', $sql)){
-			throw new Exception('SQL LIMIT BEEN SET:' . $sql);
+			throw new DBException('SQL LIMIT BEEN SET:' . $sql);
 		}
 		if(is_array($limit)){
 			return $sql . ' LIMIT ' . $limit[0] . ',' . $limit[1];

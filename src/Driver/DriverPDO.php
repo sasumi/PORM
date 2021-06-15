@@ -2,13 +2,12 @@
 namespace LFPhp\PORM\Driver;
 
 use LFPhp\PORM\Exception\ConnectException;
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Misc\DBConfig;
 use LFPhp\PORM\Query;
 use PDO;
 use PDOException;
 use PDOStatement as PDOStatement;
-use function LFPhp\Func\dump;
 use function LFPhp\Func\get_max_socket_timeout;
 use function LFPhp\Func\server_in_windows;
 
@@ -51,7 +50,7 @@ class DriverPDO extends DBAbstract {
 	 * @param bool $re_connect
 	 * @return \PDO
 	 * @throws \LFPhp\PORM\Exception\ConnectException
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function connect(DBConfig $db_config, $re_connect = false) {
 		if(!$re_connect && $this->conn){
@@ -199,11 +198,11 @@ class DriverPDO extends DBAbstract {
 	 * @param $sql
 	 * @param $limit
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setLimit($sql, $limit) {
 		if(preg_match('/\sLIMIT\s/i', $sql)){
-			throw new Exception('SQL LIMIT BEEN SET:' . $sql);
+			throw new DBException('SQL LIMIT BEEN SET:' . $sql);
 		}
 		if(is_array($limit)){
 			return $sql . ' LIMIT ' . $limit[0] . ',' . $limit[1];

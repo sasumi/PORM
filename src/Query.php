@@ -1,7 +1,7 @@
 <?php
 namespace LFPhp\PORM;
 
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\DBException;
 
 class Query {
 	const SELECT = 'SELECT';
@@ -415,7 +415,7 @@ class Query {
 	/**
 	 * 输出SQL查询语句
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function __toString(){
 		if($this->sql){
@@ -433,7 +433,7 @@ class Query {
 
 			case self::INSERT:
 				if(!$this->data){
-					throw new Exception("No data in database insert operation");
+					throw new DBException("No data in database insert operation");
 				}
 				$data_list = count($this->data) == count($this->data, 1) ? array($this->data) : $this->data;
 				$key_str = implode(",", self::escapeKey(array_keys($data_list[0])));
@@ -453,7 +453,7 @@ class Query {
 			case self::REPLACE:
 			case self::UPDATE:
 				if(!$this->data){
-					throw new Exception("No data in database update operation");
+					throw new DBException("No data in database update operation");
 				}
 				$data_list = count($this->data) == count($this->data, 1) ? array($this->data) : $this->data;
 				$sets = [];
@@ -473,7 +473,7 @@ class Query {
 				break;
 
 			default:
-				throw new Exception("No database operation type set");
+				throw new DBException("No database operation type set");
 		}
 		if($this->limit && stripos(' LIMIT ', $sql) === false){
 			if(!$this->limit[0]){

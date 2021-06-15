@@ -5,5 +5,5 @@ namespace LFPhp\PORM\Exception;
 use LFPhp\PORM\Misc\DBConfig;
 use Throwable;
 
-class ConnectException extends Exception {
+class ConnectException extends DBException {
 }
