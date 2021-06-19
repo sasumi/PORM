@@ -7,7 +7,7 @@ use LFPhp\PORM\DBQuery;
 use PHPUnit\Framework\TestCase;
 use function LFPhp\Func\dump;
 
-class QueryTest extends TestCase {
+class OrmTest extends TestCase {
 	private function getConfig(){
 		$cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'zardem');
 		return $cfg;

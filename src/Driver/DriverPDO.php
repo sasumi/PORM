@@ -1,13 +1,14 @@
 <?php
 namespace LFPhp\PORM\Driver;
 
+use Exception;
 use LFPhp\PORM\Exception\ConnectException;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Misc\DBConfig;
-use LFPhp\PORM\Query;
+use LFPhp\PORM\DBQuery;
 use PDO;
 use PDOException;
-use PDOStatement as PDOStatement;
+use PDOStatement;
 use function LFPhp\Func\get_max_socket_timeout;
 use function LFPhp\Func\server_in_windows;
 
@@ -20,7 +21,7 @@ use function LFPhp\Func\server_in_windows;
  * 当前类不关注调用方的操作是读操作还是写入操作，
  * 这部分选择有调用方自己选择提供不同的初始化config配置
  */
-class DriverPDO extends DBAbstract {
+class DriverPDO extends DBInstance {
 	/**
 	 * @var PDOStatement
 	 */
@@ -116,7 +117,7 @@ class DriverPDO extends DBAbstract {
 	 * @param \Exception $exception
 	 * @return bool
 	 */
-	protected static function isConnectionLost(\Exception $exception){
+	protected static function isConnectionLost(Exception $exception){
 		if($exception instanceof PDOException){
 			$lost_code_map = ['08S01', 'HY000'];
 			if(in_array($exception->getCode(), $lost_code_map)){
@@ -137,7 +138,7 @@ class DriverPDO extends DBAbstract {
 	
 	/**
 	 * database query function
-	 * @param string|Query $sql
+	 * @param string|DBQuery $sql
 	 * @return PDOStatement
 	 */
 	protected function dbQuery($sql){

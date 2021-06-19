@@ -3,12 +3,15 @@ namespace LFPhp\PORM;
 
 use LFPhp\PORM\Exception\DBException;
 
-class Query {
+class DBQuery {
 	const SELECT = 'SELECT';
 	const UPDATE = 'UPDATE';
 	const DELETE = 'DELETE';
 	const INSERT = 'INSERT';
 	const REPLACE = 'REPLACE';
+
+	const OP_TYPE_READ = 1;
+	const OP_TYPE_WRITE = 2;
 
 	const OP_OR = 1;
 	const OP_AND = 2;
@@ -137,7 +140,7 @@ class Query {
 
 	/**
 	 * update query
-	 * @return \LFPhp\PORM\Query $this
+	 * @return \LFPhp\PORM\DBQuery $this
 	 **/
 	public function update(){
 		$this->operation = self::UPDATE;
@@ -151,7 +154,7 @@ class Query {
 
 	/**
 	 * 插入
-	 * @return \LFPhp\PORM\Query $this
+	 * @return \LFPhp\PORM\DBQuery $this
 	 */
 	public function insert(){
 		$this->operation = self::INSERT;
@@ -160,7 +163,7 @@ class Query {
 
 	/**
 	 * 删除
-	 * @return \LFPhp\PORM\Query $this
+	 * @return \LFPhp\PORM\DBQuery $this
 	 */
 	public function delete(){
 		$this->operation = self::DELETE;
@@ -170,7 +173,7 @@ class Query {
 	/**
 	 * 设置数据（仅对update, replace, insert有效)
 	 * @param array $data
-	 * @return \LFPhp\PORM\Query $this
+	 * @return \LFPhp\PORM\DBQuery $this
 	 */
 	public function setData(array $data){
 		$this->data = $data;
@@ -180,7 +183,7 @@ class Query {
 	/**
 	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
-	 * @return \LFPhp\PORM\Model|\LFPhp\PORM\Query
+	 * @return \LFPhp\PORM\DBModel|\LFPhp\PORM\DBQuery
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
@@ -194,7 +197,7 @@ class Query {
 	/**
 	 * 表
 	 * @param string $str
-	 * @return \LFPhp\PORM\Query $this
+	 * @return \LFPhp\PORM\DBQuery $this
 	 **/
 	public function from($str){
 		$tables = explode(',', $str);
@@ -340,7 +343,7 @@ class Query {
 	/**
 	 * 排序
 	 * @param string|array $str
-	 * @return static|Query|Model
+	 * @return static|DBQuery|DBModel
 	 **/
 	public function order($str){
 		if(is_array($str)){
@@ -353,7 +356,7 @@ class Query {
 	/**
 	 * 分组
 	 * @param string $str
-	 * @return Query|Model
+	 * @return DBQuery|DBModel
 	 **/
 	public function group($str){
 		$this->group = $str;
@@ -387,7 +390,7 @@ class Query {
 
 	/**
 	 * 判断当前操作语句是否为写入语句
-	 * @param string|Query $query
+	 * @param string|DBQuery $query
 	 * @return int
 	 */
 	public static function isWriteOperation($query = ''){

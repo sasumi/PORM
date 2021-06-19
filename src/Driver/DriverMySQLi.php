@@ -12,7 +12,7 @@ use function LFPhp\Func\server_in_windows;
  * MySQLi驱动类
  * @package LFPhp\PORM\Driver
  */
-class DriverMySQLi extends DBAbstract{
+class DriverMySQLi extends DBInstance{
 	/** @var \mysqli $conn */
 	private $conn;
 

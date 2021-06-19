@@ -1,10 +1,12 @@
 <?php
 namespace LFPhp\PORM;
 
-use LFPhp\PORM\Driver\DBAbstract;
+use Exception;
+use JsonSerializable;
+use LFPhp\PORM\Driver\DBInstance;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
-use LFPhp\PORM\Misc\DAO;
+use LFPhp\PORM\Misc\DBAttribute;
 use LFPhp\PORM\Misc\DBConfig;
 use function LFPhp\Func\array_clear_fields;
 use function LFPhp\Func\array_first;
@@ -13,118 +15,93 @@ use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
 use function LFPhp\Func\time_range_v;
 
-abstract class Model extends DAO {
+abstract class DBModel implements JsonSerializable {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
 
-	const LAST_OP_SELECT = Query::SELECT;
-	const LAST_OP_UPDATE = Query::UPDATE;
-	const LAST_OP_DELETE = Query::DELETE;
-	const LAST_OP_INSERT = Query::INSERT;
-
-	/** @var string current model last operate type */
-	private $last_operate_type = self::LAST_OP_SELECT;
-
 	private DBConfig $db_config;
 
-	/** @var Query db query object * */
+	/** @var \LFPhp\PORM\Misc\DBAttribute[] model define */
+	protected $attributes = [];
+
+	/** @var array model property key-value set */
+	protected $properties = [];
+
+	protected $property_changes = [];
+
+	/** @var DBQuery db query object * */
 	private $query = null;
 
-	/**
-	 * 获取当前调用ORM对象
-	 * @return static|Query
-	 */
-	public static function meta(){
-		$class_name = get_called_class();
-		return new $class_name;
-	}
-
-	/**
-	 * on before save event
-	 * @return boolean
-	 */
-	public function onBeforeSave(){
-		return true;
-	}
-
-	/**
-	 * on before update
-	 * @return boolean
-	 */
-	public function onBeforeUpdate(){
-		return true;
-	}
-
-	/**
-	 * on after update
-	 */
+	public function onBeforeUpdate(){}
 	public function onAfterUpdate(){}
-
-	/**
-	 * 记录插入之前事件
-	 * @return boolean
-	 */
-	public function onBeforeInsert(){
-		return true;
-	}
-
-	/**
-	 * 记录插入之后
-	 */
+	public function onBeforeInsert(){}
 	public function onAfterInsert(){}
-
-	/**
-	 * 记录删除之前
-	 * @return bool
-	 */
-	public function onBeforeDelete(){
-		return true;
-	}
-
-	/**
-	 * 记录删除之后
-	 */
+	public function onBeforeDelete(){}
 	public function onAfterDelete(){}
+	public function onBeforeSave(){}
+	protected function onBeforeChanged(){}
+	protected static function onBeforeChangedGlobal(){}
+
+	abstract static public function getTableName();
 
 	/**
-	 * records on change event
+	 * @return \LFPhp\PORM\Misc\DBAttribute[]
 	 */
-	protected static function onBeforeChanged(){
-		return true;
+	abstract static public function getAttributes();
+
+	/**
+	 * DBModel constructor.
+	 * @param array $data
+	 */
+	public function __construct($data = []){
+		foreach($data as $k=>$val){
+			$this->{$k} = $val;
+		}
 	}
-
-	/**
-	 * 获取当前数据库表表名（不含前缀）
-	 * @return string
-	 */
-	abstract public function getTableName();
 
 	/**
 	 * 获取数据库表描述名称
 	 * @return string
 	 */
-	public function getModelDesc(){
-		return $this->getTableName();
+	public static function getModelDesc(){
+		return static::getTableName();
 	}
 
 	/**
 	 * 获取数据库表全名
-	 * @param $op_type
-	 * @return string
-	 */
-	public function getTableFullName($op_type){
-		return $this->getDbTablePrefix($op_type).$this->getTableName();
-	}
-
-	/**
 	 * @param int $op_type
 	 * @return string
 	 */
-	public function getTableFullNameWithDbName($op_type = self::OP_READ){
-		$config = $this->getDBConfig($op_type);
+	public static function getTableFullName($op_type){
+		return static::getDbTablePrefix($op_type).static::getTableName();
+	}
+
+	/**
+	 * 获取数据库表名（附带数据库名）
+	 * @param int $op_type
+	 * @return string
+	 */
+	public static function getTableFullNameWithDbName($op_type = self::OP_READ){
+		$config = static::getDBConfig($op_type);
 		$db = $config->database;
-		$table = $this->getTableFullName($op_type);
+		$table = static::getTableFullName($op_type);
 		return "`$db`.`$table`";
+	}
+
+	/**
+	 * 根据字段名获取属性
+	 * @param $name
+	 * @return \LFPhp\PORM\Misc\DBAttribute
+	 * @throws \Exception
+	 */
+	public static function getAttributeByName($name){
+		$attrs = static::getAttributes();
+		foreach($attrs as $attr){
+			if($attr->name == $name){
+				return $attr;
+			}
+		}
+		throw new Exception('No attribute '.$name.' found.');
 	}
 
 	/**
@@ -132,11 +109,11 @@ abstract class Model extends DAO {
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getPrimaryKey(){
-		$defines = $this->getEntityPropertiesDefine();
-		foreach($defines as $k => $def){
-			if($def['primary']){
-				return $k;
+	public static function getPrimaryKey(){
+		$attrs = static::getAttributes();
+		foreach($attrs as $attr){
+			if($attr->is_primary_key){
+				return $attr->name;
 			}
 		}
 		throw new DBException('No primary key found in table defines');
@@ -148,30 +125,29 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getPrimaryKeyValue(){
-		$pk = $this->getPrimaryKey();
+		$pk = static::getPrimaryKey();
 		return $this->$pk;
 	}
 
 	/**
 	 * 获取db记录实例对象
 	 * @param int $operate_type
-	 * @return DBAbstract
+	 * @return DBInstance
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	protected function getDbDriver($operate_type = self::OP_WRITE){
-		$db_config = $this->getDBConfig($operate_type);
-		return DBAbstract::instance($db_config);
+	protected static function getDbDriver($operate_type = self::OP_WRITE){
+		$db_config = static::getDBConfig($operate_type);
+		return DBInstance::instance($db_config);
 	}
 
 	/**
 	 * 解释SQL语句
-	 * @param $query
+	 * @param string $query
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function explainQuery($query){
-		$obj = self::meta();
-		return $obj->getDbDriver(self::OP_READ)->explain($query);
+		return static::getDbDriver(self::OP_READ)->explain($query);
 	}
 
 	/**
@@ -180,18 +156,7 @@ abstract class Model extends DAO {
 	 * @param int $operate_type
 	 * @return DBConfig
 	 */
-	protected function getDBConfig($operate_type = self::OP_WRITE){
-		return $this->db_config;
-	}
-
-	/**
-	 * 设置数据库配置到当前ORM
-	 * 该方法可被覆盖、调用
-	 * @param DBConfig $db_config
-	 */
-	protected function setDBConfig(DBConfig $db_config){
-		$this->db_config = $db_config;
-	}
+	abstract static protected function getDBConfig($operate_type = self::OP_READ);
 
 	/**
 	 * 获取数据库表前缀
@@ -199,35 +164,31 @@ abstract class Model extends DAO {
 	 * @return string
 	 */
 	public static function getDbTablePrefix($type = self::OP_READ){
-		/** @var Model $obj */
-		$obj = static::meta();
-		$config = $obj->getDBConfig($type);
+		$config = static::getDBConfig($type);
 		return $config->table_prefix;
 	}
 
 	/**
 	 * 设置查询SQL语句
-	 * @param string|Query $query
-	 * @return static|Query
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @param string|DBQuery $query
+	 * @return static|DBQuery
+	 * @throws \Exception
 	 */
 	public static function setQuery($query){
 		if(is_string($query)){
-			$obj = self::meta();
-			$args = func_get_args();
-			$query = new Query(self::parseConditionStatement($args, $obj));
+			$query = new DBQuery($query);
 		}
 		if($query){
-			$obj = self::meta();
+			$obj = new static;
 			$obj->query = $query;
 			return $obj;
 		}
-		throw new DBException('Query string required');
+		throw new Exception('Query string required');
 	}
 
 	/**
 	 * 获取当前查询对象
-	 * @return \LFPhp\PORM\Query|null
+	 * @return \LFPhp\PORM\DBQuery|null
 	 */
 	public function getQuery(){
 		return $this->query;
@@ -238,10 +199,9 @@ abstract class Model extends DAO {
 	 * @param callable $handler 处理函数，若函数返回false或抛出Exception，将停止提交，执行事务回滚
 	 * @return mixed 闭包函数返回值透传
 	 * @throws \LFPhp\PORM\Exception\DBException
-	 * @throws \Exception
 	 */
 	public static function transaction($handler){
-		$driver = self::meta()->getDbDriver(Model::OP_WRITE);
+		$driver = static::getDbDriver(DBModel::OP_WRITE);
 		try{
 			$driver->beginTransaction();
 			$ret = call_user_func($handler);
@@ -252,7 +212,7 @@ abstract class Model extends DAO {
 				throw new DBException('Database commit fail');
 			}
 			return $ret;
-		}catch(\Exception $exception){
+		}catch(Exception $exception){
 			$driver->rollback();
 			throw $exception;
 		}finally{
@@ -266,26 +226,26 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function execute(){
-		$type = Query::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
-		return $this->getDbDriver($type)->query($this->query);
+		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
+		return static::getDbDriver($type)->query($this->query);
 	}
 
 	/**
 	 * 查找
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
-	 * @return static|Query
+	 * @return static|DBQuery
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function find($statement = '', $var = null){
-		$obj = static::meta();
+		$obj = new static;
 		$prefix = self::getDbTablePrefix(self::OP_READ);
-		$query = new Query();
+		$query = new DBQuery();
 		$query->setTablePrefix($prefix);
 
 		$args = func_get_args();
-		$statement = self::parseConditionStatement($args, $obj);
-		$query->select()->from($obj->getTableName())->where($statement);
+		$statement = self::parseConditionStatement($args, static::class);
+		$query->select()->from(static::getTableName())->where($statement);
 		$obj->query = $query;
 		return $obj;
 	}
@@ -293,19 +253,19 @@ abstract class Model extends DAO {
 	/**
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
-	 * @return static|Query
+	 * @return static|DBQuery
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function where(...$args){
-		$statement = self::parseConditionStatement($args, $this);
+		$statement = self::parseConditionStatement($args, static::class);
 		$this->query->where($statement);
 		return $this;
 	}
 
 	/**
 	 * 快速查询用户请求过来的信息，只有第二个参数为不为空的时候才去查询，空数组还是会去查。
-	 * @param $st
-	 * @param $val
+	 * @param string $st
+	 * @param string|int $val
 	 * @return static
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -317,7 +277,7 @@ abstract class Model extends DAO {
 			}
 		}
 		if(is_array($val) || strlen($val)){
-			$statement = self::parseConditionStatement($args, $this);
+			$statement = self::parseConditionStatement($args, static::class);
 			$this->query->where($statement);
 		}
 		return $this;
@@ -326,8 +286,8 @@ abstract class Model extends DAO {
 	/**
 	 * 自动检测变量类型、变量值设置匹对记录
 	 * 当前操作仅做“等于”，“包含”比对，不做其他比对
-	 * @param $fields
-	 * @param $param
+	 * @param string[] $fields
+	 * @param string[]|number[] $param
 	 * @return $this
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -344,13 +304,13 @@ abstract class Model extends DAO {
 
 	/**
 	 * 快速LIKE查询用户请求过来的信息，当LIKE内容为空时，不执行查询，如 %%。
-	 * @param $st
-	 * @param $val
-	 * @return static|Query
+	 * @param string $st
+	 * @param string|number $val
+	 * @return static|DBQuery
 	 */
 	public function whereLikeOnSet($st, $val){
 		$args = func_get_args();
-		if(strlen(trim(str_replace(DBAbstract::LIKE_RESERVED_CHARS, '', $val)))){
+		if(strlen(trim(str_replace(DBInstance::LIKE_RESERVED_CHARS, '', $val)))){
 			return call_user_func_array(array($this, 'whereOnSet'), $args);
 		}
 		return $this;
@@ -375,7 +335,7 @@ abstract class Model extends DAO {
 	 * @param number|null $min 最小端
 	 * @param number|null $max 最大端
 	 * @param bool $equal_cmp 是否包含等于
-	 * @return Query|static
+	 * @return DBQuery|static
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
 		$cmp = $equal_cmp ? '=' : '';
@@ -399,12 +359,14 @@ abstract class Model extends DAO {
 	/**
 	 * 创建新对象
 	 * @param $data
-	 * @return bool|static|Query
+	 * @return bool|static
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function create($data){
-		$obj = static::meta();
-		$obj->setValues($data);
+		$obj = new static();
+		foreach($data as $k=>$v){
+			$obj->{$k} = $v;
+		}
 		return $obj->save() ? $obj : false;
 	}
 
@@ -412,12 +374,11 @@ abstract class Model extends DAO {
 	 * 由主键查询一条记录
 	 * @param string $val
 	 * @param bool $as_array
-	 * @return static|Query|array
+	 * @return static|DBQuery|array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findOneByPk($val, $as_array = false){
-		$obj = static::meta();
-		$pk = $obj->getPrimaryKey();
+		$pk = static::getPrimaryKey();
 		return static::find($pk.'=?', $val)->one($as_array);
 	}
 
@@ -447,9 +408,8 @@ abstract class Model extends DAO {
 		if(!$pk_values){
 			return [];
 		}
-		$obj = static::meta();
-		$pk = $obj->getPrimaryKey();
-		return static::find("$pk IN ?", $pk_values)->all($as_array);
+		$pk = static::getPrimaryKey();
+		return static::find("`$pk` IN ?", $pk_values)->all($as_array);
 	}
 
 	/**
@@ -459,10 +419,9 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function delByPk($val){
-		$obj = static::meta();
-		$pk = $obj->getPrimaryKey();
-		static::deleteWhere(0, "$pk=?", $val);
-		return static::meta()->getAffectNum();
+		$pk = static::getPrimaryKey();
+		static::deleteWhere(0, "`$pk`=?", $val);
+		return (new static)->getAffectNum();
 	}
 
 	/**
@@ -474,7 +433,7 @@ abstract class Model extends DAO {
 	 */
 	public static function delByPkOrFail($val){
 		static::delByPk($val);
-		$count = static::meta()->getAffectNum();
+		$count = (new static)->getAffectNum();
 		if(!$count){
 			throw new NotFoundException('记录已被删除');
 		}
@@ -489,22 +448,20 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateByPk($val, array $data){
-		$obj = static::meta();
-		$pk = $obj->getPrimaryKey();
-		return static::updateWhere($data, 1, "$pk = ?", $val);
+		$pk = static::getPrimaryKey();
+		return static::updateWhere($data, 1, "`$pk` = ?", $val);
 	}
 
 	/**
 	 * 根据主键值更新记录
-	 * @param $pks
+	 * @param string[]|number[] $pks
 	 * @param array $data
 	 * @return bool
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateByPks($pks, array $data){
-		$obj = static::meta();
-		$pk = $obj->getPrimaryKey();
-		return static::updateWhere($data, count($pks), "$pk IN ?", $pks);
+		$pk = static::getPrimaryKey();
+		return static::updateWhere($data, count($pks), "`$pk` IN ?", $pks);
 	}
 
 	/**
@@ -516,16 +473,15 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function updateWhere(array $data, $limit, $statement){
-		if(self::onBeforeChanged() === false){
+		if(self::onBeforeChangedGlobal() === false){
 			return false;
 		}
 
 		$args = func_get_args();
 		$args = array_slice($args, 2);
-		$obj = static::meta();
-		$statement = self::parseConditionStatement($args, $obj);
-		$table = $obj->getTableName();
-		return $obj->getDbDriver(self::OP_WRITE)->update($table, $data, $statement, $limit);
+		$statement = self::parseConditionStatement($args, static::class);
+		$table = static::getTableName();
+		return static::getDbDriver(self::OP_WRITE)->update($table, $data, $statement, $limit);
 	}
 
 	/**
@@ -539,10 +495,9 @@ abstract class Model extends DAO {
 		$args = func_get_args();
 		$args = array_slice($args, 1);
 
-		$obj = static::meta();
-		$statement = self::parseConditionStatement($args, $obj);
-		$table = $obj->getTableName();
-		return $obj->getDbDriver(self::OP_WRITE)->delete($table, $statement, $limit);
+		$statement = self::parseConditionStatement($args, static::class);
+		return static::getDbDriver(self::OP_WRITE)
+			->delete(static::getTableName(), $statement, $limit);
 	}
 
 	/**
@@ -551,9 +506,8 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function truncate(){
-		$obj = static::meta();
-		$table = $obj->getTableFullName(self::OP_WRITE);
-		return $obj->getDbDriver(self::OP_WRITE)->delete($table, '', 0);
+		$table = static::getTableFullName(self::OP_WRITE);
+		return static::getDbDriver(self::OP_WRITE)->delete($table, '', 0);
 	}
 
 	/**
@@ -564,11 +518,11 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function all($as_array = false, $unique_key = ''){
-		$list = $this->getDbDriver(self::OP_READ)->getAll($this->query);
+		$list = static::getDbDriver(self::OP_READ)->getAll($this->query);
 		if(!$list){
-			return array();
+			return [];
 		}
-		return $this->__handleListResult($list, $as_array, $unique_key);
+		return $this->handleListResult($list, $as_array, $unique_key);
 	}
 
 	/**
@@ -580,8 +534,8 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function paginate($page = null, $as_array = false, $unique_key = ''){
-		$list = $this->getDbDriver(self::OP_READ)->getPage($this->query, $page);
-		return $this->__handleListResult($list, $as_array, $unique_key);
+		$list = static::getDbDriver(self::OP_READ)->getPage($this->query, $page);
+		return $this->handleListResult($list, $as_array, $unique_key);
 	}
 
 	/**
@@ -591,18 +545,17 @@ abstract class Model extends DAO {
 	 * @param string $unique_key 数组下标key
 	 * @return array
 	 */
-	private function __handleListResult(array $list, $as_array = false, $unique_key = ''){
+	private function handleListResult(array $list, $as_array = false, $unique_key = ''){
 		if($as_array){
 			if($unique_key){
 				$list = array_group($list, $unique_key, true);
 			}
 			return $list;
 		}
-		$result = array();
+		$result = [];
 		foreach($list as $item){
-			$tmp = clone $this;
-			$tmp->setValues($item);
-			$tmp->resetValueChangeState();
+			$tmp = new static($item);
+			$tmp->property_changes = [];
 			if($unique_key){
 				$result[$item[$unique_key]] = $tmp;
 			} else{
@@ -619,13 +572,13 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function one($as_array = false){
-		$data = $this->getDbDriver(self::OP_READ)->getOne($this->query);
+		$data = static::getDbDriver(self::OP_READ)->getOne($this->query);
 		if($as_array){
 			return $data;
 		}
 		if(!empty($data)){
-			$this->setValues($data);
-			$this->resetValueChangeState();
+			$this->__construct($data);
+			$this->property_changes = [];
 			return $this;
 		}
 		return null;
@@ -653,13 +606,40 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function ceil($key = ''){
-		$obj = self::meta();
-		$pro_defines = $obj->getEntityPropertiesDefine();
-		if($key && $pro_defines[$key]){
+		$attr_names = static::getEntityAttributeNames();
+		if($key && in_array($key, $attr_names)){
 			$this->query->field($key);
 		}
-		$data = $this->getDbDriver(self::OP_READ)->getOne($this->query);
+		$data = static::getDbDriver(self::OP_READ)->getOne($this->query);
 		return $data ? array_pop($data) : null;
+	}
+
+	/**
+	 * 获取实体属性名列表
+	 * @return array
+	 */
+	protected static function getEntityAttributeNames(){
+		$names = [];
+		$attrs = static::getEntityAttributes();
+		foreach($attrs as $attribute){
+			$names[] = $attribute->name;
+		}
+		return $names;
+	}
+
+	/**
+	 * 获取实体属性列表
+	 * @return DBAttribute[]
+	 */
+	protected static function getEntityAttributes(){
+		$attrs = static::getAttributes();
+		$ret = [];
+		foreach($attrs as $attribute){
+			if(!$attribute->is_virtual){
+				$ret[] = $attribute;
+			}
+		}
+		return $ret;
 	}
 
 	/**
@@ -685,8 +665,8 @@ abstract class Model extends DAO {
 	public function sum($fields, $group_by=[]){
 		$fields = is_array($fields)?$fields:[$fields];
 		$str = [];
-		foreach($fields as $_=>$field){
-			$str[] = "SUM($field) as $field";
+		foreach($fields as $field){
+			$str[] = "SUM(`$field`) as $field";
 		}
 
 		if($group_by){
@@ -695,7 +675,7 @@ abstract class Model extends DAO {
 		}
 		$this->query->fields($str);
 
-		$data = $this->getDbDriver(self::OP_READ)->getAll($this->query);
+		$data = static::getDbDriver(self::OP_READ)->getAll($this->query);
 		if($group_by){
 			return $data;
 		}
@@ -719,7 +699,7 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
-		$pk = $this->getPrimaryKey();
+		$pk = static::getPrimaryKey();
 		$pk_v = $this->{$pk};
 		$query = static::find()->field($pk, $sort_key);
 
@@ -759,7 +739,7 @@ abstract class Model extends DAO {
 
 		//force reordering
 		foreach($sort_list as $k => $v){
-			static::updateWhere([$sort_key => $count-$k-1], 1, "$pk = ?", $v[$pk]);
+			static::updateWhere([$sort_key => $count-$k-1], 1, "`$pk` = ?", $v[$pk]);
 		}
 		return true;
 	}
@@ -771,13 +751,9 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function column($key){
-		$obj = self::meta();
-		$pro_defines = $obj->getEntityPropertiesDefine();
-		if(isset($pro_defines[$key]) && $pro_defines[$key]){
-			$this->query->field($key);
-		}
-		$data = $this->getDbDriver(self::OP_READ)->getAll($this->query);
-		return $data ? array_column($data, $key) : array();
+		$this->query->field($key);
+		$data = static::getDbDriver(self::OP_READ)->getAll($this->query);
+		return $data ? array_column($data, $key) : [];
 	}
 
 	/**
@@ -795,13 +771,13 @@ abstract class Model extends DAO {
 	public function map($key, $val){
 		if(is_string($val)){
 			$this->query->field($key, $val);
-			$tmp = $this->getDbDriver(self::OP_READ)->getAll($this->query);
+			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			return array_combine(array_column($tmp, $key), array_column($tmp, $val));
 		} else if(is_array($val)){
 			$tmp = $val;
 			$tmp[] = $key;
 			$this->query->fields($tmp);
-			$tmp = $this->getDbDriver(self::OP_READ)->getAll($this->query);
+			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			$ret = [];
 			foreach($tmp as $item){
 				$ret[$item[$key]] = [];
@@ -811,7 +787,7 @@ abstract class Model extends DAO {
 			}
 			return $ret;
 		}
-		throw new DBException("Mapping parameter error: [$key, $val]", null, null, $this->db_config);
+		throw new DBException("Mapping parameter error: [$key, $val]", null, null, static::getDBConfig(self::OP_READ));
 	}
 
 	/**
@@ -859,20 +835,20 @@ abstract class Model extends DAO {
 			$debugger = function(){};
 		}
 
-		$cache_on = DBAbstract::queryCacheState();
-		DBAbstract::queryCacheOff();
+		$cache_on = DBInstance::getQueryCacheState();
+		DBInstance::setQueryCacheOff();
 		while(true){
 			$obj = clone($this);
 			$break = false;
 			$start = microtime(true);
 			$exists = $obj->chunk($chunk_size, function($data_list, $page_index, $page_total, $item_total) use ($handler, $chunk_size, $debugger, $start, &$break){
-				/** @var Model $item */
+				/** @var DBModel $item */
 				foreach($data_list as $k => $item){
 					$cur = $page_index*$chunk_size+$k+1;
 					$now = microtime(true);
 					$left = ($now-$start)*($item_total-$cur)/$cur;
 					$left_time = time_range_v($left);
-					$debugger('Handling item: ['.$cur.'/'.$item_total." - $left_time]", substr(json_encode($item->toArray()), 0, 200));
+					$debugger('Handling item: ['.$cur.'/'.$item_total." - $left_time]", substr(json_encode($item), 0, 200));
 					$ret = call_user_func($handler, $item, $page_index, $page_total, $item_total);
 					if($ret === false){
 						$debugger('Handler Break!');
@@ -893,7 +869,7 @@ abstract class Model extends DAO {
 			}
 		}
 		if($cache_on){
-			DBAbstract::queryCacheOn();
+			DBInstance::setQueryCacheOn();
 		}
 		return true;
 	}
@@ -904,30 +880,8 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function count(){
-		$driver = $this->getDbDriver(self::OP_READ);
+		$driver = static::getDbDriver(self::OP_READ);
 		return $driver->getCount($this->query);
-	}
-
-	/**
-	 * 裁剪属性字符串长度，使得对象属性符合定义
-	 * @return array 被裁减字段结果列表信息 [field1=> [define length, cut length], ...]
-	 * @throws \LFPhp\PORM\Exception\DBException
-	 */
-	public function trimPropertiesData(){
-		$match_fields = [];
-		$data = $this->getValues();
-		$defines = $this->getPropertiesDefine();
-		$cut_by_utf8 = $this->getDbDriver(self::OP_WRITE)->db_config->type == DBConfig::TYPE_MYSQL;
-		foreach($defines as $field=>$def){
-			if($data[$field] && $def['length'] && $def['entity'] && !$def['readonly'] && $def['type'] == 'string'){
-				$len = $cut_by_utf8 ? mb_strlen($data[$field], 'utf-8') : strlen($data[$field]);
-				if($len > $def['length']){
-					$this->{$field} = $cut_by_utf8 ? mb_substr($data[$field], 0, $def['length'], 'utf-8') : substr($data[$field], 0, $def['length']);
-					$match_fields[$field] = [$def['length'], $len - $def['length']];
-				}
-			}
-		}
-		return $match_fields;
 	}
 
 	/**
@@ -937,21 +891,20 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function update($flush_all = false){
-		if($this->onBeforeUpdate() === false || self::onBeforeChanged() === false){
+		if($this->onBeforeUpdate() === false || $this->onBeforeChanged() === false){
 			return false;
 		}
 
-		$this->last_operate_type = self::LAST_OP_UPDATE;
-		$data = $this->getValues();
-		$pk = $this->getPrimaryKey();
+		$data = $this->properties;
+		$pk = static::getPrimaryKey();
 
 		//只更新改变的值
-		$change_keys = $this->getValueChangeKeys();
-		$data = array_clear_fields(array_keys($change_keys), $data);
-		$data = $this->validate($data, Query::UPDATE, $flush_all);
-		$this->getDbDriver(self::OP_WRITE)->update($this->getTableName(), $data, $this->getPrimaryKey().'='.$this->$pk);
+		$data = array_clear_fields($this->property_changes, $data);
+		$data = $this->validate($data, DBQuery::UPDATE, $flush_all);
+		static::getDbDriver(self::OP_WRITE)->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
 		$this->onAfterUpdate();
-		return $this->{$this->getPrimaryKey()};
+		$this->property_changes = [];
+		return $this->{static::getPrimaryKey()};
 	}
 
 	/**
@@ -961,17 +914,17 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function insert($flush_all = false){
-		if($this->onBeforeInsert() === false || self::onBeforeChanged() === false){
+		if($this->onBeforeInsert() === false || $this->onBeforeChanged() === false){
 			return false;
 		}
-		$this->last_operate_type = self::LAST_OP_INSERT;
-		$data = $this->getValues();
-		$data = $this->validate($data, Query::INSERT, $flush_all);
+		$data = $this->properties;
+		$data = $this->validate($data, DBQuery::INSERT, $flush_all);
 
-		$result = $this->getDbDriver(self::OP_WRITE)->insert($this->getTableName(), $data);
+		$result = static::getDbDriver(self::OP_WRITE)->insert(static::getTableName(), $data);
 		if($result){
-			$pk_val = $this->getDbDriver(self::OP_WRITE)->getLastInsertId();
-			$this->setValue($this->getPrimaryKey(), $pk_val);
+			$pk_val = static::getDbDriver(self::OP_WRITE)->getLastInsertId();
+			$pk = static::getPrimaryKey();
+			$this->{$pk} = $pk_val;
 			$this->onAfterInsert();
 			return $pk_val;
 		}
@@ -987,11 +940,9 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function replace(array $data, $limit = 0, ...$args){
-		$obj = self::meta();
-		$statement = self::parseConditionStatement($args, $obj);
-		$obj = static::meta();
-		$table = $obj->getTableName();
-		return $obj->getDbDriver(self::OP_WRITE)->replace($table, $data, $statement, $limit);
+		$statement = self::parseConditionStatement($args, static::class);
+		$table = static::getTableName();
+		return static::getDbDriver(self::OP_WRITE)->replace($table, $data, $statement, $limit);
 	}
 
 	/**
@@ -1004,26 +955,9 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function increase($field, $offset, $limit = 0, ...$args){
-		$obj = self::meta();
-		$statement = self::parseConditionStatement($args, $obj);
-
-		$obj = static::meta();
-		$table = $obj->getTableName();
-		return $obj->getDbDriver(self::OP_WRITE)->increase($table, $field, $offset, $statement, $limit);
-	}
-
-	/**
-	 * 获取字段-别名映射表
-	 * @return array [field=>name, ...]
-	 */
-	public static function getEntityFieldAliasMap(){
-		$obj = self::meta();
-		$ret = [];
-		$defines = $obj->getEntityPropertiesDefine();
-		foreach($defines as $field=>$def){
-			$ret[$field] = $def['alias'] ?: $field;
-		}
-		return $ret;
+		$statement = self::parseConditionStatement($args, static::class);
+		$table = static::getTableName();
+		return static::getDbDriver(self::OP_WRITE)->increase($table, $field, $offset, $statement, $limit);
 	}
 
 	/**
@@ -1034,13 +968,17 @@ abstract class Model extends DAO {
 	 * @return array $data
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	private function validate($src_data = array(), $query_type = Query::INSERT, $flush_all = false){
-		$pro_defines = $this->getEntityPropertiesDefine();
-		$pk = $this->getPrimaryKey();
+	private function validate($src_data = [], $query_type = DBQuery::INSERT, $flush_all = false){
+		$attrs = self::getEntityAttributes();
+		$attr_maps = [];
+		foreach($attrs as $attr){
+			$attr_maps[$attr->name] = $attr;
+		}
+		$pk = static::getPrimaryKey();
 
 		//转换set数据
 		foreach($src_data as $k => $d){
-			if($pro_defines[$k]['type'] == 'set' && is_array($d)){
+			if($attr_maps[$k]->type == DBAttribute::TYPE_SET && is_array($d)){
 				$src_data[$k] = join(',', $d);
 			}
 		}
@@ -1052,68 +990,69 @@ abstract class Model extends DAO {
 
 		//unique校验
 		foreach($src_data as $field=>$_){
-			$def = $pro_defines[$field];
-			if($def['unique']){
-				if($query_type == Query::INSERT){
+			$attr = $attr_maps[$field];
+			if($attr->is_unique){
+				if($query_type == DBQuery::INSERT){
 					$count = $this::find("`$field`=?", $data[$field])->count();
 				} else{
 					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 				}
 				if($count){
-					throw new DBException("{$def['alias']}：{$data[$field]}已经存在，不能重复添加");
+					throw new DBException("{$attr['alias']}：{$data[$field]}已经存在，不能重复添加");
 				}
 			}
 		}
 
 		//移除readonly属性
 		if(!$flush_all){
-			$pro_defines = array_filter($pro_defines, function($def){
-				return !$def['readonly'];
+			$attr_maps = array_filter($attr_maps, function($attr){
+				return !$attr->is_readonly;
 			});
 		}
 
 		//清理无用数据
-		$data = array_clear_fields(array_keys($pro_defines), $data);
+		$data = array_clear_fields(array_keys($attr_maps), $data);
 
 		//插入时填充default值
-		array_walk($pro_defines, function($def, $k) use (&$data, $query_type){
-			if(array_key_exists('default', $def)){
-				if($query_type == Query::INSERT){
+		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
+			/** @var DBAttribute $attr */
+			if($attr->default){
+				if($query_type == DBQuery::INSERT){
 					if(!isset($data[$k])){ //允许提交空字符串
-						$data[$k] = $def['default'];
+						$data[$k] = $attr->default;
 					}
 				} else if(isset($data[$k]) && !strlen($data[$k])){
-					$data[$k] = $def['default'];
+					$data[$k] = $attr->default;
 				}
 			}
 		});
 
 		//更新时，只需要处理更新数据的属性
-		if($query_type == Query::UPDATE || $query_type == Query::REPLACE){
-			foreach($pro_defines as $k => $define){
+		if($query_type == DBQuery::UPDATE || $query_type == DBQuery::REPLACE){
+			foreach($attr_maps as $k => $attr){
 				if(!isset($data[$k])){
-					unset($pro_defines[$k]);
+					unset($attr_maps[$k]);
 				}
 			}
 		}
 
 		//处理date日期默认为NULL情况
 		foreach($data as $k => $val){
-			if(in_array($pro_defines[$k]['type'], array(
-					'date',
-					'datetime',
-					'time',
-				)) && array_key_exists('default', $pro_defines[$k]) && $pro_defines[$k]['default'] === null && !$data[$k]
+			if(in_array($attr_maps[$k]->type, array(
+				DBAttribute::TYPE_DATE,
+				DBAttribute::TYPE_DATETIME,
+				DBAttribute::TYPE_TIME,
+				)) && $attr_maps[$k]->default && $attr_maps[$k]->default === null && !$data[$k]
 			){
 				$data[$k] = null;
 			}
 		}
 
 		//属性校验
-		foreach($pro_defines as $k => $def){
-			if(!$def['readonly'] || $flush_all){
+		foreach($attr_maps as $k => $attr){
+			if(!$attr->is_readonly || $flush_all){
 				if($msg = $this->validateField($data[$k], $k)){
-					throw new DBException($msg, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
+					throw new DBException($msg, null, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
 				}
 			}
 		}
@@ -1128,66 +1067,71 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private function validateField(&$value, $field){
-		$define = $this->getPropertiesDefine($field);
+		$attr = static::getAttributeByName($field);
 
 		$err = '';
 		$val = $value;
-		$name = $define['alias'];
-		if(is_callable($define['options'])){
-			$define['options'] = call_user_func($define['options'], $this);
+		$name = $attr->alias;
+		$options = $attr->options;
+		if(is_callable($options)){
+			$options = call_user_func($options, $this);
 		}
 
-		$required = $define['required'];
+		$required = !$attr->is_null_allow;
 
 		//type
 		if(!$err){
-			switch($define['type']){
-				case 'int':
+			switch($attr->type){
+				case DBAttribute::TYPE_INT:
 					if(strlen($val) && !is_numeric($val)){
 						$err = $name.'格式不正确';
 					}
 					break;
 
-				case 'float':
-				case 'double':
-				case 'decimal':
+				case DBAttribute::TYPE_FLOAT:
+				case DBAttribute::TYPE_DOUBLE:
+				case DBAttribute::TYPE_DECIMAL:
 					if(!(!$required && !strlen($val.'')) && isset($val) && !is_numeric($val)){
 						$err = $name.'格式不正确';
 					}
 					break;
 
-				case 'enum':
-					$err = !(!$required && !strlen($val.'')) && !isset($define['options'][$val]) ? '请选择'.$name : '';
+				case DBAttribute::TYPE_ENUM:
+					$err = !(!$required && !strlen($val.'')) && !isset($options[$val]) ? '请选择'.$name : '';
 					break;
 
 				//string暂不校验
-				case 'string':
+				case DBAttribute::TYPE_STRING:
 					break;
 			}
 		}
 
 		//required
-		if(!$err && $define['required'] && !isset($val)){
+		if(!$err && $required && !isset($val)){
 			$err = "请输入{$name}";
 		}
 
 		//length
-		if(!$err && $define['length'] && $define['type'] != 'datetime' && $define['type'] != 'date' && $define['type'] != 'time'){
-			if($define['precision']){
+		if(!$err && $attr->type && !in_array($attr->type, [
+				DBAttribute::TYPE_DATETIME,
+				DBAttribute::TYPE_DATE,
+				DBAttribute::TYPE_TIME,
+			])){
+			if($attr['precision']){
 				$int_len = strlen(substr($val, 0, strpos($val, '.')));
 				$precision_len = strpos($val, '.') !== false ? strlen(substr($val, strpos($val, '.') + 1)) : 0;
-				if($int_len > $define['length'] || $precision_len > $define['precision']){
+				if($int_len > $attr->length || $precision_len > $attr['precision']){
 					$err = "{$name}长度超出：$value";
 				}
 			}else{
 				//mysql字符计算采用mb_strlen计算字符个数
-				$db_type = $this->getDbDriver(self::OP_WRITE)->db_config->type;
-				if($define['type'] === 'string' && $db_type == DBConfig::TYPE_MYSQL){
+				$db_type = static::getDbDriver(self::OP_WRITE)->db_config->type;
+				if($attr->type === 'string' && $db_type == DBConfig::TYPE_MYSQL){
 					$str_len = mb_strlen($val, 'utf-8');
 				}else{
 					$str_len = strlen($val);
 				}
-				$err = $str_len > $define['length'] ? "{$name}长度超出：$value {$str_len} > {$define['length']}" : '';
+				$err = $str_len > $attr->length ? "{$name}长度超出：$value {$str_len} > {$attr->length}" : '';
 			}
 		}
 		if(!$err){
@@ -1209,18 +1153,16 @@ abstract class Model extends DAO {
 		if(count($data_list, COUNT_RECURSIVE) == count($data_list)){
 			throw new DBException('Two dimension array needed');
 		}
-		$obj = static::meta();
-		$return_list = array();
+		$return_list = [];
 		foreach($data_list as $data){
 			try{
-				$tmp = clone($obj);
-				$tmp->setValues($data);
+				$tmp = new static($data);
 				$result = $tmp->insert();
 				if($result){
 					$pk_val = $tmp->getDbDriver(self::OP_WRITE)->getLastInsertId();
 					$return_list[] = $pk_val;
 				}
-			} catch(\Exception $e){
+			} catch(Exception $e){
 				if($break_on_fail){
 					throw $e;
 				}
@@ -1236,11 +1178,10 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function insertManyQuick($data_list){
-		if(self::onBeforeChanged() === false){
+		if(self::onBeforeChangedGlobal() === false){
 			return false;
 		}
-		$obj = static::meta();
-		return $obj->getDbDriver(self::OP_WRITE)->insert($obj->getTableName(), $data_list);
+		return static::getDbDriver(self::OP_WRITE)->insert(static::getTableName(), $data_list);
 	}
 
 	/**
@@ -1252,8 +1193,7 @@ abstract class Model extends DAO {
 		if($this->onBeforeDelete() === false){
 			return false;
 		}
-		$pk_val = $this[$this->getPrimaryKey()];
-		$this->last_operate_type = self::LAST_OP_DELETE;
+		$pk_val = $this[static::getPrimaryKey()];
 		$result = static::delByPk($pk_val);
 		$this->onAfterDelete();
 		return $result;
@@ -1262,11 +1202,11 @@ abstract class Model extends DAO {
 	/**
 	 * 解析SQL查询中的条件表达式
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
-	 * @param \LFPhp\PORM\Model $obj
+	 * @param string|\LFPhp\PORM\DBModel $model_class
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	private static function parseConditionStatement($args, Model $obj){
+	private static function parseConditionStatement($args, $model_class){
 		$statement = isset($args[0]) ? $args[0] : null;
 		$args = array_slice($args, 1);
 		if(!empty($args) && $statement){
@@ -1274,8 +1214,8 @@ abstract class Model extends DAO {
 			$rst = '';
 			foreach($args as $key => $val){
 				if(is_array($val)){
-					array_walk($val, function(&$item) use ($obj){
-						$item = $obj->getDbDriver(self::OP_READ)->quote($item);
+					array_walk($val, function(&$item) use ($model_class){
+						$item = $model_class::getDbDriver(self::OP_READ)->quote($item);
 					});
 
 					if(!empty($val)){
@@ -1284,7 +1224,7 @@ abstract class Model extends DAO {
 						$rst .= $arr[$key].'(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
 					}
 				} else{
-					$rst .= $arr[$key].$obj->getDbDriver(self::OP_READ)->quote($val);
+					$rst .= $arr[$key].$model_class::getDbDriver(self::OP_READ)->quote($val);
 				}
 			}
 			$rst .= array_pop($arr);
@@ -1304,12 +1244,12 @@ abstract class Model extends DAO {
 			return false;
 		}
 
-		if(!$this->getValueChangeKeys()){
+		if(!$this->property_changes){
 			return false;
 		}
 
-		$data = $this->getValues();
-		$has_pk = !empty($data[$this->getPrimaryKey()]);
+		$data = $this->properties;
+		$has_pk = !empty($data[static::getPrimaryKey()]);
 		if($has_pk){
 			return $this->update($flush_all);
 		} else if(!empty($data)){
@@ -1324,55 +1264,15 @@ abstract class Model extends DAO {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAffectNum(){
-		$type = Query::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
-		return $this->getDbDriver($type)->getAffectNum();
-	}
-
-	/**
-	 * 获取最后操作类型
-	 * @return string
-	 */
-	public function getLastOperateType(){
-		return $this->last_operate_type;
-	}
-
-	/**
-	 * 获取可读变更项
-	 * @param array $original_data [field => [alias, value], ...]
-	 * @return array [field => [alias, before_value, after_value], ...]
-	 */
-	public function getValueChangesHumanReadable(&$original_data = array()){
-		$alias_map = self::getEntityFieldAliasMap();
-		$changes = parent::getValueChanges($value_before_change);
-		$org_values = $this->getValues();
-		$ret = [];
-
-		//组装raw数据
-		foreach($org_values as $field=>$val){
-			$original_data[$field] = [$alias_map[$field], $val];
-		}
-
-		//组变更数据
-		foreach($changes as $field=>$val){
-			$ret[$field] = [$alias_map[$field], $value_before_change[$field], $val];
-		}
-		return $ret;
-	}
-
-	/**
-	 * 对象克隆，支持查询对象克隆
-	 */
-	public function __clone(){
-		if(is_object($this->query)){
-			$this->query = clone $this->query;
-		}
+		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
+		return static::getDbDriver($type)->getAffectNum();
 	}
 
 	/**
 	 * 调用查询对象其他方法
-	 * @param $method_name
-	 * @param $params
-	 * @return static|Query
+	 * @param string $method_name
+	 * @param array $params
+	 * @return static|DBQuery
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	final public function __call($method_name, $params){
@@ -1380,34 +1280,22 @@ abstract class Model extends DAO {
 			call_user_func_array(array($this->query, $method_name), $params);
 			return $this;
 		}
-
 		throw new DBException("Method no exist:".$method_name);
 	}
 
 	/**
-	 * 重载DAO属性设置方法，实现数据库SET提交
+	 * 设置属性
 	 * @param $key
 	 * @param $val
 	 */
 	public function __set($key, $val){
-		if(is_array($val)){
-			$define = $this->getEntityPropertiesDefine($key);
-			if($define && $define['type'] == 'set'){
-				$val = join(',', $val);
-			}
-		}
-		parent::__set($key, $val);
+		$this->properties[$key] = $val;
+		$this->property_changes[] = $key;
 	}
 
 	/**
 	 * 配置getter
 	 * <p>
-	 * 支持：'name' => array(
-	 *      has_one'=>[current_field, target_class, target_field]
-	 * )
-	 * 支持：'name' => array(
-	 *      has_many'=>[current_field, target_class, target_field]
-	 * )
 	 * 支持：'name' => array(
 	 *     'getter' => function($k){}
 	 * )
@@ -1417,44 +1305,14 @@ abstract class Model extends DAO {
 	 * </p>
 	 * @param $key
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \Exception
 	 */
 	public function __get($key){
-		$define = $this->getPropertiesDefine($key);
-
-		if($define){
-			if(isset($define['getter']) && $define['getter']){
-				$ret = call_user_func($define['getter'], $this);
-				$this->{$key} = $ret; //avoid trigger virtual property getter again
-				return $ret;
-			}
-			if((isset($define['has_one']) && $define['has_one']) || (isset($define['has_many']) && $define['has_many'])){
-				/** @var static $target_class */
-				list($current_field, $target_class, $target_field) = $define['has_one'] ?: $define['has_many'];
-				$target_instance = $target_class::meta();
-				$target_field = $target_field ?: $target_instance->getPrimaryKey();
-				$ret = $define['has_one'] ?
-					$target_class::find("$target_field=?", $this->{$current_field})->one() :
-					$target_class::find("$target_field=?", $this->{$current_field})->all();
-				$this->{$key} = $ret; //avoid trigger virtual property getter again
-				return $ret;
-			}
+		$attr = static::getAttributeByName($key);
+		if($attr && $attr->getter){
+			return call_user_func($attr->getter, $this);
 		}
-		$v = parent::__get($key);
-
-		//avoid trigger virtual property getter again
-		$this->{$key} = $v;
-
-		/**
-		 * 这里由于在update/add模板共用情况下，很可能使用 $model->$field 进行直接拼接action，需要重新审视这里抛出exception是否合理
-		//如果当前属性未定义，或者未从数据库中获取相应字段
-		//则抛异常
-		$kvs = array_keys($this->getValues());
-		if(!isset($v) && !in_array($key, $kvs)){
-		throw new Exception('model fields not set in query result', null, $key);
-		}
-		 **/
-		return $v;
+		return $this->properties[$key];
 	}
 
 	/**
@@ -1474,10 +1332,14 @@ abstract class Model extends DAO {
 		$cfg->password = $cfg->password ? '***' : '';
 
 		return [
-			'data'              => $this->getValues(),
-			'data_changed_keys' => $this->getValueChanges(),
+			'data'              => $this->properties,
+			'data_changed_keys' => $this->property_changes,
 			'query'             => $this->getQuery().'',
 			'database'          => json_encode($cfg),
 		];
+	}
+
+	public function jsonSerialize(){
+		return $this->properties;
 	}
 }

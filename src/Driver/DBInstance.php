@@ -6,13 +6,13 @@ use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\DBConfig;
 use LFPhp\PORM\Misc\PaginateInterface;
-use LFPhp\PORM\Query;
+use LFPhp\PORM\DBQuery;
 
 /**
  * Class DBAbstract
  * @package LFPhp\PORM\Driver
  */
-abstract class DBAbstract {
+abstract class DBInstance {
 	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
 	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY';
 	const EVENT_DB_QUERY_ERROR = __CLASS__.'EVENT_DB_QUERY_ERROR';
@@ -42,7 +42,7 @@ abstract class DBAbstract {
 	private static $query_cache_data = [];
 
 	/**
-	 * @var Query current processing db query, support for exception handle
+	 * @var DBQuery current processing db query, support for exception handle
 	 */
 	private static $processing_query;
 
@@ -88,7 +88,7 @@ abstract class DBAbstract {
 	/**
 	 * 设置查询字符集
 	 * @param $charset
-	 * @return \LFPhp\PORM\Driver\DBAbstract
+	 * @return \LFPhp\PORM\Driver\DBInstance
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setCharset($charset){
@@ -150,21 +150,21 @@ abstract class DBAbstract {
 	 * 获取当前去重查询开启状态
 	 * @return bool
 	 */
-	public static function queryCacheState(){
+	public static function getQueryCacheState(){
 		return self::$query_cache_on;
 	}
 
 	/**
 	 * 打开查询缓存
 	 */
-	public static function queryCacheOn(){
+	public static function setQueryCacheOn(){
 		self::$query_cache_on = true;
 	}
 
 	/**
 	 * 关闭查询缓存
 	 */
-	public static function queryCacheOff(){
+	public static function setQueryCacheOff(){
 		self::$query_cache_on = false;
 	}
 
@@ -174,7 +174,7 @@ abstract class DBAbstract {
 	 */
 	public static function noQueryCacheMode(callable $callback){
 		$st = self::$query_cache_on;
-		self::queryCacheOff();
+		self::setQueryCacheOff();
 		call_user_func($callback);
 		self::$query_cache_on = $st;
 	}
@@ -224,12 +224,12 @@ abstract class DBAbstract {
 
 	/**
 	 * 获取一页数据
-	 * @param \LFPhp\PORM\Query $q
+	 * @param \LFPhp\PORM\DBQuery $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getPage(Query $q, $pager = null){
+	public function getPage(DBQuery $q, $pager = null){
 		$query = clone($q);
 		if($pager instanceof PaginateInterface){
 			$total = $this->getCount($query);
@@ -260,21 +260,21 @@ abstract class DBAbstract {
 
 	/**
 	 * 获取所有查询记录
-	 * @param Query $query
+	 * @param DBQuery $query
 	 * @return mixed
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getAll(Query $query){
+	public function getAll(DBQuery $query){
 		return $this->getPage($query, null);
 	}
 
 	/**
 	 * 获取一条查询记录
-	 * @param Query $query
+	 * @param DBQuery $query
 	 * @return array | null
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getOne(Query $query){
+	public function getOne(DBQuery $query){
 		$rst = $this->getPage($query, 1);
 		if($rst){
 			return $rst[0];
@@ -284,12 +284,12 @@ abstract class DBAbstract {
 
 	/**
 	 * 获取一个字段
-	 * @param Query $query
+	 * @param DBQuery $query
 	 * @param string $key
 	 * @return mixed|null
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getField(Query $query, $key){
+	public function getField(DBQuery $query, $key){
 		$rst = $this->getOne($query);
 		if($rst){
 			return $rst[$key];
@@ -418,11 +418,11 @@ abstract class DBAbstract {
 
 	/**
 	 * 产生Query对象
-	 * @return Query
+	 * @return DBQuery
 	 */
 	protected function genQuery(){
 		$prefix = isset($this->db_config['prefix']) ? $this->db_config['prefix'] : '';
-		$ins = new Query();
+		$ins = new DBQuery();
 		$ins->setTablePrefix($prefix);
 		return $ins;
 	}
@@ -509,7 +509,7 @@ abstract class DBAbstract {
 			}else{
 				$sql = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $sql);
 			}
-			$result = $this->getOne(new Query($sql));
+			$result = $this->getOne(new DBQuery($sql));
 			if($result){
 				return (int)$result['__NUM_COUNT__'];
 			}
@@ -599,7 +599,7 @@ abstract class DBAbstract {
 	/**
 	 * 设置链接重试次数
 	 * @param int $max_reconnect_count
-	 * @return \LFPhp\PORM\Driver\DBAbstract
+	 * @return \LFPhp\PORM\Driver\DBInstance
 	 */
 	public function setMaxReconnectCount($max_reconnect_count){
 		$this->max_reconnect_count = $max_reconnect_count;
@@ -617,7 +617,7 @@ abstract class DBAbstract {
 	/**
 	 * 设置重连间隔时间（毫秒）
 	 * @param int $reconnect_interval
-	 * @return DBAbstract
+	 * @return DBInstance
 	 */
 	public function setReconnectInterval($reconnect_interval){
 		$this->reconnect_interval = $reconnect_interval;

@@ -17,9 +17,9 @@ PORM 支持通过定义ORM Model类方式进行调用，也支持直接链接数
 
 ```php
 <?php
-use LFPhp\PORM\Model;
+use LFPhp\PORM\DBModel;
 
-class User extends Model {}
+class User extends DBModel {}
 
 //查询对象 
 $user = User::findOneByPK(1);
