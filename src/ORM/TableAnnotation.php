@@ -1,8 +1,8 @@
 <?php
 namespace LFPhp\PORM\ORM;
 
+use LFPhp\PORM\Driver\DBConfig;
 use LFPhp\PORM\Exception\Exception;
-use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 
 /**
@@ -15,9 +15,43 @@ trait TableAnnotation {
 		$obj = static::setQuery("SHOW CREATE TABLE `$table`");
 		$ret = $obj->all(true);
 		$sql = $ret[0]['Create Table'];
-		return self::__createSqlResolve($sql);
+
+		/** @var DBConfig $cfg */
+		$cfg = static::getDBConfig();
+		$key = md5($cfg->toDSNString()).'_'.$table;
+		return static::__cacheHandle($key, function()use($sql){
+			return self::__createSqlResolve($sql);
+		});
 	}
 
+	/**
+	 * cache handler, override enabled
+	 * @param $key
+	 * @param callable $fetcher
+	 * @return mixed|null
+	 */
+	protected static function __cacheHandle($key, callable $fetcher){
+		$tmp_file = sys_get_temp_dir().DIRECTORY_SEPARATOR."DBAnnotation".DIRECTORY_SEPARATOR.$key;
+		if(is_file($tmp_file)){
+			$str = file_get_contents($tmp_file);
+			if($str){
+				return unserialize($str);
+			}
+		}
+		$attrs = $fetcher();
+		if(isset($attrs)){
+			$data = serialize($attrs);
+			mkdir(dirname($tmp_file));
+			file_put_contents($tmp_file, $data);
+		}
+		return $attrs;
+	}
+
+	/**
+	 * @param $sql
+	 * @return array
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
 	private static function __createSqlResolve($sql){
 		$lines = explode_by("\n", $sql);
 		$attrs = [];
@@ -34,8 +68,6 @@ trait TableAnnotation {
 				$attrs[] = $attr;
 			}
 		}
-
-		dump($attrs, 1);
 		return $attrs;
 	}
 

@@ -23,6 +23,11 @@ class UserTable extends DBModel {
 		return 'blog_test';
 	}
 
+	/**
+	 * @param int $operate_type
+	 * @return \LFPhp\PORM\Driver\DBConfig
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
 	static protected function getDBConfig($operate_type = self::OP_READ){
 		return DBConfig::createMySQLConfig('localhost', 'root', '123456', 'zardem');
 	}
