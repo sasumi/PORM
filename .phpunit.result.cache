@@ -1,1 +1,1 @@
-{"version":1,"defects":{"QueryTest::testConnect":4},"times":{"QueryTest::testConnect":0.024}}
+{"version":1,"defects":{"QueryTest::testConnect":4,"OrmTest::testUser":4,"LFPhp\\PORM\\test\\OrmTest::testUser":4,"LFPhp\\PORM\\tests\\OrmTest::testUser":4},"times":{"QueryTest::testConnect":0.024,"OrmTest::testUser":0.01,"LFPhp\\PORM\\test\\OrmTest::testUser":0.011,"LFPhp\\PORM\\tests\\OrmTest::testUser":0.023}}

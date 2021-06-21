@@ -4,8 +4,6 @@ namespace LFPhp\PORM\Driver;
 use Exception;
 use LFPhp\PORM\Exception\ConnectException;
 use LFPhp\PORM\Exception\DBException;
-use LFPhp\PORM\Misc\DBConfig;
-use LFPhp\PORM\DBQuery;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -47,7 +45,7 @@ class DriverPDO extends DBInstance {
 	private $conn = null;
 
 	/**
-	 * @param \LFPhp\PORM\Misc\DBConfig $db_config
+	 * @param \LFPhp\PORM\Driver\DBConfig $db_config
 	 * @param bool $re_connect
 	 * @return \PDO
 	 * @throws \LFPhp\PORM\Exception\ConnectException

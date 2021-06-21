@@ -3,7 +3,6 @@ namespace LFPhp\PORM\Driver;
 
 use LFPhp\PORM\Exception\ConnectException;
 use LFPhp\PORM\Exception\DBException;
-use LFPhp\PORM\Misc\DBConfig;
 use mysqli_result;
 use function LFPhp\Func\get_max_socket_timeout;
 use function LFPhp\Func\server_in_windows;
@@ -77,7 +76,7 @@ class DriverMySQLi extends DBInstance{
 
 	/**
 	 * connect to specified config database
-	 * @param \LFPhp\PORM\Misc\DBConfig $db_config
+	 * @param \LFPhp\PORM\Driver\DBConfig $db_config
 	 * @param boolean $re_connect 是否重新连接
 	 * @return \mysqli
 	 * @throws \LFPhp\PORM\Exception\ConnectException

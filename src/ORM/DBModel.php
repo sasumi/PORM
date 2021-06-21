@@ -1,13 +1,13 @@
 <?php
-namespace LFPhp\PORM;
+namespace LFPhp\PORM\ORM;
 
 use Exception;
 use JsonSerializable;
+use LFPhp\PORM\Driver\DBConfig;
 use LFPhp\PORM\Driver\DBInstance;
+use LFPhp\PORM\Driver\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
-use LFPhp\PORM\Misc\DBAttribute;
-use LFPhp\PORM\Misc\DBConfig;
 use function LFPhp\Func\array_clear_fields;
 use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
@@ -19,9 +19,10 @@ abstract class DBModel implements JsonSerializable {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
 
-	private DBConfig $db_config;
+	/** @var DBConfig */
+	private $db_config;
 
-	/** @var \LFPhp\PORM\Misc\DBAttribute[] model define */
+	/** @var \LFPhp\PORM\ORM\DBAttribute[] model define */
 	protected $attributes = [];
 
 	/** @var array model property key-value set */
@@ -45,7 +46,7 @@ abstract class DBModel implements JsonSerializable {
 	abstract static public function getTableName();
 
 	/**
-	 * @return \LFPhp\PORM\Misc\DBAttribute[]
+	 * @return \LFPhp\PORM\ORM\DBAttribute[]
 	 */
 	abstract static public function getAttributes();
 
@@ -91,7 +92,7 @@ abstract class DBModel implements JsonSerializable {
 	/**
 	 * 根据字段名获取属性
 	 * @param $name
-	 * @return \LFPhp\PORM\Misc\DBAttribute
+	 * @return \LFPhp\PORM\ORM\DBAttribute
 	 * @throws \Exception
 	 */
 	public static function getAttributeByName($name){
@@ -188,7 +189,7 @@ abstract class DBModel implements JsonSerializable {
 
 	/**
 	 * 获取当前查询对象
-	 * @return \LFPhp\PORM\DBQuery|null
+	 * @return \LFPhp\PORM\Driver\DBQuery|null
 	 */
 	public function getQuery(){
 		return $this->query;
@@ -1202,7 +1203,7 @@ abstract class DBModel implements JsonSerializable {
 	/**
 	 * 解析SQL查询中的条件表达式
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
-	 * @param string|\LFPhp\PORM\DBModel $model_class
+	 * @param string|\LFPhp\PORM\ORM\DBModel $model_class
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */

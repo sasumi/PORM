@@ -28,7 +28,14 @@
   },
   "autoload": {
 	"psr-4": {
-	  "LFPhp\\PORM\\": "src/"
+	  "LFPhp\\PORM\\": "src/",
+	  "LFPhp\\PORM\\test\\": "tests/"
+	}
+  },
+  "autoload-dev": {
+	"psr-4": {
+	  "LFPhp\\PORM\\": "src/",
+	  "LFPhp\\PORM\\test\\": "tests/"
 	}
   },
   "repositories": {

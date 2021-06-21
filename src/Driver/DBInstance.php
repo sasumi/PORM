@@ -4,9 +4,7 @@ namespace LFPhp\PORM\Driver;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
-use LFPhp\PORM\Misc\DBConfig;
 use LFPhp\PORM\Misc\PaginateInterface;
-use LFPhp\PORM\DBQuery;
 
 /**
  * Class DBAbstract
@@ -47,7 +45,7 @@ abstract class DBInstance {
 	private static $processing_query;
 
 	/**
-	 * @var \LFPhp\PORM\Misc\DBConfig
+	 * @var \LFPhp\PORM\Driver\DBConfig
 	 */
 	public $db_config;
 
@@ -224,7 +222,7 @@ abstract class DBInstance {
 
 	/**
 	 * 获取一页数据
-	 * @param \LFPhp\PORM\DBQuery $q
+	 * @param \LFPhp\PORM\Driver\DBQuery $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException

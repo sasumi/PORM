@@ -1,6 +1,6 @@
 <?php
 
-namespace LFPhp\PORM\Misc;
+namespace LFPhp\PORM\Driver;
 
 use LFPhp\PORM\Exception\DBException;
 
@@ -37,7 +37,7 @@ class DBConfig {
 
 	/**
 	 * @param array $config
-	 * @return \LFPhp\PORM\Misc\DBConfig
+	 * @return \LFPhp\PORM\Driver\DBConfig
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function createFromConfig(array $config){
@@ -63,7 +63,7 @@ class DBConfig {
 	 * @param string $password
 	 * @param string $database
 	 * @param int $port
-	 * @return \LFPhp\PORM\Misc\DBConfig
+	 * @return \LFPhp\PORM\Driver\DBConfig
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function createMySQLConfig($host, $user, $password, $database, $port = 3306){

@@ -17,15 +17,23 @@ PORM 支持通过定义ORM Model类方式进行调用，也支持直接链接数
 
 ```php
 <?php
-use LFPhp\PORM\DBModel;
+use LFPhp\PORM\ORM\DBModel;
 
 class User extends DBModel {}
 
 //查询对象 
-$user = User::findOneByPK(1);
-
+$user = UserTable::findOneByPK(1);
 var_dump($user);
 
+//更改对象
+$user->name = 'Jack';
+$user->save();
+
+//新增对象
+$user = new UserTable();
+$user->name = 'Michel';
+$user->save();
+echo $user->id;
 ```
 
 ### 2.2 数据库操作
@@ -48,3 +56,10 @@ $ret = $ins->getPage($query);
 $count = $ins->getCount($query);
 ```
 
+## 3. 其他
+### 3.1 注解规则
+> 通过在Model中引入使用`AttributeAnnotation`类，可自动根据当前类注释，生成`DBAttribute`注解。
+
+此时，需保证类注释规则包含以下类型注解：
+
+1. @property string $name 名称(名称备注)
