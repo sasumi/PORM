@@ -40,15 +40,19 @@ class DBAttribute {
 	public $alias = '';
 	public $description = '';
 	public $default = null;
+	public $options = [];
 	public $length = null;
 	public $is_readonly = false;
 	public $is_primary_key = false;
 	public $is_null_allow = false;
 	public $is_unique = false;
 	public $is_virtual = false;
-
-	public $options = [];
-
 	public $setter;
 	public $getter;
+
+	public function __construct(array $data = []){
+		foreach($data as $k=>$v){
+			$this->$k = $v;
+		}
+	}
 }

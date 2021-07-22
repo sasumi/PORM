@@ -1,0 +1,2174 @@
+
+array(241) {
+  ["allow_url_fopen"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(4)
+  }
+  ["allow_url_include"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["arg_separator.input"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "&"
+    ["local_value"]=>
+    string(1) "&"
+    ["access"]=>
+    int(6)
+  }
+  ["arg_separator.output"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "&"
+    ["local_value"]=>
+    string(1) "&"
+    ["access"]=>
+    int(7)
+  }
+  ["assert.active"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["assert.bail"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["assert.callback"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["assert.exception"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["assert.quiet_eval"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["assert.warning"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["auto_append_file"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(6)
+  }
+  ["auto_detect_line_endings"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["auto_globals_jit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(6)
+  }
+  ["auto_prepend_file"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(6)
+  }
+  ["bcmath.scale"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["browscap"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["cli.pager"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["cli.prompt"]=>
+  array(3) {
+    ["global_value"]=>
+    string(6) "\b \> "
+    ["local_value"]=>
+    string(6) "\b \> "
+    ["access"]=>
+    int(7)
+  }
+  ["curl.cainfo"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["date.default_latitude"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "31.7667"
+    ["local_value"]=>
+    string(7) "31.7667"
+    ["access"]=>
+    int(7)
+  }
+  ["date.default_longitude"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "35.2333"
+    ["local_value"]=>
+    string(7) "35.2333"
+    ["access"]=>
+    int(7)
+  }
+  ["date.sunrise_zenith"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) "90.583333"
+    ["local_value"]=>
+    string(9) "90.583333"
+    ["access"]=>
+    int(7)
+  }
+  ["date.sunset_zenith"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) "90.583333"
+    ["local_value"]=>
+    string(9) "90.583333"
+    ["access"]=>
+    int(7)
+  }
+  ["date.timezone"]=>
+  array(3) {
+    ["global_value"]=>
+    string(13) "Asia/Shanghai"
+    ["local_value"]=>
+    string(13) "Asia/Shanghai"
+    ["access"]=>
+    int(7)
+  }
+  ["default_charset"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "UTF-8"
+    ["local_value"]=>
+    string(5) "UTF-8"
+    ["access"]=>
+    int(7)
+  }
+  ["default_mimetype"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) "text/html"
+    ["local_value"]=>
+    string(9) "text/html"
+    ["access"]=>
+    int(7)
+  }
+  ["default_socket_timeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "10"
+    ["local_value"]=>
+    string(2) "10"
+    ["access"]=>
+    int(7)
+  }
+  ["disable_classes"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["disable_functions"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["display_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["display_startup_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["doc_root"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["docref_ext"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["docref_root"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["enable_dl"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["enable_post_data_reading"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(6)
+  }
+  ["error_append_string"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["error_log"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["error_prepend_string"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["error_reporting"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "22519"
+    ["local_value"]=>
+    string(5) "22519"
+    ["access"]=>
+    int(7)
+  }
+  ["exif.decode_jis_intel"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "JIS"
+    ["local_value"]=>
+    string(3) "JIS"
+    ["access"]=>
+    int(7)
+  }
+  ["exif.decode_jis_motorola"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "JIS"
+    ["local_value"]=>
+    string(3) "JIS"
+    ["access"]=>
+    int(7)
+  }
+  ["exif.decode_unicode_intel"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "UCS-2LE"
+    ["local_value"]=>
+    string(7) "UCS-2LE"
+    ["access"]=>
+    int(7)
+  }
+  ["exif.decode_unicode_motorola"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "UCS-2BE"
+    ["local_value"]=>
+    string(7) "UCS-2BE"
+    ["access"]=>
+    int(7)
+  }
+  ["exif.encode_jis"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["exif.encode_unicode"]=>
+  array(3) {
+    ["global_value"]=>
+    string(11) "ISO-8859-15"
+    ["local_value"]=>
+    string(11) "ISO-8859-15"
+    ["access"]=>
+    int(7)
+  }
+  ["expose_php"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["extension_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    string(22) "C:\server\php7.3.5\ext"
+    ["local_value"]=>
+    string(22) "C:\server\php7.3.5\ext"
+    ["access"]=>
+    int(4)
+  }
+  ["file_uploads"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(4)
+  }
+  ["filter.default"]=>
+  array(3) {
+    ["global_value"]=>
+    string(10) "unsafe_raw"
+    ["local_value"]=>
+    string(10) "unsafe_raw"
+    ["access"]=>
+    int(6)
+  }
+  ["filter.default_flags"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(6)
+  }
+  ["from"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["gd.jpeg_ignore_warning"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["hard_timeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "2"
+    ["local_value"]=>
+    string(1) "2"
+    ["access"]=>
+    int(4)
+  }
+  ["highlight.comment"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "#FF8000"
+    ["local_value"]=>
+    string(7) "#FF8000"
+    ["access"]=>
+    int(7)
+  }
+  ["highlight.default"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "#0000BB"
+    ["local_value"]=>
+    string(7) "#0000BB"
+    ["access"]=>
+    int(7)
+  }
+  ["highlight.html"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "#000000"
+    ["local_value"]=>
+    string(7) "#000000"
+    ["access"]=>
+    int(7)
+  }
+  ["highlight.keyword"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "#007700"
+    ["local_value"]=>
+    string(7) "#007700"
+    ["access"]=>
+    int(7)
+  }
+  ["highlight.string"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "#DD0000"
+    ["local_value"]=>
+    string(7) "#DD0000"
+    ["access"]=>
+    int(7)
+  }
+  ["html_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["iconv.input_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["iconv.internal_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["iconv.output_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["ignore_repeated_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["ignore_repeated_source"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["ignore_user_abort"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["imap.enable_insecure_rsh"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(4)
+  }
+  ["implicit_flush"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["include_path"]=>
+  array(3) {
+    ["global_value"]=>
+    string(17) ".;C:\htdocs\sales"
+    ["local_value"]=>
+    string(17) ".;C:\htdocs\sales"
+    ["access"]=>
+    int(7)
+  }
+  ["input_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["internal_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["intl.default_locale"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["intl.error_level"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["intl.use_exceptions"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["log_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["log_errors_max_len"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "1024"
+    ["local_value"]=>
+    string(4) "1024"
+    ["access"]=>
+    int(7)
+  }
+  ["mail.add_x_header"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(6)
+  }
+  ["mail.force_extra_parameters"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(6)
+  }
+  ["mail.log"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(6)
+  }
+  ["max_execution_time"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["max_file_uploads"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "20"
+    ["local_value"]=>
+    string(2) "20"
+    ["access"]=>
+    int(6)
+  }
+  ["max_input_nesting_level"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "64"
+    ["local_value"]=>
+    string(2) "64"
+    ["access"]=>
+    int(6)
+  }
+  ["max_input_time"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(6)
+  }
+  ["max_input_vars"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "1000"
+    ["local_value"]=>
+    string(4) "1000"
+    ["access"]=>
+    int(6)
+  }
+  ["mbstring.detect_order"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.encoding_translation"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(6)
+  }
+  ["mbstring.func_overload"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(4)
+  }
+  ["mbstring.http_input"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.http_output"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.http_output_conv_mimetypes"]=>
+  array(3) {
+    ["global_value"]=>
+    string(31) "^(text/|application/xhtml\+xml)"
+    ["local_value"]=>
+    string(31) "^(text/|application/xhtml\+xml)"
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.internal_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.language"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "neutral"
+    ["local_value"]=>
+    string(7) "neutral"
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.regex_stack_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(6) "100000"
+    ["local_value"]=>
+    string(6) "100000"
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.strict_detection"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["mbstring.substitute_character"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["memory_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "512M"
+    ["local_value"]=>
+    string(4) "512M"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.allow_local_infile"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqli.allow_persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqli.default_host"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.default_port"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "3306"
+    ["local_value"]=>
+    string(4) "3306"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.default_pw"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.default_socket"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.default_user"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["mysqli.max_links"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqli.max_persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqli.reconnect"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["mysqli.rollback_on_cached_plink"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqlnd.collect_memory_statistics"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(4)
+  }
+  ["mysqlnd.collect_statistics"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.debug"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["mysqlnd.fetch_data_copy"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.log_mask"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.mempool_default_size"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "16000"
+    ["local_value"]=>
+    string(5) "16000"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.net_cmd_buffer_size"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "4096"
+    ["local_value"]=>
+    string(4) "4096"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.net_read_buffer_size"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "32768"
+    ["local_value"]=>
+    string(5) "32768"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.net_read_timeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "86400"
+    ["local_value"]=>
+    string(5) "86400"
+    ["access"]=>
+    int(7)
+  }
+  ["mysqlnd.sha256_server_public_key"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(2)
+  }
+  ["mysqlnd.trace_alloc"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["open_basedir"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["openssl.cafile"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(2)
+  }
+  ["openssl.capath"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(2)
+  }
+  ["output_buffering"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(6)
+  }
+  ["output_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["output_handler"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(6)
+  }
+  ["pcre.backtrack_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "1000000"
+    ["local_value"]=>
+    string(7) "1000000"
+    ["access"]=>
+    int(7)
+  }
+  ["pcre.jit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["pcre.recursion_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(6) "100000"
+    ["local_value"]=>
+    string(6) "100000"
+    ["access"]=>
+    int(7)
+  }
+  ["pgsql.allow_persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(4)
+  }
+  ["pgsql.auto_reset_persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["pgsql.ignore_notice"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["pgsql.log_notice"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["pgsql.max_links"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(4)
+  }
+  ["pgsql.max_persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(4)
+  }
+  ["phar.cache_list"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["phar.readonly"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["phar.require_hash"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["post_max_size"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "8M"
+    ["local_value"]=>
+    string(2) "8M"
+    ["access"]=>
+    int(6)
+  }
+  ["precision"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "14"
+    ["local_value"]=>
+    string(2) "14"
+    ["access"]=>
+    int(7)
+  }
+  ["realpath_cache_size"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "4096K"
+    ["local_value"]=>
+    string(5) "4096K"
+    ["access"]=>
+    int(4)
+  }
+  ["realpath_cache_ttl"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "120"
+    ["local_value"]=>
+    string(3) "120"
+    ["access"]=>
+    int(4)
+  }
+  ["redis.arrays.algorithm"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.auth"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.autorehash"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.connecttimeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.consistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.distributor"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.functions"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.hosts"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.index"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.lazyconnect"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.names"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.pconnect"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.previous"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.readtimeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.arrays.retryinterval"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.auth"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.cache_slots"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.persistent"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.read_timeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.seeds"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["redis.clusters.timeout"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.pconnect.connection_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.pconnect.pooling_enabled"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.session.lock_expire"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.session.lock_retries"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "10"
+    ["local_value"]=>
+    string(2) "10"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.session.lock_wait_time"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "2000"
+    ["local_value"]=>
+    string(4) "2000"
+    ["access"]=>
+    int(7)
+  }
+  ["redis.session.locking_enabled"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["register_argc_argv"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(6)
+  }
+  ["report_memleaks"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["report_zend_debug"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["request_order"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "GP"
+    ["local_value"]=>
+    string(2) "GP"
+    ["access"]=>
+    int(6)
+  }
+  ["sendmail_from"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["sendmail_path"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["serialize_precision"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "-1"
+    ["local_value"]=>
+    string(2) "-1"
+    ["access"]=>
+    int(7)
+  }
+  ["session.auto_start"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(2)
+  }
+  ["session.cache_expire"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "180"
+    ["local_value"]=>
+    string(3) "180"
+    ["access"]=>
+    int(7)
+  }
+  ["session.cache_limiter"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "nocache"
+    ["local_value"]=>
+    string(7) "nocache"
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_domain"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_httponly"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_lifetime"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_path"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "/"
+    ["local_value"]=>
+    string(1) "/"
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_samesite"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.cookie_secure"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["session.gc_divisor"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "1000"
+    ["local_value"]=>
+    string(4) "1000"
+    ["access"]=>
+    int(7)
+  }
+  ["session.gc_maxlifetime"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "1440"
+    ["local_value"]=>
+    string(4) "1440"
+    ["access"]=>
+    int(7)
+  }
+  ["session.gc_probability"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["session.lazy_write"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["session.name"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) "PHPSESSID"
+    ["local_value"]=>
+    string(9) "PHPSESSID"
+    ["access"]=>
+    int(7)
+  }
+  ["session.referer_check"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.save_handler"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "files"
+    ["local_value"]=>
+    string(5) "files"
+    ["access"]=>
+    int(7)
+  }
+  ["session.save_path"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.serialize_handler"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "php"
+    ["local_value"]=>
+    string(3) "php"
+    ["access"]=>
+    int(7)
+  }
+  ["session.sid_bits_per_character"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "5"
+    ["local_value"]=>
+    string(1) "5"
+    ["access"]=>
+    int(7)
+  }
+  ["session.sid_length"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "26"
+    ["local_value"]=>
+    string(2) "26"
+    ["access"]=>
+    int(7)
+  }
+  ["session.trans_sid_hosts"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["session.trans_sid_tags"]=>
+  array(3) {
+    ["global_value"]=>
+    string(32) "a=href,area=href,frame=src,form="
+    ["local_value"]=>
+    string(32) "a=href,area=href,frame=src,form="
+    ["access"]=>
+    int(7)
+  }
+  ["session.upload_progress.cleanup"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(2)
+  }
+  ["session.upload_progress.enabled"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(2)
+  }
+  ["session.upload_progress.freq"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "1%"
+    ["local_value"]=>
+    string(2) "1%"
+    ["access"]=>
+    int(2)
+  }
+  ["session.upload_progress.min_freq"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(2)
+  }
+  ["session.upload_progress.name"]=>
+  array(3) {
+    ["global_value"]=>
+    string(27) "PHP_SESSION_UPLOAD_PROGRESS"
+    ["local_value"]=>
+    string(27) "PHP_SESSION_UPLOAD_PROGRESS"
+    ["access"]=>
+    int(2)
+  }
+  ["session.upload_progress.prefix"]=>
+  array(3) {
+    ["global_value"]=>
+    string(16) "upload_progress_"
+    ["local_value"]=>
+    string(16) "upload_progress_"
+    ["access"]=>
+    int(2)
+  }
+  ["session.use_cookies"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["session.use_only_cookies"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["session.use_strict_mode"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["session.use_trans_sid"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["short_open_tag"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(6)
+  }
+  ["SMTP"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) "localhost"
+    ["local_value"]=>
+    string(9) "localhost"
+    ["access"]=>
+    int(7)
+  }
+  ["smtp_port"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "25"
+    ["local_value"]=>
+    string(2) "25"
+    ["access"]=>
+    int(7)
+  }
+  ["soap.wsdl_cache"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["soap.wsdl_cache_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "/tmp"
+    ["local_value"]=>
+    string(4) "/tmp"
+    ["access"]=>
+    int(7)
+  }
+  ["soap.wsdl_cache_enabled"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["soap.wsdl_cache_limit"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "5"
+    ["local_value"]=>
+    string(1) "5"
+    ["access"]=>
+    int(7)
+  }
+  ["soap.wsdl_cache_ttl"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "86400"
+    ["local_value"]=>
+    string(5) "86400"
+    ["access"]=>
+    int(7)
+  }
+  ["sqlite3.extension_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["sys_temp_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["syslog.facility"]=>
+  array(3) {
+    ["global_value"]=>
+    string(8) "LOG_USER"
+    ["local_value"]=>
+    string(8) "LOG_USER"
+    ["access"]=>
+    int(4)
+  }
+  ["syslog.filter"]=>
+  array(3) {
+    ["global_value"]=>
+    string(7) "no-ctrl"
+    ["local_value"]=>
+    string(7) "no-ctrl"
+    ["access"]=>
+    int(7)
+  }
+  ["syslog.ident"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "php"
+    ["local_value"]=>
+    string(3) "php"
+    ["access"]=>
+    int(4)
+  }
+  ["track_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["unserialize_callback_func"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["upload_max_filesize"]=>
+  array(3) {
+    ["global_value"]=>
+    string(2) "2M"
+    ["local_value"]=>
+    string(2) "2M"
+    ["access"]=>
+    int(6)
+  }
+  ["upload_tmp_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(4)
+  }
+  ["url_rewriter.hosts"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+  ["url_rewriter.tags"]=>
+  array(3) {
+    ["global_value"]=>
+    string(5) "form="
+    ["local_value"]=>
+    string(5) "form="
+    ["access"]=>
+    int(7)
+  }
+  ["user_agent"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["user_dir"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(4)
+  }
+  ["user_ini.cache_ttl"]=>
+  array(3) {
+    ["global_value"]=>
+    string(3) "300"
+    ["local_value"]=>
+    string(3) "300"
+    ["access"]=>
+    int(4)
+  }
+  ["user_ini.filename"]=>
+  array(3) {
+    ["global_value"]=>
+    string(9) ".user.ini"
+    ["local_value"]=>
+    string(9) ".user.ini"
+    ["access"]=>
+    int(4)
+  }
+  ["variables_order"]=>
+  array(3) {
+    ["global_value"]=>
+    string(4) "GPCS"
+    ["local_value"]=>
+    string(4) "GPCS"
+    ["access"]=>
+    int(6)
+  }
+  ["windows.show_crt_warning"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["xmlrpc_error_number"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(7)
+  }
+  ["xmlrpc_errors"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(4)
+  }
+  ["zend.assertions"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["zend.detect_unicode"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["zend.enable_gc"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["zend.multibyte"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "0"
+    ["local_value"]=>
+    string(1) "0"
+    ["access"]=>
+    int(2)
+  }
+  ["zend.script_encoding"]=>
+  array(3) {
+    ["global_value"]=>
+    NULL
+    ["local_value"]=>
+    NULL
+    ["access"]=>
+    int(7)
+  }
+  ["zlib.output_compression"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "1"
+    ["local_value"]=>
+    string(1) "1"
+    ["access"]=>
+    int(7)
+  }
+  ["zlib.output_compression_level"]=>
+  array(3) {
+    ["global_value"]=>
+    string(1) "6"
+    ["local_value"]=>
+    string(1) "6"
+    ["access"]=>
+    int(7)
+  }
+  ["zlib.output_handler"]=>
+  array(3) {
+    ["global_value"]=>
+    string(0) ""
+    ["local_value"]=>
+    string(0) ""
+    ["access"]=>
+    int(7)
+  }
+}
+C:\htdocs\Porm\tests\test.php #12 
+================================================================================

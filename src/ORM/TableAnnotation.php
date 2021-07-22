@@ -1,6 +1,7 @@
 <?php
 namespace LFPhp\PORM\ORM;
 
+use LFPhp\Cache\CacheFile;
 use LFPhp\PORM\Driver\DBConfig;
 use LFPhp\PORM\Exception\Exception;
 use function LFPhp\Func\explode_by;
@@ -10,6 +11,7 @@ use function LFPhp\Func\explode_by;
  * @package LFPhp\PORM\Misc
  */
 trait TableAnnotation {
+	protected static $_cache_dir_name = '_table_annotation';
 	public static function getAttributes(){
 		$table = static::getTableName();
 		$obj = static::setQuery("SHOW CREATE TABLE `$table`");
@@ -19,32 +21,10 @@ trait TableAnnotation {
 		/** @var DBConfig $cfg */
 		$cfg = static::getDBConfig();
 		$key = md5($cfg->toDSNString()).'_'.$table;
-		return static::__cacheHandle($key, function()use($sql){
+		return CacheFile::instance(['dir'=>sys_get_temp_dir().'/'.static::$_cache_dir_name])
+			->cache($key, function()use($sql){
 			return self::__createSqlResolve($sql);
 		});
-	}
-
-	/**
-	 * cache handler, override enabled
-	 * @param $key
-	 * @param callable $fetcher
-	 * @return mixed|null
-	 */
-	protected static function __cacheHandle($key, callable $fetcher){
-		$tmp_file = sys_get_temp_dir().DIRECTORY_SEPARATOR."DBAnnotation".DIRECTORY_SEPARATOR.$key;
-		if(is_file($tmp_file)){
-			$str = file_get_contents($tmp_file);
-			if($str){
-				return unserialize($str);
-			}
-		}
-		$attrs = $fetcher();
-		if(isset($attrs)){
-			$data = serialize($attrs);
-			mkdir(dirname($tmp_file));
-			file_put_contents($tmp_file, $data);
-		}
-		return $attrs;
 	}
 
 	/**
@@ -52,7 +32,7 @@ trait TableAnnotation {
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	private static function __createSqlResolve($sql){
+	public static function __createSqlResolve($sql){
 		$lines = explode_by("\n", $sql);
 		$attrs = [];
 		foreach($lines as $line){

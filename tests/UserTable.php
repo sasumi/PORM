@@ -1,6 +1,7 @@
 <?php
 namespace LFPhp\PORM\tests;
 use LFPhp\PORM\Driver\DBConfig;
+use LFPhp\PORM\ORM\DBAttribute;
 use LFPhp\PORM\ORM\DBModel;
 use LFPhp\PORM\ORM\TableAnnotation;
 
@@ -21,6 +22,16 @@ class UserTable extends DBModel {
 	use TableAnnotation;
 	public static function getTableName(){
 		return 'blog_test';
+	}
+
+	public static function getAttributes(){
+		return [
+			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+		];
 	}
 
 	/**

@@ -19,7 +19,19 @@ PORM 支持通过定义ORM Model类方式进行调用，也支持直接链接数
 <?php
 use LFPhp\PORM\ORM\DBModel;
 
-class User extends DBModel {}
+class User extends DBModel {
+
+static public function getTableName(){
+ // TODO: Implement getTableName() method.
+}
+
+static public function getAttributes(){
+ // TODO: Implement getAttributes() method.
+}
+
+static protected function getDBConfig($operate_type = self::OP_READ){
+ // TODO: Implement getDBConfig() method.
+}}
 
 //查询对象 
 $user = UserTable::findOneByPK(1);
@@ -40,6 +52,9 @@ echo $user->id;
 
 ```php
 <?php
+
+use LFPhp\PORM\Driver\DBConfig;
+
 //创建数据库配置
 $cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'blog');
 

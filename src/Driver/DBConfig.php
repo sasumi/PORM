@@ -32,8 +32,7 @@ class DBConfig {
 	public $connect_timeout = null;
 	public $query_timeout = null;
 
-	private function __construct(){
-	}
+	private function __construct(){}
 
 	/**
 	 * @param array $config
