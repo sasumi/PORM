@@ -1,16 +1,23 @@
 <?php
-namespace LFPhp\PORM\Driver;
+namespace LFPhp\PORM\Database;
 
+use Exception;
+use LFPhp\PORM\Exception\ConnectException;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\PaginateInterface;
+use PDO;
+use PDOException;
+use PDOStatement;
+use function LFPhp\Func\get_max_socket_timeout;
+use function LFPhp\Func\server_in_windows;
 
 /**
  * Class DBAbstract
  * @package LFPhp\PORM\Driver
  */
-abstract class DBInstance {
+class DBDriver {
 	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
 	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY';
 	const EVENT_DB_QUERY_ERROR = __CLASS__.'EVENT_DB_QUERY_ERROR';
@@ -45,9 +52,33 @@ abstract class DBInstance {
 	private static $processing_query;
 
 	/**
-	 * @var \LFPhp\PORM\Driver\DBConfig
+	 * @var \LFPhp\PORM\Database\DBConfig
 	 */
 	public $db_config;
+
+	/**
+	 * @var PDOStatement
+	 */
+	private $_last_query_result = null;
+
+	/**
+	 * PDO TYPE MAP
+	 * @var array
+	 */
+	private static $PDO_TYPE_MAP = array(
+		'bool'    => PDO::PARAM_BOOL,
+		'null'    => PDO::PARAM_BOOL,
+		'int'     => PDO::PARAM_INT,
+		'float'   => PDO::PARAM_INT,
+		'decimal' => PDO::PARAM_INT,
+		'double'  => PDO::PARAM_INT,
+		'string'  => PDO::PARAM_STR,
+	);
+
+	/**
+	 * @var PDO pdo connect resource
+	 */
+	private $conn = null;
 
 	/**
 	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
@@ -59,15 +90,191 @@ abstract class DBInstance {
 
 		$this->connect($this->db_config);
 
-		//charset
-		if($this->db_config->charset){
-			$this->setCharset($this->db_config->charset);
-		}
-
 		//timezone
 		if(isset($this->db_config->timezone) && $this->db_config->timezone){
 			$this->setTimeZone($this->db_config->timezone);
 		}
+	}
+
+
+	/**
+	 * 是否切换到严格模式
+	 * @param bool $to_strict
+	 */
+	public function toggleStrictMode($to_strict = false){
+		if($to_strict){
+			$sql = "set session sql_mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'";
+		} else {
+			$sql = "set session sql_mode='NO_ENGINE_SUBSTITUTION'";
+		}
+		$this->conn->prepare($sql);
+	}
+
+
+	/**
+	 * PDO判别是否为连接丢失异常
+	 * @param \Exception $exception
+	 * @return bool
+	 */
+	protected static function isConnectionLost(Exception $exception){
+		if($exception instanceof PDOException){
+			$lost_code_map = ['08S01', 'HY000'];
+			if(in_array($exception->getCode(), $lost_code_map)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 获取最后插入ID
+	 * @param string $name
+	 * @return string
+	 */
+	public function getLastInsertId($name = null) {
+		return $this->conn->lastInsertId($name);
+	}
+
+	/**
+	 * database query function
+	 * @param string|DBQuery $sql
+	 * @return PDOStatement
+	 */
+	protected function dbQuery($sql){
+		$this->_last_query_result = null;
+		$result = $this->conn->query($sql.'');
+		$this->_last_query_result = $result;
+		return $result;
+	}
+
+	/**
+	 * 开启事务操作
+	 * @return bool
+	 */
+	public function beginTransaction(){
+		return $this->conn->beginTransaction();
+	}
+
+	/**
+	 * 回滚事务
+	 * @return bool
+	 */
+	public function rollback(){
+		return $this->conn->rollBack();
+	}
+
+	/**
+	 * 提交事务
+	 * @return bool
+	 */
+	public function commit(){
+		return $this->conn->commit();
+	}
+
+	/**
+	 * 取消事务自动提交状态
+	 * @return bool
+	 */
+	public function cancelTransactionState(){
+		return $this->conn->setAttribute(PDO::ATTR_AUTOCOMMIT, true);
+	}
+
+	/**
+	 * 数据转义
+	 * @param string $data
+	 * @param string $type
+	 * @return mixed
+	 */
+	public function quote($data, $type = null) {
+		if(is_array($data)){
+			$data = join(',', $data);
+		}
+		$type = in_array($type, self::$PDO_TYPE_MAP) ? $type : PDO::PARAM_STR;
+		return $this->conn->quote($data, $type);
+	}
+
+	/**
+	 * 设置SQL查询条数限制信息
+	 * @param $sql
+	 * @param $limit
+	 * @return string
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public function setLimit($sql, $limit) {
+		if(preg_match('/\sLIMIT\s/i', $sql)){
+			throw new DBException('SQL LIMIT BEEN SET:' . $sql);
+		}
+		if(is_array($limit)){
+			return $sql . ' LIMIT ' . $limit[0] . ',' . $limit[1];
+		}
+		return $sql . ' LIMIT ' . $limit;
+	}
+
+	/**
+	 * 获取所有行
+	 * @param PDOStatement $resource
+	 * @return array | mixed
+	 */
+	public function fetchAll($resource) {
+		$resource->setFetchMode(PDO::FETCH_ASSOC);
+		return $resource->fetchAll();
+	}
+
+	/**
+	 * fetch one column
+	 * @param PDOStatement $rs
+	 * @return string
+	 */
+	public static function fetchColumn(PDOStatement $rs) {
+		return $rs->fetchColumn();
+	}
+
+	/**
+	 * 查询最近db执行影响行数
+	 * @description 该方法调用时候需要谨慎，需要避免_last_query_result被覆盖
+	 * @return integer
+	 */
+	public function getAffectNum() {
+		return $this->_last_query_result ? $this->_last_query_result->rowCount() : 0;
+	}
+
+	/**
+	 * 数据库数据字典
+	 * @return array
+	 */
+	public function getDictionary(){
+		$tables = self::getTables();
+		foreach($tables as $k=>$tbl_info){
+			$fields = self::getFields($tbl_info['TABLE_NAME']);
+			$tables[$k]['FIELDS'] = $fields;
+		}
+		return $tables;
+	}
+
+	/**
+	 * 获取数据库表清单
+	 * @return array
+	 */
+	public function getTables(){
+		$query = "SELECT `table_name`, `engine`, `table_collation`, `table_comment` FROM `information_schema`.`tables` WHERE `table_schema`=?";
+		$sth = $this->conn->prepare($query);
+		$sth->execute([$this->db_config->dsn->database]);
+		return $sth->fetchAll(PDO::FETCH_ASSOC);
+	}
+
+	/**
+	 * 获取数据库表字段清单
+	 * @param $table
+	 * @return array
+	 */
+	public function getFields($table){
+		$query = "SELECT `column_name`, `column_type`, `collation_name`, `is_nullable`, `column_key`, `column_default`, `extra`, `privileges`, `column_comment`
+				    FROM `information_schema`.`columns`
+				    WHERE `table_schema`=? AND `table_name`=?";
+		$sth = $this->conn->prepare($query);
+		$db = $this->db_config->dsn->database;
+		$sth->execute([$db, $table]);
+		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}
 
 	/**
@@ -86,7 +293,7 @@ abstract class DBInstance {
 	/**
 	 * 设置查询字符集
 	 * @param $charset
-	 * @return \LFPhp\PORM\Driver\DBInstance
+	 * @return \LFPhp\PORM\Database\DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setCharset($charset){
@@ -117,7 +324,7 @@ abstract class DBInstance {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	final public static function instance(DBConfig $db_config){
-		$key = md5($db_config->toDSNString());
+		$key = md5($db_config);
 
 		static $instance_list;
 		if(!$instance_list){
@@ -125,20 +332,7 @@ abstract class DBInstance {
 		}
 
 		if(!isset($instance_list[$key]) || !$instance_list[$key]){
-			/** @var self $class */
-
-			switch($db_config->driver){
-				case DBConfig::DRIVER_MYSQLI:
-					$ins = new DriverMySQLi($db_config);
-					break;
-
-				case DBConfig::DRIVER_PDO:
-					$ins = new DriverPDO($db_config);
-					break;
-
-				default:
-					throw new DBException("database config driver: [$db_config->driver] no support", 0, null, $db_config);
-			}
+			$ins = new self($db_config);
 			$instance_list[$key] = $ins;
 		}
 		return $instance_list[$key];
@@ -186,28 +380,6 @@ abstract class DBInstance {
 	}
 
 	/**
-	 * 转义数据，缺省为统一使用字符转义
-	 * @param string $data
-	 * @param string $type @todo 支持数据库查询转义数据类型
-	 * @return mixed
-	 */
-	public function quote($data, $type = null){
-		if(is_array($data)){
-			$data = join(',', $data);
-		}
-		if($data === null){
-			return 'null';
-		}
-		if(is_bool($data)){
-			return $data ? 'TRUE' : 'FALSE';
-		}
-		if(!is_string($data) && is_numeric($data)){
-			return $data;
-		}
-		return "'".addslashes($data)."'";
-	}
-
-	/**
 	 * 转义数组
 	 * @param $data
 	 * @param array $types
@@ -222,7 +394,7 @@ abstract class DBInstance {
 
 	/**
 	 * 获取一页数据
-	 * @param \LFPhp\PORM\Driver\DBQuery $q
+	 * @param \LFPhp\PORM\Database\DBQuery $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
@@ -239,7 +411,7 @@ abstract class DBInstance {
 		if($limit){
 			$query->limit($limit);
 		}
-		$cache_key = $this->db_config->toDSNString().'/'.$query->__toString();
+		$cache_key = $this->db_config.'/'.$query->__toString();
 		$result = null;
 		if(self::$query_cache_on){
 			$result = isset(self::$query_cache_data[$cache_key]) ? self::$query_cache_data[$cache_key] : null;
@@ -440,9 +612,9 @@ abstract class DBInstance {
 			//由于PHP对数据库查询返回结果并非报告Exception，
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
 			return $result;
-		}catch(\Exception $ex){
+		}catch(Exception $ex){
 			static $reconnect_count_map;
-			$k = $this->db_config->toDSNString();
+			$k = $this->db_config->__toString();
 			if(!isset($reconnect_count_map[$k])){
 				$reconnect_count_map[$k] = 0;
 			}
@@ -454,7 +626,7 @@ abstract class DBInstance {
 				$reconnect_count_map[$k]++;
 				try{
 					$this->connect($this->db_config, true);
-				}catch(\Exception $e){
+				}catch(Exception $e){
 					//ignore reconnect exception
 				}
 				return $this->query($query);
@@ -462,30 +634,6 @@ abstract class DBInstance {
 			throw new QueryException($ex->getMessage(), $ex->getCode(), $ex, $query, $this->db_config);
 		}
 	}
-
-	/**
-	 * 根据message检测服务器是否丢失、断开、重置链接
-	 * @param \Exception $exception
-	 * @return bool
-	 */
-	protected static function isConnectionLost(\Exception $exception){
-		$error = $exception->getMessage();
-		$ms = ['server has gone away', 'shut down'];
-		foreach($ms as $kw){
-			if(stripos($kw, $error) !== false){
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * 执行查询
-	 * 规划dbQuery代替实际的数据查询主要目的是：为了统一对数据库查询动作做统一的行为监控
-	 * @param string $query
-	 * @return mixed|false 返回查询结果，如果查询失败，则返回false
-	 */
-	protected abstract function dbQuery($query);
 
 	/**
 	 * 获取条数
@@ -526,65 +674,48 @@ abstract class DBInstance {
 	}
 
 	/**
-	 * 获取操作影响条数
-	 * @return integer
-	 */
-	public abstract function getAffectNum();
-
-	/**
-	 * 获取所有记录
-	 * @param $resource
-	 * @return mixed
-	 */
-	public abstract function fetchAll($resource);
-
-	/**
-	 * 设置SQL查询条数限制信息
-	 * @param $sql
-	 * @param $limit
-	 * @return mixed
-	 */
-	public abstract function setLimit($sql, $limit);
-
-	/**
-	 * 获取最后插入ID
-	 * @return mixed
-	 */
-	public abstract function getLastInsertId();
-
-	/**
-	 * 事务提交
-	 * @return bool
-	 */
-	public abstract function commit();
-
-	/**
-	 * 事务回滚
-	 * @return bool
-	 */
-	public abstract function rollback();
-
-	/**
-	 * 开始事务操作
-	 * @return mixed
-	 */
-	public abstract function beginTransaction();
-
-	/**
-	 * 取消事务操作状态
-	 * @return mixed
-	 */
-	public abstract function cancelTransactionState();
-
-	/**
 	 * 连接数据库接口
 	 * @param DBConfig $db_config <p>数据库连接配置，
 	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
 	 * </p>
 	 * @param boolean $re_connect 是否重新连接
-	 * @return resource
+	 * @return \PDO|null
+	 * @throws \LFPhp\PORM\Exception\ConnectException
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public abstract function connect(DBConfig $db_config, $re_connect = false);
+	public function connect(DBConfig $db_config, $re_connect = false){
+		if(!$re_connect && $this->conn){
+			return $this->conn;
+		}
+
+		//build in connect attribute
+		$opt = [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		];
+
+		//最大超时时间
+		$max_connect_timeout = isset($db_config->connect_timeout) ? $db_config->connect_timeout : get_max_socket_timeout(2);
+
+		if($max_connect_timeout){
+			$opt[PDO::ATTR_TIMEOUT] = $max_connect_timeout;
+		}
+
+		if($db_config->persist){
+			$opt[PDO::ATTR_PERSISTENT] = true;
+		}
+
+		//connect & process windows encode issue
+		try{
+			$conn = new PDO($db_config->dsn, $db_config->user, $db_config->password, $opt);
+		}catch(PDOException $e){
+			$err = server_in_windows() ? mb_convert_encoding($e->getMessage(), 'utf-8', 'gb2312') : $e->getMessage();
+			$db_config->password = $db_config->password ? '******' : 'no password';
+			throw new ConnectException("Database connect failed:{$err}", $e->getCode(), $e, $db_config);
+		}
+		$this->conn = $conn;
+		$this->toggleStrictMode(isset($db_config->strict_mode) ? !!$db_config->strict_mode : false);
+		return $conn;
+	}
 
 	/**
 	 * 获取最大链接重试次数
@@ -597,7 +728,7 @@ abstract class DBInstance {
 	/**
 	 * 设置链接重试次数
 	 * @param int $max_reconnect_count
-	 * @return \LFPhp\PORM\Driver\DBInstance
+	 * @return \LFPhp\PORM\Database\DBDriver
 	 */
 	public function setMaxReconnectCount($max_reconnect_count){
 		$this->max_reconnect_count = $max_reconnect_count;
@@ -615,7 +746,7 @@ abstract class DBInstance {
 	/**
 	 * 设置重连间隔时间（毫秒）
 	 * @param int $reconnect_interval
-	 * @return DBInstance
+	 * @return DBDriver
 	 */
 	public function setReconnectInterval($reconnect_interval){
 		$this->reconnect_interval = $reconnect_interval;

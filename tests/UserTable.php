@@ -1,6 +1,6 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\Driver\DBConfig;
+use LFPhp\PORM\Database\DBConfig;
 use LFPhp\PORM\ORM\DBAttribute;
 use LFPhp\PORM\ORM\DBModel;
 use LFPhp\PORM\ORM\TableAnnotation;
@@ -36,7 +36,7 @@ class UserTable extends DBModel {
 
 	/**
 	 * @param int $operate_type
-	 * @return \LFPhp\PORM\Driver\DBConfig
+	 * @return \LFPhp\PORM\Database\DBConfig
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	static protected function getDBConfig($operate_type = self::OP_READ){

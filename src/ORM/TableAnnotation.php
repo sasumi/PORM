@@ -2,7 +2,7 @@
 namespace LFPhp\PORM\ORM;
 
 use LFPhp\Cache\CacheFile;
-use LFPhp\PORM\Driver\DBConfig;
+use LFPhp\PORM\Database\DBConfig;
 use LFPhp\PORM\Exception\Exception;
 use function LFPhp\Func\explode_by;
 
@@ -20,7 +20,7 @@ trait TableAnnotation {
 
 		/** @var DBConfig $cfg */
 		$cfg = static::getDBConfig();
-		$key = md5($cfg->toDSNString()).'_'.$table;
+		$key = md5($cfg).'_'.$table;
 		return CacheFile::instance(['dir'=>sys_get_temp_dir().'/'.static::$_cache_dir_name])
 			->cache($key, function()use($sql){
 			return self::__createSqlResolve($sql);

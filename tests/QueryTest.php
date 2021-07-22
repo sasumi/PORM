@@ -1,8 +1,8 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\Driver\DBConfig;
-use LFPhp\PORM\Driver\DBInstance;
-use LFPhp\PORM\Driver\DBQuery;
+use LFPhp\PORM\Database\DBConfig;
+use LFPhp\PORM\Database\DBDriver;
+use LFPhp\PORM\Database\DBQuery;
 use LFPhp\PORM\Exception\DBException as ExceptionAlias;
 use PHPUnit\Framework\TestCase;
 use function LFPhp\Func\dump;
@@ -16,7 +16,7 @@ class QueryTest extends TestCase {
 	public function testConnect(){
 		try {
 			$config = $this->getConfig();
-			$ins = DBInstance::instance($config);
+			$ins = DBDriver::instance($config);
 			$query = (new DBQuery())->select()->field('id', 'title')->from('blog_article');
 			$ret = $ins->getPage($query);
 			$count = $ins->getCount($query);

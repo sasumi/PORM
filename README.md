@@ -53,7 +53,7 @@ echo $user->id;
 ```php
 <?php
 
-use LFPhp\PORM\Driver\DBConfig;
+use LFPhp\PORM\Database\DBConfig;
 
 //创建数据库配置
 $cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'blog');

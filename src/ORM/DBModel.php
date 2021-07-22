@@ -3,9 +3,10 @@ namespace LFPhp\PORM\ORM;
 
 use Exception;
 use JsonSerializable;
-use LFPhp\PORM\Driver\DBConfig;
-use LFPhp\PORM\Driver\DBInstance;
-use LFPhp\PORM\Driver\DBQuery;
+use LFPhp\PDODSN\Database\MySQL;
+use LFPhp\PORM\Database\DBConfig;
+use LFPhp\PORM\Database\DBDriver;
+use LFPhp\PORM\Database\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
 use function LFPhp\Func\array_clear_fields;
@@ -84,7 +85,7 @@ abstract class DBModel implements JsonSerializable {
 	 */
 	public static function getTableFullNameWithDbName($op_type = self::OP_READ){
 		$config = static::getDBConfig($op_type);
-		$db = $config->database;
+		$db = $config->dsn->database;
 		$table = static::getTableFullName($op_type);
 		return "`$db`.`$table`";
 	}
@@ -133,12 +134,12 @@ abstract class DBModel implements JsonSerializable {
 	/**
 	 * 获取db记录实例对象
 	 * @param int $operate_type
-	 * @return DBInstance
+	 * @return DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	protected static function getDbDriver($operate_type = self::OP_WRITE){
 		$db_config = static::getDBConfig($operate_type);
-		return DBInstance::instance($db_config);
+		return DBDriver::instance($db_config);
 	}
 
 	/**
@@ -189,7 +190,7 @@ abstract class DBModel implements JsonSerializable {
 
 	/**
 	 * 获取当前查询对象
-	 * @return \LFPhp\PORM\Driver\DBQuery|null
+	 * @return \LFPhp\PORM\Database\DBQuery|null
 	 */
 	public function getQuery(){
 		return $this->query;
@@ -311,7 +312,7 @@ abstract class DBModel implements JsonSerializable {
 	 */
 	public function whereLikeOnSet($st, $val){
 		$args = func_get_args();
-		if(strlen(trim(str_replace(DBInstance::LIKE_RESERVED_CHARS, '', $val)))){
+		if(strlen(trim(str_replace(DBDriver::LIKE_RESERVED_CHARS, '', $val)))){
 			return call_user_func_array(array($this, 'whereOnSet'), $args);
 		}
 		return $this;
@@ -836,8 +837,8 @@ abstract class DBModel implements JsonSerializable {
 			$debugger = function(){};
 		}
 
-		$cache_on = DBInstance::getQueryCacheState();
-		DBInstance::setQueryCacheOff();
+		$cache_on = DBDriver::getQueryCacheState();
+		DBDriver::setQueryCacheOff();
 		while(true){
 			$obj = clone($this);
 			$break = false;
@@ -870,7 +871,7 @@ abstract class DBModel implements JsonSerializable {
 			}
 		}
 		if($cache_on){
-			DBInstance::setQueryCacheOn();
+			DBDriver::setQueryCacheOn();
 		}
 		return true;
 	}
@@ -1126,8 +1127,8 @@ abstract class DBModel implements JsonSerializable {
 				}
 			}else{
 				//mysql字符计算采用mb_strlen计算字符个数
-				$db_type = static::getDbDriver(self::OP_WRITE)->db_config->type;
-				if($attr->type === 'string' && $db_type == DBConfig::TYPE_MYSQL){
+				$dsn = static::getDbDriver(self::OP_WRITE)->db_config->dsn;
+				if($attr->type === 'string' && get_class($dsn) == MySQL::class){
 					$str_len = mb_strlen($val, 'utf-8');
 				}else{
 					$str_len = strlen($val);

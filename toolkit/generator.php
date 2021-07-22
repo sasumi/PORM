@@ -2,8 +2,8 @@
 namespace LFPhp\PORM\toolkit;
 
 use LFPhp\PDODSN\DSN;
-use LFPhp\PORM\Driver\DBConfig;
-use LFPhp\PORM\Driver\DriverPDO;
+use LFPhp\PORM\Database\DBConfig;
+use LFPhp\PORM\Database\DriverPDO;
 
 $opts = getopt('p::d:t::p');
 $path = $opts['p'];

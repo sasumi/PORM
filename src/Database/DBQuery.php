@@ -1,5 +1,5 @@
 <?php
-namespace LFPhp\PORM\Driver;
+namespace LFPhp\PORM\Database;
 
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\ORM\DBModel;
@@ -141,7 +141,7 @@ class DBQuery {
 
 	/**
 	 * update query
-	 * @return \LFPhp\PORM\Driver\DBQuery $this
+	 * @return \LFPhp\PORM\Database\DBQuery $this
 	 **/
 	public function update(){
 		$this->operation = self::UPDATE;
@@ -155,7 +155,7 @@ class DBQuery {
 
 	/**
 	 * 插入
-	 * @return \LFPhp\PORM\Driver\DBQuery $this
+	 * @return \LFPhp\PORM\Database\DBQuery $this
 	 */
 	public function insert(){
 		$this->operation = self::INSERT;
@@ -164,7 +164,7 @@ class DBQuery {
 
 	/**
 	 * 删除
-	 * @return \LFPhp\PORM\Driver\DBQuery $this
+	 * @return \LFPhp\PORM\Database\DBQuery $this
 	 */
 	public function delete(){
 		$this->operation = self::DELETE;
@@ -174,7 +174,7 @@ class DBQuery {
 	/**
 	 * 设置数据（仅对update, replace, insert有效)
 	 * @param array $data
-	 * @return \LFPhp\PORM\Driver\DBQuery $this
+	 * @return \LFPhp\PORM\Database\DBQuery $this
 	 */
 	public function setData(array $data){
 		$this->data = $data;
@@ -184,7 +184,7 @@ class DBQuery {
 	/**
 	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
-	 * @return \LFPhp\PORM\ORM\DBModel|\LFPhp\PORM\Driver\DBQuery
+	 * @return \LFPhp\PORM\ORM\DBModel|\LFPhp\PORM\Database\DBQuery
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
@@ -198,7 +198,7 @@ class DBQuery {
 	/**
 	 * 表
 	 * @param string $str
-	 * @return \LFPhp\PORM\Driver\DBQuery $this
+	 * @return \LFPhp\PORM\Database\DBQuery $this
 	 **/
 	public function from($str){
 		$tables = explode(',', $str);
