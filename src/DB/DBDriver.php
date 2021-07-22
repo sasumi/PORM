@@ -1,5 +1,5 @@
 <?php
-namespace LFPhp\PORM\Database;
+namespace LFPhp\PORM\DB;
 
 use Exception;
 use LFPhp\PORM\Exception\ConnectException;
@@ -52,7 +52,7 @@ class DBDriver {
 	private static $processing_query;
 
 	/**
-	 * @var \LFPhp\PORM\Database\DBConfig
+	 * @var \LFPhp\PORM\DB\DBConfig
 	 */
 	public $db_config;
 
@@ -293,7 +293,7 @@ class DBDriver {
 	/**
 	 * 设置查询字符集
 	 * @param $charset
-	 * @return \LFPhp\PORM\Database\DBDriver
+	 * @return \LFPhp\PORM\DB\DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function setCharset($charset){
@@ -394,7 +394,7 @@ class DBDriver {
 
 	/**
 	 * 获取一页数据
-	 * @param \LFPhp\PORM\Database\DBQuery $q
+	 * @param \LFPhp\PORM\DB\DBQuery $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
@@ -728,7 +728,7 @@ class DBDriver {
 	/**
 	 * 设置链接重试次数
 	 * @param int $max_reconnect_count
-	 * @return \LFPhp\PORM\Database\DBDriver
+	 * @return \LFPhp\PORM\DB\DBDriver
 	 */
 	public function setMaxReconnectCount($max_reconnect_count){
 		$this->max_reconnect_count = $max_reconnect_count;

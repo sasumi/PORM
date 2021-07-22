@@ -4,9 +4,9 @@ namespace LFPhp\PORM\ORM;
 use Exception;
 use JsonSerializable;
 use LFPhp\PDODSN\Database\MySQL;
-use LFPhp\PORM\Database\DBConfig;
-use LFPhp\PORM\Database\DBDriver;
-use LFPhp\PORM\Database\DBQuery;
+use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PORM\DB\DBDriver;
+use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
 use function LFPhp\Func\array_clear_fields;
@@ -16,14 +16,14 @@ use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
 use function LFPhp\Func\time_range_v;
 
-abstract class DBModel implements JsonSerializable {
+abstract class Model implements JsonSerializable {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
 
 	/** @var DBConfig */
 	private $db_config;
 
-	/** @var \LFPhp\PORM\ORM\DBAttribute[] model define */
+	/** @var \LFPhp\PORM\ORM\Attribute[] model define */
 	protected $attributes = [];
 
 	/** @var array model property key-value set */
@@ -47,7 +47,7 @@ abstract class DBModel implements JsonSerializable {
 	abstract static public function getTableName();
 
 	/**
-	 * @return \LFPhp\PORM\ORM\DBAttribute[]
+	 * @return \LFPhp\PORM\ORM\Attribute[]
 	 */
 	abstract static public function getAttributes();
 
@@ -93,7 +93,7 @@ abstract class DBModel implements JsonSerializable {
 	/**
 	 * 根据字段名获取属性
 	 * @param $name
-	 * @return \LFPhp\PORM\ORM\DBAttribute
+	 * @return \LFPhp\PORM\ORM\Attribute
 	 * @throws \Exception
 	 */
 	public static function getAttributeByName($name){
@@ -190,7 +190,7 @@ abstract class DBModel implements JsonSerializable {
 
 	/**
 	 * 获取当前查询对象
-	 * @return \LFPhp\PORM\Database\DBQuery|null
+	 * @return \LFPhp\PORM\DB\DBQuery|null
 	 */
 	public function getQuery(){
 		return $this->query;
@@ -203,7 +203,7 @@ abstract class DBModel implements JsonSerializable {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function transaction($handler){
-		$driver = static::getDbDriver(DBModel::OP_WRITE);
+		$driver = static::getDbDriver(Model::OP_WRITE);
 		try{
 			$driver->beginTransaction();
 			$ret = call_user_func($handler);
@@ -631,7 +631,7 @@ abstract class DBModel implements JsonSerializable {
 
 	/**
 	 * 获取实体属性列表
-	 * @return DBAttribute[]
+	 * @return Attribute[]
 	 */
 	protected static function getEntityAttributes(){
 		$attrs = static::getAttributes();
@@ -844,7 +844,7 @@ abstract class DBModel implements JsonSerializable {
 			$break = false;
 			$start = microtime(true);
 			$exists = $obj->chunk($chunk_size, function($data_list, $page_index, $page_total, $item_total) use ($handler, $chunk_size, $debugger, $start, &$break){
-				/** @var DBModel $item */
+				/** @var Model $item */
 				foreach($data_list as $k => $item){
 					$cur = $page_index*$chunk_size+$k+1;
 					$now = microtime(true);
@@ -980,7 +980,7 @@ abstract class DBModel implements JsonSerializable {
 
 		//转换set数据
 		foreach($src_data as $k => $d){
-			if($attr_maps[$k]->type == DBAttribute::TYPE_SET && is_array($d)){
+			if($attr_maps[$k]->type == Attribute::TYPE_SET && is_array($d)){
 				$src_data[$k] = join(',', $d);
 			}
 		}
@@ -1017,7 +1017,7 @@ abstract class DBModel implements JsonSerializable {
 
 		//插入时填充default值
 		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
-			/** @var DBAttribute $attr */
+			/** @var Attribute $attr */
 			if($attr->default){
 				if($query_type == DBQuery::INSERT){
 					if(!isset($data[$k])){ //允许提交空字符串
@@ -1041,9 +1041,9 @@ abstract class DBModel implements JsonSerializable {
 		//处理date日期默认为NULL情况
 		foreach($data as $k => $val){
 			if(in_array($attr_maps[$k]->type, array(
-				DBAttribute::TYPE_DATE,
-				DBAttribute::TYPE_DATETIME,
-				DBAttribute::TYPE_TIME,
+				Attribute::TYPE_DATE,
+				Attribute::TYPE_DATETIME,
+				Attribute::TYPE_TIME,
 				)) && $attr_maps[$k]->default && $attr_maps[$k]->default === null && !$data[$k]
 			){
 				$data[$k] = null;
@@ -1084,26 +1084,26 @@ abstract class DBModel implements JsonSerializable {
 		//type
 		if(!$err){
 			switch($attr->type){
-				case DBAttribute::TYPE_INT:
+				case Attribute::TYPE_INT:
 					if(strlen($val) && !is_numeric($val)){
 						$err = $name.'格式不正确';
 					}
 					break;
 
-				case DBAttribute::TYPE_FLOAT:
-				case DBAttribute::TYPE_DOUBLE:
-				case DBAttribute::TYPE_DECIMAL:
+				case Attribute::TYPE_FLOAT:
+				case Attribute::TYPE_DOUBLE:
+				case Attribute::TYPE_DECIMAL:
 					if(!(!$required && !strlen($val.'')) && isset($val) && !is_numeric($val)){
 						$err = $name.'格式不正确';
 					}
 					break;
 
-				case DBAttribute::TYPE_ENUM:
+				case Attribute::TYPE_ENUM:
 					$err = !(!$required && !strlen($val.'')) && !isset($options[$val]) ? '请选择'.$name : '';
 					break;
 
 				//string暂不校验
-				case DBAttribute::TYPE_STRING:
+				case Attribute::TYPE_STRING:
 					break;
 			}
 		}
@@ -1115,9 +1115,9 @@ abstract class DBModel implements JsonSerializable {
 
 		//length
 		if(!$err && $attr->type && !in_array($attr->type, [
-				DBAttribute::TYPE_DATETIME,
-				DBAttribute::TYPE_DATE,
-				DBAttribute::TYPE_TIME,
+				Attribute::TYPE_DATETIME,
+				Attribute::TYPE_DATE,
+				Attribute::TYPE_TIME,
 			])){
 			if($attr['precision']){
 				$int_len = strlen(substr($val, 0, strpos($val, '.')));
@@ -1204,7 +1204,7 @@ abstract class DBModel implements JsonSerializable {
 	/**
 	 * 解析SQL查询中的条件表达式
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
-	 * @param string|\LFPhp\PORM\ORM\DBModel $model_class
+	 * @param string|\LFPhp\PORM\ORM\Model $model_class
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */

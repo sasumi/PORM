@@ -1,7 +1,7 @@
 <?php
 namespace LFPhp\PORM\Exception;
 
-use LFPhp\PORM\Database\DBConfig;
+use LFPhp\PORM\DB\DBConfig;
 use Throwable;
 
 class DBException extends Exception {

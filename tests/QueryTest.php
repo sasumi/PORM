@@ -1,8 +1,8 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\Database\DBConfig;
-use LFPhp\PORM\Database\DBDriver;
-use LFPhp\PORM\Database\DBQuery;
+use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PORM\DB\DBDriver;
+use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException as ExceptionAlias;
 use PHPUnit\Framework\TestCase;
 use function LFPhp\Func\dump;

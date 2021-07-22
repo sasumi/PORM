@@ -1,8 +1,8 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\Database\DBConfig;
-use LFPhp\PORM\ORM\DBAttribute;
-use LFPhp\PORM\ORM\DBModel;
+use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PORM\ORM\Attribute;
+use LFPhp\PORM\ORM\Model;
 use LFPhp\PORM\ORM\TableAnnotation;
 
 /**
@@ -18,7 +18,7 @@ use LFPhp\PORM\ORM\TableAnnotation;
  * @property mixed $status 状态
  * @property mixed $type job类型
  */
-class UserTable extends DBModel {
+class UserTable extends Model {
 	use TableAnnotation;
 	public static function getTableName(){
 		return 'blog_test';
@@ -26,17 +26,17 @@ class UserTable extends DBModel {
 
 	public static function getAttributes(){
 		return [
-			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
-			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
-			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
-			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
-			new DBAttribute(['name'=>'hello', 'type'=>DBAttribute::TYPE_STRING]),
+			new Attribute(['name' =>'hello', 'type' =>Attribute::TYPE_STRING]),
+			new Attribute(['name' =>'hello', 'type' =>Attribute::TYPE_STRING]),
+			new Attribute(['name' =>'hello', 'type' =>Attribute::TYPE_STRING]),
+			new Attribute(['name' =>'hello', 'type' =>Attribute::TYPE_STRING]),
+			new Attribute(['name' =>'hello', 'type' =>Attribute::TYPE_STRING]),
 		];
 	}
 
 	/**
 	 * @param int $operate_type
-	 * @return \LFPhp\PORM\Database\DBConfig
+	 * @return \LFPhp\PORM\DB\DBConfig
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	static protected function getDBConfig($operate_type = self::OP_READ){

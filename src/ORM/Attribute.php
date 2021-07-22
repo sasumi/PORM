@@ -4,7 +4,7 @@ namespace LFPhp\PORM\ORM;
 /**
  * 数据库元数据抽象类
  */
-class DBAttribute {
+class Attribute {
 	const TYPE_INT = 'int';
 	const TYPE_FLOAT = 'float';
 	const TYPE_DECIMAL = 'decimal';

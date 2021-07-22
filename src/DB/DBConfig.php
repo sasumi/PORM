@@ -1,6 +1,6 @@
 <?php
 
-namespace LFPhp\PORM\Database;
+namespace LFPhp\PORM\DB;
 
 use LFPhp\PDODSN\Database\Firebird;
 use LFPhp\PDODSN\Database\Informix;
@@ -35,7 +35,7 @@ class DBConfig {
 	 * @param string $password
 	 * @param string $database
 	 * @param int $port
-	 * @return \LFPhp\PORM\Database\DBConfig
+	 * @return \LFPhp\PORM\DB\DBConfig
 	 */
 	public static function createMySQLConfig($host, $user, $password, $database, $port = 3306){
 		$dsn = new MySQL();

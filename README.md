@@ -17,9 +17,9 @@ PORM 支持通过定义ORM Model类方式进行调用，也支持直接链接数
 
 ```php
 <?php
-use LFPhp\PORM\ORM\DBModel;
+use LFPhp\PORM\ORM\Model;
 
-class User extends DBModel {
+class User extends Model {
 
 static public function getTableName(){
  // TODO: Implement getTableName() method.
@@ -53,7 +53,7 @@ echo $user->id;
 ```php
 <?php
 
-use LFPhp\PORM\Database\DBConfig;
+use LFPhp\PORM\DB\DBConfig;
 
 //创建数据库配置
 $cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'blog');
