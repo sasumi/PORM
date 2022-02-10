@@ -2,6 +2,7 @@
 namespace LFPhp\PORM\ORM;
 
 use LFPhp\Logger\Logger;
+use ReflectionClass;
 use function LFPhp\Func\explode_by;
 
 /**
@@ -11,7 +12,7 @@ use function LFPhp\Func\explode_by;
 trait AttributeAnnotation {
 	public static function getAttributes(){
 		$class = get_called_class();
-		$rc = new \ReflectionClass($class);
+		$rc = new ReflectionClass($class);
 		$doc = $rc->getDocComment();
 		return self::_parseClassAnnotation($doc);
 	}
