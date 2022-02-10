@@ -6,6 +6,7 @@ use LFPhp\PORM\Exception\ConnectException;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
+use LFPhp\PORM\Misc\LoggerTrait;
 use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
@@ -18,6 +19,7 @@ use function LFPhp\Func\server_in_windows;
  * @package LFPhp\PORM\Driver
  */
 class DBDriver {
+	use LoggerTrait;
 	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
 	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY';
 	const EVENT_DB_QUERY_ERROR = __CLASS__.'EVENT_DB_QUERY_ERROR';
@@ -95,7 +97,6 @@ class DBDriver {
 			$this->setTimeZone($this->db_config->timezone);
 		}
 	}
-
 
 	/**
 	 * 是否切换到严格模式
@@ -459,10 +460,10 @@ class DBDriver {
 	 * @return mixed|null
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getField(DBQuery $query, $key){
+	public function getField(DBQuery $query, $key=''){
 		$rst = $this->getOne($query);
 		if($rst){
-			return $rst[$key];
+			return $key ? $rst[$key] : current($rst);
 		}
 		return null;
 	}
@@ -599,13 +600,14 @@ class DBDriver {
 
 	/**
 	 * SQL查询，支持重连数据库选项
-	 * @param $query
+	 * @param \LFPhp\PORM\DB\DBQuery|string $query
 	 * @return mixed
 	 * @throws DBException
 	 */
 	final public function query($query){
 		try{
 			self::$processing_query = $query;
+			self::getLogger()->info('query:'.$query.'');
 			$result = $this->dbQuery($query);
 			self::$processing_query = null;
 
@@ -619,6 +621,7 @@ class DBDriver {
 				$reconnect_count_map[$k] = 0;
 			}
 			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count_map[$k] < $this->max_reconnect_count)){
+				self::getLogger()->warning('DB lost connection, reconnecting');
 				//间隔时间之后重新连接
 				if($this->reconnect_interval){
 					usleep($this->reconnect_interval*1000);
@@ -706,6 +709,7 @@ class DBDriver {
 
 		//connect & process windows encode issue
 		try{
+			self::getLogger()->info('connecting to database:', $db_config->dsn.'');
 			$conn = new PDO($db_config->dsn, $db_config->user, $db_config->password, $opt);
 		}catch(PDOException $e){
 			$err = server_in_windows() ? mb_convert_encoding($e->getMessage(), 'utf-8', 'gb2312') : $e->getMessage();

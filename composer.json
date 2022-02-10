@@ -23,6 +23,7 @@
 		"ext-json": "*",
 		"ext-mysqli": "*",
 		"lfphp/cache": "^1.0",
+		"lfphp/logger": "^1.0",
 		"lfphp/pdodsn": "^0.0.5"
 	},
 	"require-dev": {
