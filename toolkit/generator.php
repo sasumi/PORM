@@ -2,8 +2,10 @@
 namespace LFPhp\PORM\toolkit;
 
 use LFPhp\PDODSN\DSN;
-use LFPhp\PORM\DB\DBConfig;
-use LFPhp\PORM\DB\DriverPDO;
+
+/**
+ * @todo
+ */
 
 $opts = getopt('p::d:t::p');
 $path = $opts['p'];
@@ -22,11 +24,3 @@ $help = '
 if(!$path || !$dsn){
 	die($help);
 }
-
-$db_config = DBConfig::createFromConfig();
-DSN::resolveString($dsn);
-
-$conn = DriverPDO::instance();
-
-$sql = "SHOW CREATE TABLE `$table`";
-

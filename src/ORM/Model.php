@@ -4,7 +4,6 @@ namespace LFPhp\PORM\ORM;
 use Exception;
 use JsonSerializable;
 use LFPhp\PDODSN\Database\MySQL;
-use LFPhp\PORM\DB\DBConfig;
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
@@ -20,8 +19,8 @@ abstract class Model implements JsonSerializable {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
 
-	/** @var DBConfig */
-	private $db_config;
+	/** @var \LFPhp\PDODSN\DSN */
+	private $dsn;
 
 	/** @var \LFPhp\PORM\ORM\Attribute[] model define */
 	protected $attributes = [];
@@ -84,7 +83,7 @@ abstract class Model implements JsonSerializable {
 	 * @return string
 	 */
 	public static function getTableFullNameWithDbName($op_type = self::OP_READ){
-		$config = static::getDBConfig($op_type);
+		$config = static::getDbDsn($op_type);
 		$db = $config->dsn->database;
 		$table = static::getTableFullName($op_type);
 		return "`$db`.`$table`";
@@ -138,8 +137,8 @@ abstract class Model implements JsonSerializable {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	protected static function getDbDriver($operate_type = self::OP_WRITE){
-		$db_config = static::getDBConfig($operate_type);
-		return DBDriver::instance($db_config);
+		$dsn = static::getDbDsn($operate_type);
+		return DBDriver::instance($dsn);
 	}
 
 	/**
@@ -156,9 +155,9 @@ abstract class Model implements JsonSerializable {
 	 * 获取数据库配置
 	 * 该方法可以被覆盖重写
 	 * @param int $operate_type
-	 * @return DBConfig
+	 * @return \LFPhp\PDODSN\DSN
 	 */
-	abstract static protected function getDBConfig($operate_type = self::OP_READ);
+	abstract static protected function getDbDsn($operate_type = self::OP_READ);
 
 	/**
 	 * 获取数据库表前缀
@@ -166,8 +165,8 @@ abstract class Model implements JsonSerializable {
 	 * @return string
 	 */
 	public static function getDbTablePrefix($type = self::OP_READ){
-		$config = static::getDBConfig($type);
-		return $config->table_prefix;
+		$dsn = static::getDbDsn($type);
+		return $dsn->table_prefix;
 	}
 
 	/**
@@ -789,7 +788,7 @@ abstract class Model implements JsonSerializable {
 			}
 			return $ret;
 		}
-		throw new DBException("Mapping parameter error: [$key, $val]", null, null, static::getDBConfig(self::OP_READ));
+		throw new DBException("Mapping parameter error: [$key, $val]", null, null, static::getDbDsn(self::OP_READ));
 	}
 
 	/**
@@ -1127,7 +1126,7 @@ abstract class Model implements JsonSerializable {
 				}
 			}else{
 				//mysql字符计算采用mb_strlen计算字符个数
-				$dsn = static::getDbDriver(self::OP_WRITE)->db_config->dsn;
+				$dsn = static::getDbDriver(self::OP_WRITE)->dsn;
 				if($attr->type === 'string' && get_class($dsn) == MySQL::class){
 					$str_len = mb_strlen($val, 'utf-8');
 				}else{
@@ -1330,7 +1329,7 @@ abstract class Model implements JsonSerializable {
 	 * @return array
 	 */
 	public function __debugInfo(){
-		$cfg = $this->getDBConfig();
+		$cfg = $this->getDbDsn();
 		$cfg->password = $cfg->password ? '***' : '';
 
 		return [

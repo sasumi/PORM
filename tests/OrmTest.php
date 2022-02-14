@@ -1,6 +1,6 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException as ExceptionAlias;
@@ -11,7 +11,12 @@ include_once "../vendor/autoload.php";
 include_once "./UserTable.php";
 class OrmTest extends TestCase {
 	private function getConfig(){
-		return DBConfig::createMySQLConfig('localhost', 'root', '123456', 'zardem');
+		return new MySQL([
+			'host'=>'localhost',
+			'user'=>'root',
+			'password'=>'123456',
+			'database'=>'zardem'
+		]);
 	}
 
 	public function testConnect(){

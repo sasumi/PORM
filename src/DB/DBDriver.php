@@ -2,7 +2,7 @@
 namespace LFPhp\PORM\DB;
 
 use Exception;
-use LFPhp\PORM\Exception\ConnectException;
+use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
@@ -11,8 +11,6 @@ use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
 use PDOStatement;
-use function LFPhp\Func\get_max_socket_timeout;
-use function LFPhp\Func\server_in_windows;
 
 /**
  * Class DBAbstract
@@ -53,10 +51,8 @@ class DBDriver {
 	 */
 	private static $processing_query;
 
-	/**
-	 * @var \LFPhp\PORM\DB\DBConfig
-	 */
-	public $db_config;
+	/** @var \LFPhp\PDODSN\DSN */
+	public $dsn;
 
 	/**
 	 * @var PDOStatement
@@ -84,18 +80,11 @@ class DBDriver {
 
 	/**
 	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
-	 * @param DBConfig $config
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @param DSN $dsn
 	 */
-	private function __construct(DBConfig $config){
-		$this->db_config = $config;
-
-		$this->connect($this->db_config);
-
-		//timezone
-		if(isset($this->db_config->timezone) && $this->db_config->timezone){
-			$this->setTimeZone($this->db_config->timezone);
-		}
+	private function __construct(DSN $dsn){
+		$this->dsn = $dsn;
+		$this->connect($this->dsn);
 	}
 
 	/**
@@ -110,7 +99,6 @@ class DBDriver {
 		}
 		$this->conn->prepare($sql);
 	}
-
 
 	/**
 	 * PDO判别是否为连接丢失异常
@@ -259,7 +247,7 @@ class DBDriver {
 	public function getTables(){
 		$query = "SELECT `table_name`, `engine`, `table_collation`, `table_comment` FROM `information_schema`.`tables` WHERE `table_schema`=?";
 		$sth = $this->conn->prepare($query);
-		$sth->execute([$this->db_config->dsn->database]);
+		$sth->execute([$this->dsn->database]);
 		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}
 
@@ -273,7 +261,7 @@ class DBDriver {
 				    FROM `information_schema`.`columns`
 				    WHERE `table_schema`=? AND `table_name`=?";
 		$sth = $this->conn->prepare($query);
-		$db = $this->db_config->dsn->database;
+		$db = $this->dsn->database;
 		$sth->execute([$db, $table]);
 		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}
@@ -320,12 +308,11 @@ class DBDriver {
 
 	/**
 	 * 单例
-	 * @param DBConfig $db_config
+	 * @param DSN $dsn
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	final public static function instance(DBConfig $db_config){
-		$key = md5($db_config);
+	final public static function instance(DSN $dsn){
+		$key = md5($dsn);
 
 		static $instance_list;
 		if(!$instance_list){
@@ -333,7 +320,7 @@ class DBDriver {
 		}
 
 		if(!isset($instance_list[$key]) || !$instance_list[$key]){
-			$ins = new self($db_config);
+			$ins = new self($dsn);
 			$instance_list[$key] = $ins;
 		}
 		return $instance_list[$key];
@@ -412,7 +399,7 @@ class DBDriver {
 		if($limit){
 			$query->limit($limit);
 		}
-		$cache_key = $this->db_config.'/'.$query->__toString();
+		$cache_key = $this->dsn.'/'.$query->__toString();
 		$result = null;
 		if(self::$query_cache_on){
 			$result = isset(self::$query_cache_data[$cache_key]) ? self::$query_cache_data[$cache_key] : null;
@@ -477,7 +464,7 @@ class DBDriver {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
-		$prefix = $this->db_config['prefix'] ?: '';
+		$prefix = $this->dsn['prefix'] ?: '';
 		$query = $this->genQuery();
 		$sql = "UPDATE {$prefix}{$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
 		$query->setSql($sql);
@@ -498,7 +485,7 @@ class DBDriver {
 	public function update($table, array $data, $condition = '', $limit = 1){
 		if(empty($data)){
 			if(static::$THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA){
-				throw new NullOperation('NO UPDATE DATA FOUND', 0, null, $table, $this->db_config);
+				throw new NullOperation('NO UPDATE DATA FOUND', 0, null, $table);
 			}
 			return false;
 		}
@@ -519,7 +506,7 @@ class DBDriver {
 	 */
 	public function replace($table, array $data, $condition = '', $limit = 0){
 		if(empty($data)){
-			throw new NullOperation('NO REPLACE DATA FOUND', 0, null, $table, $this->db_config);
+			throw new NullOperation('NO REPLACE DATA FOUND', 0, null, $table, $this->dsn);
 		}
 
 		$count = $this->getCount($this->genQuery()->select()->from($table)->where($condition)->limit(1));
@@ -581,7 +568,7 @@ class DBDriver {
 	 */
 	public function insert($table, array $data, $condition = null){
 		if(empty($data)){
-			throw new NullOperation('NO INSERT DATA FOUND', 0, null, $table, $this->db_config);
+			throw new NullOperation('NO INSERT DATA FOUND', 0, null, $table, $this->dsn);
 		}
 		$query = $this->genQuery()->insert()->from($table)->setData($data)->where($condition);
 		return $this->query($query);
@@ -592,7 +579,7 @@ class DBDriver {
 	 * @return DBQuery
 	 */
 	protected function genQuery(){
-		$prefix = isset($this->db_config['prefix']) ? $this->db_config['prefix'] : '';
+		$prefix = isset($this->dsn['prefix']) ? $this->dsn['prefix'] : '';
 		$ins = new DBQuery();
 		$ins->setTablePrefix($prefix);
 		return $ins;
@@ -616,7 +603,7 @@ class DBDriver {
 			return $result;
 		}catch(Exception $ex){
 			static $reconnect_count_map;
-			$k = $this->db_config->__toString();
+			$k = $this->dsn->__toString();
 			if(!isset($reconnect_count_map[$k])){
 				$reconnect_count_map[$k] = 0;
 			}
@@ -628,13 +615,13 @@ class DBDriver {
 				}
 				$reconnect_count_map[$k]++;
 				try{
-					$this->connect($this->db_config, true);
+					$this->connect($this->dsn, true);
 				}catch(Exception $e){
 					//ignore reconnect exception
 				}
 				return $this->query($query);
 			}
-			throw new QueryException($ex->getMessage(), $ex->getCode(), $ex, $query, $this->db_config);
+			throw new QueryException($ex->getMessage(), $ex->getCode(), $ex, $query, $this->dsn);
 		}
 	}
 
@@ -678,47 +665,18 @@ class DBDriver {
 
 	/**
 	 * 连接数据库接口
-	 * @param DBConfig $db_config <p>数据库连接配置，
+	 * @param DSN $dsn <p>数据库连接配置，
 	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
 	 * </p>
 	 * @param boolean $re_connect 是否重新连接
 	 * @return \PDO|null
-	 * @throws \LFPhp\PORM\Exception\ConnectException
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function connect(DBConfig $db_config, $re_connect = false){
+	public function connect(DSN $dsn, $re_connect = false){
 		if(!$re_connect && $this->conn){
 			return $this->conn;
 		}
-
-		//build in connect attribute
-		$opt = [
-			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-		];
-
-		//最大超时时间
-		$max_connect_timeout = isset($db_config->connect_timeout) ? $db_config->connect_timeout : get_max_socket_timeout(2);
-
-		if($max_connect_timeout){
-			$opt[PDO::ATTR_TIMEOUT] = $max_connect_timeout;
-		}
-
-		if($db_config->persist){
-			$opt[PDO::ATTR_PERSISTENT] = true;
-		}
-
-		//connect & process windows encode issue
-		try{
-			self::getLogger()->info('connecting to database:', $db_config->dsn.'');
-			$conn = new PDO($db_config->dsn, $db_config->user, $db_config->password, $opt);
-		}catch(PDOException $e){
-			$err = server_in_windows() ? mb_convert_encoding($e->getMessage(), 'utf-8', 'gb2312') : $e->getMessage();
-			$db_config->password = $db_config->password ? '******' : 'no password';
-			throw new ConnectException("Database connect failed:{$err}", $e->getCode(), $e, $db_config);
-		}
-		$this->conn = $conn;
-		$this->toggleStrictMode(isset($db_config->strict_mode) ? !!$db_config->strict_mode : false);
-		return $conn;
+		$this->conn = $dsn->pdoConnect();
+		return $this->conn;
 	}
 
 	/**

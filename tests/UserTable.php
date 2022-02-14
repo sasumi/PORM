@@ -1,6 +1,6 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PORM\ORM\Attribute;
 use LFPhp\PORM\ORM\Model;
 use LFPhp\PORM\ORM\TableAnnotation;
@@ -36,10 +36,15 @@ class UserTable extends Model {
 
 	/**
 	 * @param int $operate_type
-	 * @return \LFPhp\PORM\DB\DBConfig
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @return \LFPhp\PDODSN\Database\MySQL
+	 * @throws \Exception
 	 */
-	static protected function getDBConfig($operate_type = self::OP_READ){
-		return DBConfig::createMySQLConfig('localhost', 'root', '123456', 'zardem');
+	static protected function getDbDsn($operate_type = self::OP_READ){
+		return new MySQL([
+			'host'=>'localhost',
+			'user'=>'root',
+			'password'=>'123456',
+			'database'=>'zardem'
+		]);
 	}
 }

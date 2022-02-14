@@ -1,6 +1,6 @@
 <?php
 namespace LFPhp\PORM\tests;
-use LFPhp\PORM\DB\DBConfig;
+use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException as ExceptionAlias;
@@ -9,8 +9,12 @@ use function LFPhp\Func\dump;
 
 class QueryTest extends TestCase {
 	private function getConfig(){
-		$cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'zardem');
-		return $cfg;
+		return new MySQL([
+			'host'=>'localhost',
+			'user'=>'root',
+			'password'=>'123456',
+			'database'=>'zardem'
+		]);
 	}
 
 	public function testConnect(){

@@ -53,10 +53,13 @@ echo $user->id;
 ```php
 <?php
 
-use LFPhp\PORM\DB\DBConfig;
-
 //创建数据库配置
-$cfg = DBConfig::createMySQLConfig('localhost', 'root', '123456', 'blog');
+$cfg =  new MySQL([
+			'host'=>'localhost',
+			'user'=>'root',
+			'password'=>'123456',
+			'database'=>'zardem'
+		]);
 
 //创建数据库链接实例
 $ins = DBAbstract::instance($config);
