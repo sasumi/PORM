@@ -413,7 +413,7 @@ class DBDriver {
 				}
 			}
 		}
-		return $result;
+		return $result ?: [];
 	}
 
 	/**
