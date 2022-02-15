@@ -3,6 +3,7 @@ namespace LFPhp\PORM\ORM;
 
 use Exception;
 use JsonSerializable;
+use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
@@ -22,7 +23,7 @@ abstract class Model implements JsonSerializable {
 	/** @var \LFPhp\PDODSN\DSN */
 	private $dsn;
 
-	/** @var \LFPhp\PORM\ORM\Attribute[] model define */
+	/** @var Attribute[] model define */
 	protected $attributes = [];
 
 	/** @var array model property key-value set */
@@ -46,7 +47,7 @@ abstract class Model implements JsonSerializable {
 	abstract static public function getTableName();
 
 	/**
-	 * @return \LFPhp\PORM\ORM\Attribute[]
+	 * @return Attribute[]
 	 */
 	abstract static public function getAttributes();
 
@@ -69,30 +70,25 @@ abstract class Model implements JsonSerializable {
 	}
 
 	/**
-	 * 获取数据库表全名
-	 * @param int $op_type
-	 * @return string
-	 */
-	public static function getTableFullName($op_type){
-		return static::getDbTablePrefix($op_type).static::getTableName();
-	}
-
-	/**
 	 * 获取数据库表名（附带数据库名）
 	 * @param int $op_type
 	 * @return string
+	 * @throws \Exception
 	 */
 	public static function getTableFullNameWithDbName($op_type = self::OP_READ){
-		$config = static::getDbDsn($op_type);
-		$db = $config->dsn->database;
-		$table = static::getTableFullName($op_type);
+		$dsn = static::getDbDsn($op_type);
+		if(!isset($dsn['database'])){
+			throw new Exception('DSN no support database');
+		}
+		$db = $dsn['database'];
+		$table = static::getTableName();
 		return "`$db`.`$table`";
 	}
 
 	/**
 	 * 根据字段名获取属性
 	 * @param $name
-	 * @return \LFPhp\PORM\ORM\Attribute
+	 * @return Attribute
 	 * @throws \Exception
 	 */
 	public static function getAttributeByName($name){
@@ -134,7 +130,6 @@ abstract class Model implements JsonSerializable {
 	 * 获取db记录实例对象
 	 * @param int $operate_type
 	 * @return DBDriver
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	protected static function getDbDriver($operate_type = self::OP_WRITE){
 		$dsn = static::getDbDsn($operate_type);
@@ -158,16 +153,6 @@ abstract class Model implements JsonSerializable {
 	 * @return \LFPhp\PDODSN\DSN
 	 */
 	abstract static protected function getDbDsn($operate_type = self::OP_READ);
-
-	/**
-	 * 获取数据库表前缀
-	 * @param int $type
-	 * @return string
-	 */
-	public static function getDbTablePrefix($type = self::OP_READ){
-		$dsn = static::getDbDsn($type);
-		return $dsn->table_prefix;
-	}
 
 	/**
 	 * 设置查询SQL语句
@@ -199,7 +184,7 @@ abstract class Model implements JsonSerializable {
 	 * 事务处理
 	 * @param callable $handler 处理函数，若函数返回false或抛出Exception，将停止提交，执行事务回滚
 	 * @return mixed 闭包函数返回值透传
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \Exception
 	 */
 	public static function transaction($handler){
 		$driver = static::getDbDriver(Model::OP_WRITE);
@@ -236,14 +221,10 @@ abstract class Model implements JsonSerializable {
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
 	 * @return static|DBQuery
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = new static;
-		$prefix = self::getDbTablePrefix(self::OP_READ);
 		$query = new DBQuery();
-		$query->setTablePrefix($prefix);
-
 		$args = func_get_args();
 		$statement = self::parseConditionStatement($args, static::class);
 		$query->select()->from(static::getTableName())->where($statement);
@@ -255,7 +236,6 @@ abstract class Model implements JsonSerializable {
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
 	 * @return static|DBQuery
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -268,7 +248,6 @@ abstract class Model implements JsonSerializable {
 	 * @param string $st
 	 * @param string|int $val
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function whereOnSet($st, $val){
 		$args = func_get_args();
@@ -290,7 +269,6 @@ abstract class Model implements JsonSerializable {
 	 * @param string[] $fields
 	 * @param string[]|number[] $param
 	 * @return $this
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function whereEqualOnSetViaFields(array $fields, array $param = []){
 		foreach($fields as $field){
@@ -507,7 +485,7 @@ abstract class Model implements JsonSerializable {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function truncate(){
-		$table = static::getTableFullName(self::OP_WRITE);
+		$table = static::getTableName();
 		return static::getDbDriver(self::OP_WRITE)->delete($table, '', 0);
 	}
 
@@ -1065,7 +1043,7 @@ abstract class Model implements JsonSerializable {
 	 * @param $value
 	 * @param $field
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \Exception
 	 */
 	private function validateField(&$value, $field){
 		$attr = static::getAttributeByName($field);
@@ -1118,7 +1096,7 @@ abstract class Model implements JsonSerializable {
 				Attribute::TYPE_DATE,
 				Attribute::TYPE_TIME,
 			])){
-			if($attr['precision']){
+			if($attr->precision){
 				$int_len = strlen(substr($val, 0, strpos($val, '.')));
 				$precision_len = strpos($val, '.') !== false ? strlen(substr($val, strpos($val, '.') + 1)) : 0;
 				if($int_len > $attr->length || $precision_len > $attr['precision']){
@@ -1205,7 +1183,6 @@ abstract class Model implements JsonSerializable {
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
 	 * @param string|\LFPhp\PORM\ORM\Model $model_class
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	private static function parseConditionStatement($args, $model_class){
 		$statement = isset($args[0]) ? $args[0] : null;
@@ -1246,6 +1223,7 @@ abstract class Model implements JsonSerializable {
 		}
 
 		if(!$this->property_changes){
+			Logger::instance()->warning('no property changes');
 			return false;
 		}
 
@@ -1262,7 +1240,6 @@ abstract class Model implements JsonSerializable {
 	/**
 	 * 获取影响条数
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAffectNum(){
 		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
@@ -1329,14 +1306,12 @@ abstract class Model implements JsonSerializable {
 	 * @return array
 	 */
 	public function __debugInfo(){
-		$cfg = $this->getDbDsn();
-		$cfg->password = $cfg->password ? '***' : '';
-
+		$dsn = $this->getDbDsn();
 		return [
 			'data'              => $this->properties,
 			'data_changed_keys' => $this->property_changes,
 			'query'             => $this->getQuery().'',
-			'database'          => json_encode($cfg),
+			'database'          => json_encode($dsn),
 		];
 	}
 

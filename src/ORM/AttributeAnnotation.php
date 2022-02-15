@@ -26,7 +26,7 @@ trait AttributeAnnotation {
 			$seg = explode_by(' ', $line);
 			list($flag, $type, $name, $description) = $seg;
 			$type = strtolower($type);
-			if(preg_match('/@property/i', $flag) && in_array($type, Attribute::TYPE_MAPS) && preg_match('/\\$?\w+/', $name)){
+			if(preg_match('/@property/i', $flag) && in_array($type, Attribute::ALL_TYPES) && preg_match('/\\$?\w+/', $name)){
 				$attr = new Attribute();
 				$attr->name = trim($name, '$');
 				$attr->is_readonly = stripos($flag, 'property-read') !== false;

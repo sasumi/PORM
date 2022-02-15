@@ -22,7 +22,6 @@ class DBQuery {
 	const INNER_JOIN = 3;
 
 	public $sql = '';
-	public $table_prefix = '';
 	public $operation = self::SELECT;
 	public $fields = [];
 	public $tables = [];
@@ -65,16 +64,6 @@ class DBQuery {
 	 */
 	public function setSql($sql){
 		$this->sql = $sql;
-		return $this;
-	}
-
-	/**
-	 * 设置表前缀
-	 * @param string $table_prefix
-	 * @return $this
-	 */
-	public function setTablePrefix($table_prefix = ''){
-		$this->table_prefix = $table_prefix;
 		return $this;
 	}
 
@@ -203,7 +192,7 @@ class DBQuery {
 	public function from($str){
 		$tables = explode(',', $str);
 		foreach($tables as $key => $table){
-			$tables[$key] = self::escapeKey($this->table_prefix.$table);
+			$tables[$key] = self::escapeKey($table);
 		}
 		$this->tables = $tables;
 		return $this;

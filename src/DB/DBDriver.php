@@ -464,9 +464,8 @@ class DBDriver {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
-		$prefix = $this->dsn['prefix'] ?: '';
 		$query = $this->genQuery();
-		$sql = "UPDATE {$prefix}{$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
+		$sql = "UPDATE {$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
 		$query->setSql($sql);
 		$this->query($query);
 		return $this->getAffectNum();
@@ -579,10 +578,7 @@ class DBDriver {
 	 * @return DBQuery
 	 */
 	protected function genQuery(){
-		$prefix = isset($this->dsn['prefix']) ? $this->dsn['prefix'] : '';
-		$ins = new DBQuery();
-		$ins->setTablePrefix($prefix);
-		return $ins;
+		return new DBQuery();
 	}
 
 	/**

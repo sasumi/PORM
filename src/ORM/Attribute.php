@@ -19,7 +19,7 @@ class Attribute {
 	const TYPE_TIMESTAMP = 'timestamp';
 	const TYPE_YEAR = 'year';
 
-	const TYPE_MAPS = [
+	const ALL_TYPES = [
 		self::TYPE_INT,
 		self::TYPE_FLOAT,
 		self::TYPE_DECIMAL,
@@ -35,18 +35,28 @@ class Attribute {
 		self::TYPE_YEAR,
 	];
 
-	public $name;
-	public $type;
-	public $alias = '';
-	public $description = '';
-	public $default = null;
-	public $options = [];
-	public $length = null;
-	public $is_readonly = false;
-	public $is_primary_key = false;
-	public $is_null_allow = false;
-	public $is_unique = false;
-	public $is_virtual = false;
+	const IS_TYPE_NUM = [
+		self::TYPE_INT,
+		self::TYPE_DECIMAL,
+		self::TYPE_FLOAT,
+		self::TYPE_DOUBLE,
+	];
+
+	public $name; //名称
+	public $type; //类型
+	public $alias = ''; //别名(中文名)
+	public $description = ''; //描述
+	public $default = null; //默认值
+	public $options = []; //选项(ENum类型有效)
+	public $length = null; //长度
+	public $precision = null; //精度
+	public $is_readonly = false; //是否只读
+	public $is_primary_key = false; //是否主键
+	public $is_null_allow = false; //是否允许为空
+	public $is_unique = false; //是否唯一
+	public $is_virtual = false; //是否虚拟
+	public $collate = ''; //字符集
+	public $charset = ''; //编码
 	public $setter;
 	public $getter;
 
