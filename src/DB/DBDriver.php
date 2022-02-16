@@ -427,20 +427,6 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取所有表
-	 * @return string[]
-	 * @throws \LFPhp\PORM\Exception\DBException
-	 */
-	public function getAllTables(){
-		$ret = $this->getAll(new DBQuery("SHOW TABLES"));
-		$tables = [];
-		foreach($ret as $item){
-			$tables[] = current($item);
-		}
-		return $tables;
-	}
-
-	/**
 	 * 获取指定表创建语句
 	 * @param string $table
 	 * @return string create table DSL

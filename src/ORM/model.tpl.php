@@ -13,7 +13,7 @@ use LFPhp\PORM\ORM\Attribute;
 use LFPhp\PORM\ORM\Model;
 
 /**
- * <?php echo $table, ' - ', $table_description, PHP_EOL;?>
+ * <?php echo $table_description, PHP_EOL;?>
 <?php echo DSLHelper::convertAttrsToDoctrine($attributes);?>
  */
 class <?php echo underscores_to_pascalcase($table, true);?> extends Model {

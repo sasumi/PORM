@@ -71,7 +71,7 @@ abstract class DSLHelper {
 		$code = '';
 		foreach($attrs as $attr){
 			$readonly_patch = $attr->is_readonly ? '-read' : '';
-			$code .= "{$tab_prefix}@property{$readonly_patch} ".(self::PHP_TYPE_MAP[$attr->type] ?? $attr->type)." \${$attr->name} {$attr->description}".PHP_EOL;
+			$code .= "{$tab_prefix}@property{$readonly_patch} ".(self::PHP_TYPE_MAP[$attr->type] ?? $attr->type)." \${$attr->name} {$attr->alias} {$attr->description}".PHP_EOL;
 		}
 		return $code;
 	}
