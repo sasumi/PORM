@@ -19,11 +19,10 @@
 		"php": ">=7.0",
 		"ext-mbstring": "*",
 		"ext-pdo": "*",
-		"lfphp/func": "^1.0",
 		"ext-json": "*",
 		"ext-mysqli": "*",
-		"lfphp/cache": "^1.0",
 		"lfphp/logger": "^1.0",
+		"lfphp/func": "^1.1",
 		"lfphp/pdodsn": "^0.0.7"
 	},
 	"require-dev": {

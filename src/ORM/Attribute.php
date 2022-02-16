@@ -61,7 +61,7 @@ class Attribute {
 	public $getter;
 
 	public function __construct(array $data = []){
-		foreach($data as $k=>$v){
+		foreach($data as $k => $v){
 			$this->$k = $v;
 		}
 	}

@@ -427,6 +427,31 @@ class DBDriver {
 	}
 
 	/**
+	 * 获取所有表
+	 * @return string[]
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public function getAllTables(){
+		$ret = $this->getAll(new DBQuery("SHOW TABLES"));
+		$tables = [];
+		foreach($ret as $item){
+			$tables[] = current($item);
+		}
+		return $tables;
+	}
+
+	/**
+	 * 获取指定表创建语句
+	 * @param string $table
+	 * @return string create table DSL
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public function getDSLSchema($table){
+		$ret = $this->getAll(new DBQuery("SHOW CREATE TABLE `$table`"));
+		return $ret[0]['Create Table'];
+	}
+
+	/**
 	 * 获取一条查询记录
 	 * @param DBQuery $query
 	 * @return array | null

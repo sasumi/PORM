@@ -1,60 +1,144 @@
 <?php
 namespace LFPhp\PORM\ORM;
 
-use LFPhp\Cache\CacheFile;
+use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
 use function LFPhp\Func\explode_by;
+use function LFPhp\Func\get_constant_name;
+use function LFPhp\Func\var_export_min;
 
 /**
- * 自动表注解解析
- * 数据库类型需要支持 SHOW CREATE TABLE 语句
+ * 数据库元数据抽象辅助
+ *  * @property-read int id
+ * @property string serial_no
+ * @property string business_id
+ * @property int state 0:初始化, 1:正常, 2:处理中, 3:废弃
+ * @property string raw
+ * @property string create_time
+
  */
-trait TableAnnotation {
-	/**
-	 * 根据实际数据库表设计，转换成Model属性，同时缓存到本地
-	 * @return mixed
-	 * @throws \Exception
-	 */
-	public static function getAttributes(){
-		$table = static::getTableName();
-		/** @var \LFPhp\PDODSN\DSN $dsn */
-		$dsn = static::getDbDsn();
-		$key = md5($dsn).'_'.$table;
-		return CacheFile::instance(['dir' => static::_getTableAnnotationCacheDir()])
-			->cache($key, function() use ($table){
-				$obj = static::setQuery("SHOW CREATE TABLE `$table`");
-				$ret = $obj->all(true);
-				$dsl = $ret[0]['Create Table'];
-				return self::__DSLResolve($dsl);
-			});
-	}
+abstract class DSLHelper {
+	const DEFAULT_MODEL_TPL = __DIR__.'/model.tpl.php';
+	const PHP_TYPE_MAP = [
+		Attribute::TYPE_DATE      => 'string',
+		Attribute::TYPE_TIME      => 'string',
+		Attribute::TYPE_DATETIME  => 'string',
+		Attribute::TYPE_TIMESTAMP => 'string',
+		Attribute::TYPE_YEAR      => 'int',
+		Attribute::TYPE_SET       => 'array',
+		Attribute::TYPE_ENUM      => 'array',
+		Attribute::TYPE_DECIMAL   => 'float',
+	];
 
 	/**
-	 * 获取缓存目录，方法支持覆盖
-	 * @return string path
-	 */
-	public static function _getTableAnnotationCacheDir(){
-		return sys_get_temp_dir().'/_table_annotation';
-	}
-
-	/**
-	 * 清空缓存目录
-	 */
-	public static function _clearTableAnnotationCache(){
-		CacheFile::instance(['dir'=>static::_getTableAnnotationCacheDir()])->flush();
-	}
-
-	/**
-	 * 从DSL中解析生成Attribute清单
-	 * @param string $dsl
-	 * @return Attribute[]
+	 * 从Model中解析获取DSL信息
+	 * @param Model|string $model_class
+	 * @return array [string:表名, string:表备注, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public static function __DSLResolve($dsl){
+	public static function resolveDSLByModel($model_class){
+		if(!class_exists($model_class)){
+			throw new Exception('Class no exists:'.$model_class);
+		}
+		if(!in_array(Model::class, class_parents($model_class)) || $model_class === Model::class){
+			throw new Exception('Class should inherit from '.Model::class);
+		}
+		$dsn = $model_class::getDbDsn();
+		$table = $model_class::getTableName();
+		return self::resolveDSLByDSN($dsn, $table);
+	}
+
+	/**
+	 * 从DSN中解析
+	 * @param \LFPhp\PDODSN\DSN $dsn
+	 * @param string $table
+	 * @return array [string:表名, string:表备注, array:Attribute[]]
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public static function resolveDSLByDSN($dsn, $table){
+		$pdo = DBDriver::instance($dsn);
+		$dsl = $pdo->getDSLSchema($table);
+		return self::resolveDSL($dsl);
+	}
+
+	/**
+	 * 转化属性表到文档声明
+	 * @param Attribute[] $attrs
+	 * @return string
+	 */
+	public static function convertAttrsToDoctrine(array $attrs){
+		$tab_prefix = ' * ';
+		$code = '';
+		foreach($attrs as $attr){
+			$readonly_patch = $attr->is_readonly ? '-read' : '';
+			$code .= "{$tab_prefix}@property{$readonly_patch} ".(self::PHP_TYPE_MAP[$attr->type] ?? $attr->type)." \${$attr->name} {$attr->description}".PHP_EOL;
+		}
+		return $code;
+	}
+
+	/**
+	 * @param Attribute $attr
+	 * @param bool $full_define
+	 * @return string
+	 */
+	public static function convertAttrToCode($attr, $full_define = false){
+		$default_attr = new Attribute();
+		$result = [];
+		$const_placeholder = '__CONST__';
+		foreach($attr as $f => $v){
+			if($full_define || $default_attr->{$f} !== $v){
+				if($f === 'type'){
+					$v = $const_placeholder.get_constant_name(Attribute::class, $v);
+				}
+				$result[$f] = $v;
+			}
+		}
+		$code = '';
+		$str = var_export_min($result, true);
+		$s = preg_replace(
+			['/^array\(/m', "/'$const_placeholder(.*?)'/", "/'CURRENT_TIMESTAMP'/", '/\)$/'],
+			['[',            'Attribute::'.'$1', "date('Y-m-d H:i:s')", ']'], $str);
+		$code .= "new Attribute($s)";
+		return $code;
+	}
+
+	/**
+	 * 构建Model模板
+	 * @param string $table
+	 * @param string $table_description
+	 * @param \LFPhp\PORM\ORM\Attribute[] $attributes
+	 * @param string $template
+	 * @return false|string
+	 */
+	public static function buildTemplate($table, $table_description, $attributes, $template = self::DEFAULT_MODEL_TPL){
+		ob_start();
+		include $template;
+		$str = ob_get_contents();
+		ob_clean();
+		return $str;
+	}
+
+	/**
+	 * 从DSL中解析生成：表名+表备注+Attribute清单
+	 * @param string $dsl
+	 * @return array [string:表名, string:表备注, array:Attribute[]]
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public static function resolveDSL($dsl){
 		$lines = explode_by("\n", $dsl);
 		$attrs = [];
-		foreach($lines as $ln=>$line){
+		$table_name = '';
+		$table_description = '';
+		foreach($lines as $ln => $line){
 			$attr = new Attribute();
+			if(!$table_name && preg_match('/^CREATE\s+TABLE\s+`([^`]+)`/', $line, $matches)){
+				$table_name = $matches[1];
+				continue;
+			}
+			if(!$table_description && preg_match("/\s+COMMENT='(.*?)'$/", $line, $matches)){
+				$table_description = $matches[1];
+				continue;
+			}
 			if(preg_match('/^`(\w+)`\s+(.*?)\s+(.*),?$/', $line, $matches)){
 				$name = $matches[1];
 				$left = $matches[3];
@@ -63,7 +147,7 @@ trait TableAnnotation {
 				$attr->type = $type;
 				$attr->length = $length;
 				$attr->precision = $precision;
-				$attr->options = $opts;
+				$attr->options = $opts ?: [];
 			}
 			if(self::_resolveDirective($line, 'CHARACTER SET', $charset)){
 				$attr->charset = $charset;
@@ -74,19 +158,19 @@ trait TableAnnotation {
 			if(self::_resolveDirective($line, 'DEFAULT', $default)){
 				$default = trim($default, "'");
 				if($default === 'CURRENT_TIMESTAMP'){
-					$attr->default = date('Y-m-d H:i:s');
-				}
-				elseif($default === 'NULL'){
+					$attr->default = 'CURRENT_TIMESTAMP'; //这里会涉及到属性打印,因此不能试用当前时间
+				}elseif($default === 'NULL'){
 					$attr->default = null;
 					$attr->is_null_allow = true;
-				}
-				elseif($attr->type === Attribute::TYPE_INT){
+				}elseif($attr->type === Attribute::TYPE_INT){
 					$attr->default = intval($default);
-				}
-				elseif(in_array($attr->type, [Attribute::TYPE_DECIMAL, Attribute::TYPE_FLOAT, Attribute::TYPE_DOUBLE])){
+				}elseif(in_array($attr->type, [
+					Attribute::TYPE_DECIMAL,
+					Attribute::TYPE_FLOAT,
+					Attribute::TYPE_DOUBLE,
+				])){
 					$attr->default = floatval(trim($default, "'"));
-				}
-				else {
+				}else{
 					$attr->default = $default;
 				}
 			}
@@ -103,14 +187,13 @@ trait TableAnnotation {
 					$attr->description = '';
 				}
 			}
-			if(strpos($line, ' AUTO_INCREMENT') !== false ||
-				self::_resolveDirective($line, 'ON UPDATE CURRENT_TIMESTAMP')){
+			if(strpos($line, ' AUTO_INCREMENT') !== false || self::_resolveDirective($line, 'ON UPDATE CURRENT_TIMESTAMP')){
 				$attr->is_readonly = true;
 			}
 
 			if(preg_match('/^PRIMARY\sKEY\s\(`(.*)`\)/', $line, $matches)){
-				array_walk($attrs, function($at)use($matches){
-					/** @var \LFPhp\PORM\ORM\Attribute $at */
+				array_walk($attrs, function($at) use ($matches){
+					/** @var Attribute $at */
 					if($at->name === $matches[1]){
 						$at->is_primary_key = true;
 					}
@@ -118,8 +201,8 @@ trait TableAnnotation {
 			}
 			//当前仅支持单字段唯一
 			if(preg_match('/^UNIQUE\sKEY.*\(`([^`]+)`\)/i', $line, $matches)){
-				array_walk($attrs, function($at)use($matches){
-					/** @var \LFPhp\PORM\ORM\Attribute $at */
+				array_walk($attrs, function($at) use ($matches){
+					/** @var Attribute $at */
 					if($at->name === $matches[1]){
 						$at->is_unique = true;
 					}
@@ -129,7 +212,7 @@ trait TableAnnotation {
 				$attrs[] = $attr;
 			}
 		}
-		return $attrs;
+		return [$table_name, $table_description, $attrs];
 	}
 
 	/**
@@ -194,13 +277,12 @@ trait TableAnnotation {
 
 				//scalar
 				if($is_scalar){
-					$precision = 0;
+					$precision = null;
 					if(strpos($val, ',') !== false){
 						list($val, $precision) = explode(',', $val);
 					}
 					return [$type, (int)$val ?: $def_len, $precision];
-				}
-				//enum、set
+				}//enum、set
 				else if($type == Attribute::TYPE_ENUM || $type == Attribute::TYPE_SET){
 					$keys = explode_by(',', str_replace("'", '', $val));
 
@@ -208,15 +290,14 @@ trait TableAnnotation {
 					if(preg_match('/\sCOMMENT\s\'(.*?)\(([^)]+)\)\'/', $tail_sql, $ms)){
 						$remarks = explode_by(',', $ms[2]);
 						if(count($remarks) == count($keys)){
-							return [Attribute::TYPE_ENUM, null, array_combine($keys, $remarks)];
+							return [Attribute::TYPE_ENUM, null, null, array_combine($keys, $remarks)];
 						}
-					} else {
+					}else{
 						return [Attribute::TYPE_ENUM, null, null, array_combine($keys, $keys)];
 					}
-				}
-				//time
+				}//time
 				else{
-					return [$type];
+					return [$type, null, null, []];
 				}
 			}
 		}

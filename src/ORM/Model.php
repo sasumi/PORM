@@ -49,7 +49,9 @@ abstract class Model implements JsonSerializable {
 	/**
 	 * @return Attribute[]
 	 */
-	abstract static public function getAttributes();
+	static public function getAttributes(){
+		return [];
+	}
 
 	/**
 	 * DBModel constructor.
@@ -152,7 +154,7 @@ abstract class Model implements JsonSerializable {
 	 * @param int $operate_type
 	 * @return \LFPhp\PDODSN\DSN
 	 */
-	abstract static protected function getDbDsn($operate_type = self::OP_READ);
+	abstract static public function getDbDsn($operate_type = self::OP_READ);
 
 	/**
 	 * 设置查询SQL语句

@@ -3,7 +3,6 @@ namespace LFPhp\PORM\tests;
 use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PORM\ORM\Attribute;
 use LFPhp\PORM\ORM\Model;
-use LFPhp\PORM\ORM\TableAnnotation;
 
 /**
  * Class UserTable
@@ -19,7 +18,6 @@ use LFPhp\PORM\ORM\TableAnnotation;
  * @property mixed $type job类型
  */
 class UserTable extends Model {
-	use TableAnnotation;
 	public static function getTableName(){
 		return 'blog_test';
 	}
@@ -39,7 +37,7 @@ class UserTable extends Model {
 	 * @return \LFPhp\PDODSN\Database\MySQL
 	 * @throws \Exception
 	 */
-	static protected function getDbDsn($operate_type = self::OP_READ){
+	static public function getDbDsn($operate_type = self::OP_READ){
 		return new MySQL([
 			'host'=>'localhost',
 			'user'=>'root',
