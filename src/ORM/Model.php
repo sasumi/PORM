@@ -1052,7 +1052,7 @@ abstract class Model implements JsonSerializable {
 
 		$err = '';
 		$val = $value;
-		$name = $attr->alias;
+		$name = $attr->alias ? $attr->alias : $attr->name;
 		$options = $attr->options;
 		if(is_callable($options)){
 			$options = call_user_func($options, $this);
