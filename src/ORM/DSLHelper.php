@@ -9,13 +9,6 @@ use function LFPhp\Func\var_export_min;
 
 /**
  * 数据库元数据抽象辅助
- *  * @property-read int id
- * @property string serial_no
- * @property string business_id
- * @property int state 0:初始化, 1:正常, 2:处理中, 3:废弃
- * @property string raw
- * @property string create_time
-
  */
 abstract class DSLHelper {
 	const DEFAULT_MODEL_TPL = __DIR__.'/model.tpl.php';
