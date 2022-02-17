@@ -1093,10 +1093,11 @@ abstract class Model implements JsonSerializable {
 		}
 
 		//length
-		if(!$err && $attr->type && !in_array($attr->type, [
+		if(!$err && $attr->length && $attr->type && !in_array($attr->type, [
 				Attribute::TYPE_DATETIME,
 				Attribute::TYPE_DATE,
 				Attribute::TYPE_TIME,
+				Attribute::TYPE_TIMESTAMP
 			])){
 			if($attr->precision){
 				$int_len = strlen(substr($val, 0, strpos($val, '.')));
