@@ -23,7 +23,7 @@
 		"ext-mysqli": "*",
 		"lfphp/logger": "^1.0",
 		"lfphp/func": "^1.1",
-		"lfphp/pdodsn": "^0.0.7"
+		"lfphp/pdodsn": "^0.0.8"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^9.5"

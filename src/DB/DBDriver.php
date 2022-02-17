@@ -95,9 +95,9 @@ class DBDriver {
 		if($to_strict){
 			$sql = "set session sql_mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'";
 		} else {
-			$sql = "set session sql_mode='NO_ENGINE_SUBSTITUTION'";
+			$sql = "SET sql_mode ='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'";
 		}
-		$this->conn->prepare($sql);
+		$this->conn->query($sql);
 	}
 
 	/**
@@ -601,7 +601,7 @@ class DBDriver {
 	final public function query($query){
 		try{
 			self::$processing_query = $query;
-			self::getLogger()->info('query:'.$query.'');
+			self::getLogger()->info('Query: '.$query.'');
 			$result = $this->dbQuery($query);
 			self::$processing_query = null;
 
@@ -683,6 +683,9 @@ class DBDriver {
 			return $this->conn;
 		}
 		$this->conn = $dsn->pdoConnect();
+		if(isset($dsn->strict_mode)){
+			$this->toggleStrictMode($dsn->strict_mode);
+		}
 		return $this->conn;
 	}
 
