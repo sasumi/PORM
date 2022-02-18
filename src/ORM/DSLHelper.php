@@ -88,9 +88,19 @@ abstract class DSLHelper {
 		}
 		$code = '';
 		$str = var_export_min($result, true);
-		$s = preg_replace(
-			['/^array\(/m', "/'$const_placeholder(.*?)'/", "/'CURRENT_TIMESTAMP'/", '/\)$/'],
-			['[',            'Attribute::'.'$1', "date('Y-m-d H:i:s')", ']'], $str);
+		$s = preg_replace([
+			'/^array\(/m',
+			"/'$const_placeholder(.*?)'/",
+			"/'".preg_quote(Attribute::DEFAULT_CURRENT_TIMESTAMP)."'/",
+			"/'".preg_quote(Attribute::DEFAULT_NULL)."'/",
+			'/\)$/'
+		], [
+			'[',
+			'Attribute::'.'$1',
+			"Attribute::DEFAULT_CURRENT_TIMESTAMP",
+			"Attribute::DEFAULT_NULL",
+			']',
+		], $str);
 		$code .= "new Attribute($s)";
 		return $code;
 	}
@@ -151,10 +161,9 @@ abstract class DSLHelper {
 			if(self::_resolveDirective($line, 'DEFAULT', $default)){
 				$default = trim($default, "'");
 				if($default === 'CURRENT_TIMESTAMP'){
-					$attr->default = 'CURRENT_TIMESTAMP'; //这里会涉及到属性打印,因此不能试用当前时间
+					$attr->default = Attribute::DEFAULT_CURRENT_TIMESTAMP; //这里会涉及到属性打印,因此不能试用当前时间
 				}elseif($default === 'NULL'){
-					$attr->default = null;
-					$attr->is_null_allow = true;
+					$attr->default = Attribute::DEFAULT_NULL;
 				}elseif($attr->type === Attribute::TYPE_INT){
 					$attr->default = intval($default);
 				}elseif(in_array($attr->type, [

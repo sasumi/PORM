@@ -900,7 +900,6 @@ abstract class Model implements JsonSerializable {
 		}
 		$data = $this->properties;
 		$data = $this->validate($data, DBQuery::INSERT, $flush_all);
-
 		$result = static::getDbDriver(self::OP_WRITE)->insert(static::getTableName(), $data);
 		if($result){
 			$pk_val = static::getDbDriver(self::OP_WRITE)->getLastInsertId();
@@ -996,8 +995,11 @@ abstract class Model implements JsonSerializable {
 
 		//插入时填充default值
 		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
-			/** @var Attribute $attr */
-			if($attr->default){
+			/**
+			 * 没有设置数据，属性定义没有默认值情况，需要填充定义默认值
+			 * @var Attribute $attr
+			 */
+			if(!isset($data[$k]) && $attr->hasUserDefinedDefaultValue()){
 				if($query_type == DBQuery::INSERT){
 					if(!isset($data[$k])){ //允许提交空字符串
 						$data[$k] = $attr->default;
@@ -1017,22 +1019,10 @@ abstract class Model implements JsonSerializable {
 			}
 		}
 
-		//处理date日期默认为NULL情况
-		foreach($data as $k => $val){
-			if(in_array($attr_maps[$k]->type, array(
-				Attribute::TYPE_DATE,
-				Attribute::TYPE_DATETIME,
-				Attribute::TYPE_TIME,
-				)) && $attr_maps[$k]->default && $attr_maps[$k]->default === null && !$data[$k]
-			){
-				$data[$k] = null;
-			}
-		}
-
 		//属性校验
 		foreach($attr_maps as $k => $attr){
 			if(!$attr->is_readonly || $flush_all){
-				if($msg = $this->validateField($data[$k], $k)){
+				if($msg = $this->validateField($attr, $data[$k])){
 					throw new DBException($msg, null, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
 				}
 			}
@@ -1042,29 +1032,26 @@ abstract class Model implements JsonSerializable {
 
 	/**
 	 * 字段校验
+	 * @param \LFPhp\PORM\ORM\Attribute $attr
 	 * @param $value
-	 * @param $field
 	 * @return string
 	 * @throws \Exception
 	 */
-	private function validateField(&$value, $field){
-		$attr = static::getAttributeByName($field);
-
+	private function validateField($attr, $value){
 		$err = '';
-		$val = $value;
 		$name = $attr->alias ? $attr->alias : $attr->name;
 		$options = $attr->options;
 		if(is_callable($options)){
 			$options = call_user_func($options, $this);
 		}
 
-		$required = !$attr->is_null_allow;
+		$required = !$attr->is_null_allow && !$attr->hasSysDefinedDefaultValue();
 
 		//type
 		if(!$err){
 			switch($attr->type){
 				case Attribute::TYPE_INT:
-					if(strlen($val) && !is_numeric($val)){
+					if(strlen($value) && !is_numeric($value)){
 						$err = $name.'格式不正确';
 					}
 					break;
@@ -1072,13 +1059,13 @@ abstract class Model implements JsonSerializable {
 				case Attribute::TYPE_FLOAT:
 				case Attribute::TYPE_DOUBLE:
 				case Attribute::TYPE_DECIMAL:
-					if(!(!$required && !strlen($val.'')) && isset($val) && !is_numeric($val)){
+					if(!(!$required && !strlen($value.'')) && isset($value) && !is_numeric($value)){
 						$err = $name.'格式不正确';
 					}
 					break;
 
 				case Attribute::TYPE_ENUM:
-					$err = !(!$required && !strlen($val.'')) && !isset($options[$val]) ? '请选择'.$name : '';
+					$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? '请选择'.$name : '';
 					break;
 
 				//string暂不校验
@@ -1088,7 +1075,7 @@ abstract class Model implements JsonSerializable {
 		}
 
 		//required
-		if(!$err && $required && !isset($val)){
+		if(!$err && $required && !isset($value)){
 			$err = "请输入{$name}";
 		}
 
@@ -1100,8 +1087,8 @@ abstract class Model implements JsonSerializable {
 				Attribute::TYPE_TIMESTAMP
 			])){
 			if($attr->precision){
-				$int_len = strlen(substr($val, 0, strpos($val, '.')));
-				$precision_len = strpos($val, '.') !== false ? strlen(substr($val, strpos($val, '.') + 1)) : 0;
+				$int_len = strlen(substr($value, 0, strpos($value, '.')));
+				$precision_len = strpos($value, '.') !== false ? strlen(substr($value, strpos($value, '.') + 1)) : 0;
 				if($int_len > $attr->length || $precision_len > $attr['precision']){
 					$err = "{$name}长度超出：$value";
 				}
@@ -1109,15 +1096,12 @@ abstract class Model implements JsonSerializable {
 				//mysql字符计算采用mb_strlen计算字符个数
 				$dsn = static::getDbDriver(self::OP_WRITE)->dsn;
 				if($attr->type === 'string' && get_class($dsn) == MySQL::class){
-					$str_len = mb_strlen($val, 'utf-8');
+					$str_len = mb_strlen($value, 'utf-8');
 				}else{
-					$str_len = strlen($val);
+					$str_len = strlen($value);
 				}
 				$err = $str_len > $attr->length ? "{$name}长度超出：$value {$str_len} > {$attr->length}" : '';
 			}
-		}
-		if(!$err){
-			$value = $val;
 		}
 		return $err;
 	}

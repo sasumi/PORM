@@ -19,6 +19,9 @@ class Attribute {
 	const TYPE_TIMESTAMP = 'timestamp';
 	const TYPE_YEAR = 'year';
 
+	const DEFAULT_NULL = "__ATTRIBUTE_DEFAULT_NULL__";
+	const DEFAULT_CURRENT_TIMESTAMP = "__ATTRIBUTE_DEFAULT_CURRENT_TIMESTAMP__";
+
 	const ALL_TYPES = [
 		self::TYPE_INT,
 		self::TYPE_FLOAT,
@@ -59,6 +62,22 @@ class Attribute {
 	public $charset = ''; //编码
 	public $setter;
 	public $getter;
+
+	/**
+	 * 属性是否具备用户设定默认值
+	 * @return bool
+	 */
+	public function hasUserDefinedDefaultValue(){
+		return isset($this->default) && $this->default !== self::DEFAULT_NULL && $this->default !== self::DEFAULT_CURRENT_TIMESTAMP;
+	}
+
+	/**
+	 * 是否有系统定义默认值
+	 * @return bool
+	 */
+	public function hasSysDefinedDefaultValue(){
+		return $this->default === self::DEFAULT_NULL || $this->default === self::DEFAULT_CURRENT_TIMESTAMP;
+	}
 
 	public function __construct(array $data = []){
 		foreach($data as $k => $v){
