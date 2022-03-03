@@ -245,7 +245,7 @@ class DBDriver {
 	 * @return array
 	 */
 	public function getTables(){
-		$query = "SELECT `table_name`, `engine`, `table_collation`, `table_comment` FROM `information_schema`.`tables` WHERE `table_schema`=?";
+		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment FROM `information_schema`.`tables` WHERE `table_schema`=?";
 		$sth = $this->conn->prepare($query);
 		$sth->execute([$this->dsn->database]);
 		return $sth->fetchAll(PDO::FETCH_ASSOC);
