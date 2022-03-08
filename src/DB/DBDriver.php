@@ -2,11 +2,11 @@
 namespace LFPhp\PORM\DB;
 
 use Exception;
+use LFPhp\Logger\LoggerTrait;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
-use LFPhp\PORM\Misc\LoggerTrait;
 use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
