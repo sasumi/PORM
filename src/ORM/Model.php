@@ -1,6 +1,7 @@
 <?php
 namespace LFPhp\PORM\ORM;
 
+use ArrayAccess;
 use Exception;
 use JsonSerializable;
 use LFPhp\Logger\Logger;
@@ -16,7 +17,7 @@ use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
 use function LFPhp\Func\time_range_v;
 
-abstract class Model implements JsonSerializable {
+abstract class Model implements JsonSerializable, ArrayAccess {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
 
@@ -575,7 +576,7 @@ abstract class Model implements JsonSerializable {
 	public function oneOrFail($as_array = false){
 		$data = $this->one($as_array);
 		if(!$data){
-			throw new NotFoundException('找不到相关数据。');
+			throw new NotFoundException('找不到相关数据。'.$this->query, null, null, $this->query);
 		}
 		return $data;
 	}
@@ -1231,6 +1232,22 @@ abstract class Model implements JsonSerializable {
 	public function getAffectNum(){
 		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
 		return static::getDbDriver($type)->getAffectNum();
+	}
+
+	public function offsetExists($offset){
+		return isset($this->properties[$offset]);
+	}
+
+	public function offsetGet($offset){
+		return $this->properties[$offset];
+	}
+
+	public function offsetSet($offset, $value){
+		$this->properties[$offset] = $value;
+	}
+
+	public function offsetUnset($offset){
+		unset($this->properties[$offset]);
 	}
 
 	/**
