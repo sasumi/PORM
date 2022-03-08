@@ -5,7 +5,7 @@ use LFPhp\PDODSN\DSN;
 use Throwable;
 
 class DBException extends Exception {
-	protected $dsn;
+	public $dsn;
 
 	public function __construct($message = "", $code = 0, Throwable $previous = null, $data = null, DSN $dsn = null){
 		$this->dsn = $dsn;

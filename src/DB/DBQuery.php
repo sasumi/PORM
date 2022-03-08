@@ -406,11 +406,20 @@ class DBQuery {
 	}
 
 	/**
-	 * 输出SQL查询语句
+	 * 输出调试信息
+	 * @return string[]
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public function __debugInfo(){
+		return ['SQL' => $this->toSQL()];
+	}
+
+	/**
+	 * 获取当前查询SQL
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function __toString(){
+	public function toSQL(){
 		if($this->sql){
 			return $this->sql;
 		}
@@ -464,7 +473,6 @@ class DBQuery {
 				$op_key = $this->operation == self::REPLACE ? 'REPLACE INTO' : 'UPDATE';
 				$sql = "$op_key ".implode(',', $this->tables).' SET '.implode(',', $sets).$this->getWhereStr();
 				break;
-
 			default:
 				throw new DBException("No database operation type set");
 		}
@@ -476,5 +484,13 @@ class DBQuery {
 			}
 		}
 		return $sql;
+	}
+
+	/**
+	 * 输出SQL查询语句
+	 * @return string
+	 */
+	public function __toString(){
+		return $this->toSQL();
 	}
 }

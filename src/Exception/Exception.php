@@ -4,7 +4,7 @@ namespace LFPhp\PORM\Exception;
 use Throwable;
 
 class Exception extends \Exception {
-	protected $data;
+	public $data;
 
 	public function __construct($message = "", $code = 0, Throwable $previous = null, $data = null){
 		$this->data = $data;
