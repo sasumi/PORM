@@ -171,7 +171,7 @@ class DBDriver {
 	/**
 	 * 数据转义
 	 * @param string $data
-	 * @param string $type
+	 * @param int $type PDO变量类型(PARAM_STR，PARAM_INT，PARAM_NULL···)
 	 * @return mixed
 	 */
 	public function quote($data, $type = null) {

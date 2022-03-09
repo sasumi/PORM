@@ -10,11 +10,13 @@ use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
+use PDO;
 use function LFPhp\Func\array_clear_fields;
 use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
+use function LFPhp\Func\dump;
 use function LFPhp\Func\time_range_v;
 
 abstract class Model implements JsonSerializable, ArrayAccess {
@@ -1176,27 +1178,30 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$statement = isset($args[0]) ? $args[0] : null;
 		$args = array_slice($args, 1);
 		if(!empty($args) && $statement){
-			$arr = explode('?', $statement);
-			$rst = '';
-			foreach($args as $key => $val){
-				if(is_array($val)){
-					array_walk($val, function(&$item) use ($model_class){
-						$item = $model_class::getDbDriver(self::OP_READ)->quote($item);
-					});
+			$statement = preg_replace_callback('/\?/', function()use(&$args, $model_class){
+				$val = array_shift($args);
+				return self::quoteVal($val, $model_class, PDO::PARAM_STR);
 
-					if(!empty($val)){
-						$rst .= $arr[$key].'('.join(',', $val).')';
-					} else{
-						$rst .= $arr[$key].'(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
-					}
-				} else{
-					$rst .= $arr[$key].$model_class::getDbDriver(self::OP_READ)->quote($val);
-				}
-			}
-			$rst .= array_pop($arr);
-			$statement = $rst;
+			}, $statement);
 		}
 		return $statement;
+	}
+
+	/**
+	 * 转义值
+	 * @param mixed $val
+	 * @param static|string $model_class
+	 * @param int $type PDO变量类型(PARAM_STR，PARAM_INT，PARAM_NULL···)，缺省为字符串类型
+	 * @return string
+	 */
+	private static function quoteVal($val, $model_class, $type = null){
+		if(is_array($val)){
+			array_walk($val, function(&$item) use ($model_class, $type){
+				$item = $model_class::getDbDriver(self::OP_READ)->quote($item, $type);
+			});
+			return !empty($val) ? '('.join(',', $val).')' : '(NULL)'; //(NULL) This will never match, since nothing is equal to null (not even null itself.)
+		}
+		return $model_class::getDbDriver(self::OP_READ)->quote($val);
 	}
 
 	/**
