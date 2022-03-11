@@ -1324,6 +1324,27 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		];
 	}
 
+	/**
+	 * 转换为数组
+	 * @return array
+	 */
+	public function toArray(){
+		return $this->properties;
+	}
+
+	/**
+	 * 批量转换为数组
+	 * @param self|static $models
+	 * @return array
+	 */
+	public static function convertToArray($models){
+		$ret = [];
+		foreach($models as $model){
+			$ret[] = $model->toArray();
+		}
+		return $ret;
+	}
+
 	public function jsonSerialize(){
 		return $this->properties;
 	}
