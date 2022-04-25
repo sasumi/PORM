@@ -8,6 +8,7 @@ use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\PaginateInterface;
+use LFPhp\PORM\ORM\Model;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -47,7 +48,7 @@ class DBDriver {
 	private static $query_cache_data = [];
 
 	/**
-	 * @var DBQuery current processing db query, support for exception handle
+	 * @var DBQuery|string current processing db query, support for exception handle
 	 */
 	private static $processing_query;
 
@@ -172,7 +173,7 @@ class DBDriver {
 	 * 数据转义
 	 * @param string $data
 	 * @param int $type PDO变量类型(PARAM_STR，PARAM_INT，PARAM_NULL···)
-	 * @return mixed
+	 * @return false|string
 	 */
 	public function quote($data, $type = null) {
 		if(is_array($data)){
@@ -202,7 +203,7 @@ class DBDriver {
 	/**
 	 * 获取所有行
 	 * @param PDOStatement $resource
-	 * @return array | mixed
+	 * @return array
 	 */
 	public function fetchAll($resource) {
 		$resource->setFetchMode(PDO::FETCH_ASSOC);
@@ -361,7 +362,7 @@ class DBDriver {
 
 	/**
 	 * 获取正在提交中的查询
-	 * @return mixed
+	 * @return DBQuery|string
 	 */
 	public static function getProcessingQuery(){
 		return self::$processing_query;
@@ -369,9 +370,9 @@ class DBDriver {
 
 	/**
 	 * 转义数组
-	 * @param $data
+	 * @param array $data
 	 * @param array $types
-	 * @return mixed
+	 * @return array
 	 */
 	public function quoteArray(array $data, array $types){
 		foreach($data as $k => $item){
@@ -419,11 +420,11 @@ class DBDriver {
 	/**
 	 * 获取所有查询记录
 	 * @param DBQuery $query
-	 * @return mixed
+	 * @return array|Model[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAll(DBQuery $query){
-		return $this->getPage($query, null);
+		return $this->getPage($query);
 	}
 
 	/**
@@ -476,7 +477,7 @@ class DBDriver {
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
 		$query = $this->genQuery();
-		$sql = "UPDATE {$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
+		$sql = "UPDATE $table SET $field = $field".($offset_count > 0 ? " + $offset_count" : " - $offset_count");
 		$query->setSql($sql);
 		$this->query($query);
 		return $this->getAffectNum();
@@ -572,7 +573,7 @@ class DBDriver {
 	 * @param $table
 	 * @param array $data
 	 * @param null $condition
-	 * @return mixed
+	 * @return \PDOStatement
 	 * @throws DBException
 	 * @throws NullOperation
 	 */
@@ -595,13 +596,13 @@ class DBDriver {
 	/**
 	 * SQL查询，支持重连数据库选项
 	 * @param \LFPhp\PORM\DB\DBQuery|string $query
-	 * @return mixed
+	 * @return \PDOStatement
 	 * @throws DBException
 	 */
 	final public function query($query){
 		try{
 			self::$processing_query = $query;
-			self::getLogger()->info('Query: '.$query.'');
+			self::getLogger()->info('Query: '.$query);
 			$result = $this->dbQuery($query);
 			self::$processing_query = null;
 

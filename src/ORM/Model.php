@@ -16,7 +16,6 @@ use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
-use function LFPhp\Func\dump;
 use function LFPhp\Func\time_range_v;
 
 abstract class Model implements JsonSerializable, ArrayAccess {
@@ -45,8 +44,15 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function onAfterDelete(){}
 	public function onBeforeSave(){}
 	protected function onBeforeChanged(){}
-	protected static function onBeforeChangedGlobal(){}
 
+	/**
+	 * @return bool
+	 */
+	protected static function onBeforeChangedGlobal(){return true;}
+
+	/**
+	 * @return string
+	 */
 	abstract static public function getTableName();
 
 	/**
@@ -225,7 +231,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 查找
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = new static;
@@ -240,7 +246,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -319,7 +325,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param number|null $min 最小端
 	 * @param number|null $max 最大端
 	 * @param bool $equal_cmp 是否包含等于
-	 * @return DBQuery|static
+	 * @return static
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
 		$cmp = $equal_cmp ? '=' : '';
@@ -358,7 +364,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 由主键查询一条记录
 	 * @param string $val
 	 * @param bool $as_array
-	 * @return static|DBQuery|array
+	 * @return array|static
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findOneByPk($val, $as_array = false){
@@ -399,7 +405,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键值删除一条记录
 	 * @param string $val
-	 * @return bool
+	 * @return int
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function delByPk($val){
@@ -411,7 +417,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键删除记录
 	 * @param $val
-	 * @return bool
+	 * @return int
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */

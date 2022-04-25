@@ -173,7 +173,7 @@ class DBQuery {
 	/**
 	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
-	 * @return \LFPhp\PORM\ORM\Model|\LFPhp\PORM\DB\DBQuery
+	 * @return \LFPhp\PORM\DB\DBQuery
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
@@ -272,7 +272,7 @@ class DBQuery {
 	/**
 	 * get join query string
 	 * @param array $joins
-	 * @return mixed
+	 * @return string
 	 */
 	private function getJoinStr($joins = []){
 		$str = [];
@@ -333,7 +333,7 @@ class DBQuery {
 	/**
 	 * 排序
 	 * @param string|array $str
-	 * @return static|DBQuery|Model
+	 * @return DBQuery|static
 	 **/
 	public function order($str){
 		if(is_array($str)){
@@ -346,7 +346,7 @@ class DBQuery {
 	/**
 	 * 分组
 	 * @param string $str
-	 * @return DBQuery|Model
+	 * @return DBQuery
 	 **/
 	public function group($str){
 		$this->group = $str;
@@ -381,7 +381,7 @@ class DBQuery {
 	/**
 	 * 判断当前操作语句是否为写入语句
 	 * @param string|DBQuery $query
-	 * @return int
+	 * @return bool
 	 */
 	public static function isWriteOperation($query = ''){
 		return !preg_match('/^select\s/i', trim($query.''));
