@@ -10,7 +10,6 @@ use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NotFoundException;
-use PDO;
 use function LFPhp\Func\array_clear_fields;
 use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
@@ -44,15 +43,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function onAfterDelete(){}
 	public function onBeforeSave(){}
 	protected function onBeforeChanged(){}
+	protected static function onBeforeChangedGlobal(){}
 
-	/**
-	 * @return bool
-	 */
-	protected static function onBeforeChangedGlobal(){return true;}
-
-	/**
-	 * @return string
-	 */
 	abstract static public function getTableName();
 
 	/**
@@ -231,7 +223,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 查找
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = new static;
@@ -246,7 +238,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -325,7 +317,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param number|null $min 最小端
 	 * @param number|null $max 最大端
 	 * @param bool $equal_cmp 是否包含等于
-	 * @return static
+	 * @return DBQuery|static
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
 		$cmp = $equal_cmp ? '=' : '';
@@ -364,7 +356,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 由主键查询一条记录
 	 * @param string $val
 	 * @param bool $as_array
-	 * @return array|static
+	 * @return static|DBQuery|array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function findOneByPk($val, $as_array = false){
@@ -405,7 +397,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键值删除一条记录
 	 * @param string $val
-	 * @return int
+	 * @return bool
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public static function delByPk($val){
@@ -417,7 +409,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键删除记录
 	 * @param $val
-	 * @return int
+	 * @return bool
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
@@ -1184,30 +1176,27 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$statement = isset($args[0]) ? $args[0] : null;
 		$args = array_slice($args, 1);
 		if(!empty($args) && $statement){
-			$statement = preg_replace_callback('/\?/', function()use(&$args, $model_class){
-				$val = array_shift($args);
-				return self::quoteVal($val, $model_class, PDO::PARAM_STR);
+			$arr = explode('?', $statement);
+			$rst = '';
+			foreach($args as $key => $val){
+				if(is_array($val)){
+					array_walk($val, function(&$item) use ($model_class){
+						$item = $model_class::getDbDriver(self::OP_READ)->quote($item);
+					});
 
-			}, $statement);
+					if(!empty($val)){
+						$rst .= $arr[$key].'('.join(',', $val).')';
+					} else{
+						$rst .= $arr[$key].'(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
+					}
+				} else{
+					$rst .= $arr[$key].$model_class::getDbDriver(self::OP_READ)->quote($val);
+				}
+			}
+			$rst .= array_pop($arr);
+			$statement = $rst;
 		}
 		return $statement;
-	}
-
-	/**
-	 * 转义值
-	 * @param mixed $val
-	 * @param static|string $model_class
-	 * @param int $type PDO变量类型(PARAM_STR，PARAM_INT，PARAM_NULL···)，缺省为字符串类型
-	 * @return string
-	 */
-	private static function quoteVal($val, $model_class, $type = null){
-		if(is_array($val)){
-			array_walk($val, function(&$item) use ($model_class, $type){
-				$item = $model_class::getDbDriver(self::OP_READ)->quote($item, $type);
-			});
-			return !empty($val) ? '('.join(',', $val).')' : '(NULL)'; //(NULL) This will never match, since nothing is equal to null (not even null itself.)
-		}
-		return $model_class::getDbDriver(self::OP_READ)->quote($val);
 	}
 
 	/**
@@ -1328,27 +1317,6 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			'query'             => $this->getQuery().'',
 			'database'          => json_encode($dsn),
 		];
-	}
-
-	/**
-	 * 转换为数组
-	 * @return array
-	 */
-	public function toArray(){
-		return $this->properties;
-	}
-
-	/**
-	 * 批量转换为数组
-	 * @param self|static $models
-	 * @return array
-	 */
-	public static function convertToArray($models){
-		$ret = [];
-		foreach($models as $model){
-			$ret[] = $model->toArray();
-		}
-		return $ret;
 	}
 
 	public function jsonSerialize(){

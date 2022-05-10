@@ -2,7 +2,6 @@
 namespace LFPhp\PORM\DB;
 
 use LFPhp\PORM\Exception\DBException;
-use LFPhp\PORM\ORM\Model;
 
 class DBQuery {
 	const SELECT = 'SELECT';
@@ -163,7 +162,7 @@ class DBQuery {
 	/**
 	 * 设置数据（仅对update, replace, insert有效)
 	 * @param array $data
-	 * @return \LFPhp\PORM\DB\DBQuery $this
+	 * @return $this
 	 */
 	public function setData(array $data){
 		$this->data = $data;
@@ -173,13 +172,17 @@ class DBQuery {
 	/**
 	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
-	 * @return \LFPhp\PORM\DB\DBQuery
+	 * @return $this
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
 		return $this;
 	}
 
+	/**
+	 * @param ...$fields
+	 * @return $this
+	 */
 	public function field(...$fields){
 		return $this->fields($fields);
 	}
@@ -274,7 +277,7 @@ class DBQuery {
 	 * @param array $joins
 	 * @return string
 	 */
-	private function getJoinStr($joins = []){
+	private function getJoinStr(array $joins = []){
 		$str = [];
 		foreach($joins ?: $this->joins as $j){
 			list($table, $on, $type) = $j;
@@ -333,7 +336,7 @@ class DBQuery {
 	/**
 	 * 排序
 	 * @param string|array $str
-	 * @return DBQuery|static
+	 * @return $this
 	 **/
 	public function order($str){
 		if(is_array($str)){
@@ -346,7 +349,7 @@ class DBQuery {
 	/**
 	 * 分组
 	 * @param string $str
-	 * @return DBQuery
+	 * @return $this
 	 **/
 	public function group($str){
 		$this->group = $str;

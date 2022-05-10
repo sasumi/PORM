@@ -8,7 +8,6 @@ use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\PaginateInterface;
-use LFPhp\PORM\ORM\Model;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -48,7 +47,7 @@ class DBDriver {
 	private static $query_cache_data = [];
 
 	/**
-	 * @var DBQuery|string current processing db query, support for exception handle
+	 * @var DBQuery current processing db query, support for exception handle
 	 */
 	private static $processing_query;
 
@@ -127,12 +126,12 @@ class DBDriver {
 
 	/**
 	 * database query function
-	 * @param string|DBQuery $sql
+	 * @param string|DBQuery $query
 	 * @return PDOStatement
 	 */
-	protected function dbQuery($sql){
+	protected function dbQuery($query){
 		$this->_last_query_result = null;
-		$result = $this->conn->query($sql.'');
+		$result = $this->conn->query($query.'');
 		$this->_last_query_result = $result;
 		return $result;
 	}
@@ -172,8 +171,8 @@ class DBDriver {
 	/**
 	 * 数据转义
 	 * @param string $data
-	 * @param int $type PDO变量类型(PARAM_STR，PARAM_INT，PARAM_NULL···)
-	 * @return false|string
+	 * @param string $type
+	 * @return mixed
 	 */
 	public function quote($data, $type = null) {
 		if(is_array($data)){
@@ -269,13 +268,13 @@ class DBDriver {
 
 	/**
 	 * 解析SQL语句
-	 * @param $sql
+	 * @param DBQuery|string $query
 	 * @return array
 	 * @throws DBException
 	 */
-	public function explain($sql){
-		$sql = "EXPLAIN $sql";
-		$rst = $this->query($sql);
+	public function explain($query){
+		$query = "EXPLAIN $query";
+		$rst = $this->query($query);
 		$data = $this->fetchAll($rst);
 		return $data[0];
 	}
@@ -362,7 +361,7 @@ class DBDriver {
 
 	/**
 	 * 获取正在提交中的查询
-	 * @return DBQuery|string
+	 * @return mixed
 	 */
 	public static function getProcessingQuery(){
 		return self::$processing_query;
@@ -370,9 +369,9 @@ class DBDriver {
 
 	/**
 	 * 转义数组
-	 * @param array $data
+	 * @param $data
 	 * @param array $types
-	 * @return array
+	 * @return mixed
 	 */
 	public function quoteArray(array $data, array $types){
 		foreach($data as $k => $item){
@@ -383,13 +382,19 @@ class DBDriver {
 
 	/**
 	 * 获取一页数据
-	 * @param \LFPhp\PORM\DB\DBQuery $q
+	 * @param DBQuery|string $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getPage(DBQuery $q, $pager = null){
-		$query = clone($q);
+	public function getPage($q, $pager = null){
+		if($q instanceof DBQuery){
+			$query = clone($q);
+		}else if(gettype($q) === 'string'){
+			$query = new DBQuery($q);
+		}else{
+			throw new DBException('Query type error');
+		}
 		if($pager instanceof PaginateInterface){
 			$total = $this->getCount($query);
 			$pager->setItemTotal($total);
@@ -400,7 +405,7 @@ class DBDriver {
 		if($limit){
 			$query->limit($limit);
 		}
-		$cache_key = $this->dsn.'/'.$query->__toString();
+		$cache_key = $this->dsn.'/'.$query;
 		$result = null;
 		if(self::$query_cache_on){
 			$result = isset(self::$query_cache_data[$cache_key]) ? self::$query_cache_data[$cache_key] : null;
@@ -419,12 +424,12 @@ class DBDriver {
 
 	/**
 	 * 获取所有查询记录
-	 * @param DBQuery $query
-	 * @return array|Model[]
+	 * @param DBQuery|string $query
+	 * @return mixed
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getAll(DBQuery $query){
-		return $this->getPage($query);
+	public function getAll($query){
+		return $this->getPage($query, null);
 	}
 
 	/**
@@ -440,11 +445,11 @@ class DBDriver {
 
 	/**
 	 * 获取一条查询记录
-	 * @param DBQuery $query
+	 * @param DBQuery|string $query
 	 * @return array | null
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getOne(DBQuery $query){
+	public function getOne($query){
 		$rst = $this->getPage($query, 1);
 		if($rst){
 			return $rst[0];
@@ -454,12 +459,12 @@ class DBDriver {
 
 	/**
 	 * 获取一个字段
-	 * @param DBQuery $query
+	 * @param DBQuery|string $query
 	 * @param string $key
 	 * @return mixed|null
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function getField(DBQuery $query, $key=''){
+	public function getField($query, $key=''){
 		$rst = $this->getOne($query);
 		if($rst){
 			return $key ? $rst[$key] : current($rst);
@@ -477,7 +482,7 @@ class DBDriver {
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
 		$query = $this->genQuery();
-		$sql = "UPDATE $table SET $field = $field".($offset_count > 0 ? " + $offset_count" : " - $offset_count");
+		$sql = "UPDATE {$table} SET {$field} = {$field}".($offset_count > 0 ? " + {$offset_count}" : " - {$offset_count}");
 		$query->setSql($sql);
 		$this->query($query);
 		return $this->getAffectNum();
@@ -519,7 +524,6 @@ class DBDriver {
 		if(empty($data)){
 			throw new NullOperation('NO REPLACE DATA FOUND', 0, null, $table, $this->dsn);
 		}
-
 		$count = $this->getCount($this->genQuery()->select()->from($table)->where($condition)->limit(1));
 		if($count){
 			$query = $this->genQuery()->update()->from($table)->setData($data)->where($condition)->limit($limit);
@@ -573,7 +577,7 @@ class DBDriver {
 	 * @param $table
 	 * @param array $data
 	 * @param null $condition
-	 * @return \PDOStatement
+	 * @return mixed
 	 * @throws DBException
 	 * @throws NullOperation
 	 */
@@ -595,7 +599,7 @@ class DBDriver {
 
 	/**
 	 * SQL查询，支持重连数据库选项
-	 * @param \LFPhp\PORM\DB\DBQuery|string $query
+	 * @param DBQuery|string $query
 	 * @return \PDOStatement
 	 * @throws DBException
 	 */
@@ -635,25 +639,25 @@ class DBDriver {
 
 	/**
 	 * 获取条数
-	 * @param $sql
+	 * @param DBQuery|string $query
 	 * @return int
 	 * @throws DBException
 	 */
-	public function getCount($sql){
-		$sql .= '';
-		$sql = str_replace(array("\n", "\r"), '', trim($sql));
+	public function getCount($query){
+		$query .= '';
+		$query = str_replace(array("\n", "\r"), '', trim($query));
 
 		//为了避免order中出现field，在select里面定义，select里面被删除了，导致order里面的field未定义。
 		//同时提升Count性能
-		$sql = preg_replace('/\sorder\s+by\s.*$/i', '', $sql);
+		$query = preg_replace('/\sorder\s+by\s.*$/i', '', $query);
 
-		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $sql)){
-			if(preg_match('/\sGROUP\s+by\s/i', $sql) || preg_match('/^\s*SELECT\s+DISTINCT\s/i', $sql)){
-				$sql = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($sql) AS cnt_";
+		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $query)){
+			if(preg_match('/\sGROUP\s+by\s/i', $query) || preg_match('/^\s*SELECT\s+DISTINCT\s/i', $query)){
+				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
 			}else{
-				$sql = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $sql);
+				$query = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
-			$result = $this->getOne(new DBQuery($sql));
+			$result = $this->getOne($query);
 			if($result){
 				return (int)$result['__NUM_COUNT__'];
 			}
