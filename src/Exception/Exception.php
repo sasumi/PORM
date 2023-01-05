@@ -8,7 +8,7 @@ class Exception extends \Exception {
 
 	public function __construct($message = "", $code = 0, Throwable $previous = null, $data = null){
 		$this->data = $data;
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message, (int)$code, $previous);
 	}
 
 	public function __debugInfo(){
