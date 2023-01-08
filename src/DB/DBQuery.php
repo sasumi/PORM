@@ -10,9 +10,6 @@ class DBQuery {
 	const INSERT = 'INSERT';
 	const REPLACE = 'REPLACE';
 
-	const OP_TYPE_READ = 1;
-	const OP_TYPE_WRITE = 2;
-
 	const OP_OR = 1;
 	const OP_AND = 2;
 
@@ -37,6 +34,7 @@ class DBQuery {
 	 */
 	public function __construct($sql = ''){
 		$this->sql = $sql;
+		$this->operation = self::operationResolve($sql);
 	}
 
 	/**
@@ -57,13 +55,35 @@ class DBQuery {
 	}
 
 	/**
+	 * 解析sql类型
+	 * @param string $sql
+	 * @return string|null
+	 */
+	private static function operationResolve($sql){
+		$sql = trim($sql);
+		if(preg_match('/^(\w+)\s/', $sql, $matches)){
+			$key_mapping = [
+				'SELECT'  => self::SELECT,
+				'UPDATE'  => self::UPDATE,
+				'DELETE'  => self::DELETE,
+				'INSERT'  => self::INSERT,
+				'REPLACE' => self::REPLACE,
+			];
+			$ms = strtoupper($matches[1]);
+			if(isset($key_mapping[$ms])){
+				return $key_mapping[$ms];
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * 设置查询语句
 	 * @param $sql
 	 * @return $this
 	 */
 	public function setSql($sql){
-		$this->sql = $sql;
-		return $this;
+		$this->__construct($sql);
 	}
 
 	/**
@@ -162,7 +182,7 @@ class DBQuery {
 	/**
 	 * 设置数据（仅对update, replace, insert有效)
 	 * @param array $data
-	 * @return $this
+	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 */
 	public function setData(array $data){
 		$this->data = $data;
@@ -172,17 +192,13 @@ class DBQuery {
 	/**
 	 * 添加过滤字段
 	 * @param array $fields 字符串，或者只使用第一个数组参数
-	 * @return $this
+	 * @return \LFPhp\PORM\ORM\Model|\LFPhp\PORM\DB\DBQuery
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
 		return $this;
 	}
 
-	/**
-	 * @param ...$fields
-	 * @return $this
-	 */
 	public function field(...$fields){
 		return $this->fields($fields);
 	}
@@ -275,9 +291,9 @@ class DBQuery {
 	/**
 	 * get join query string
 	 * @param array $joins
-	 * @return string
+	 * @return mixed
 	 */
-	private function getJoinStr(array $joins = []){
+	private function getJoinStr($joins = []){
 		$str = [];
 		foreach($joins ?: $this->joins as $j){
 			list($table, $on, $type) = $j;
@@ -336,7 +352,7 @@ class DBQuery {
 	/**
 	 * 排序
 	 * @param string|array $str
-	 * @return $this
+	 * @return DBQuery|static
 	 **/
 	public function order($str){
 		if(is_array($str)){
@@ -349,7 +365,7 @@ class DBQuery {
 	/**
 	 * 分组
 	 * @param string $str
-	 * @return $this
+	 * @return DBQuery
 	 **/
 	public function group($str){
 		$this->group = $str;
@@ -406,15 +422,6 @@ class DBQuery {
 		}else{
 			return (strpos($field, '`') === false && strpos($field, '.') === false && strpos($field, ' ') === false && $field != '*') ? "`$field`" : $field;
 		}
-	}
-
-	/**
-	 * 输出调试信息
-	 * @return string[]
-	 * @throws \LFPhp\PORM\Exception\DBException
-	 */
-	public function __debugInfo(){
-		return ['SQL' => $this->toSQL()];
 	}
 
 	/**
@@ -495,5 +502,14 @@ class DBQuery {
 	 */
 	public function __toString(){
 		return $this->toSQL();
+	}
+
+	/**
+	 * 输出调试信息
+	 * @return string[]
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public function __debugInfo(){
+		return ['SQL' => $this->toSQL()];
 	}
 }
