@@ -249,7 +249,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 快速查询用户请求过来的信息，只有第二个参数为不为空的时候才去查询，空数组还是会去查。
 	 * @param string $st
-	 * @param string|int $val
+	 * @param string|int|array|null $val
 	 * @return static
 	 */
 	public function whereOnSet($st, $val){
