@@ -35,15 +35,15 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/** @var DBQuery db query object * */
 	private $query = null;
 
-	public function onBeforeUpdate(){}
+	public function onBeforeUpdate(){return true;}
 	public function onAfterUpdate(){}
-	public function onBeforeInsert(){}
+	public function onBeforeInsert(){return true;}
 	public function onAfterInsert(){}
-	public function onBeforeDelete(){}
+	public function onBeforeDelete(){return true;}
 	public function onAfterDelete(){}
-	public function onBeforeSave(){}
-	protected function onBeforeChanged(){}
-	protected static function onBeforeChangedGlobal(){}
+	public function onBeforeSave(){return true;}
+	protected function onBeforeChanged(){return true;}
+	protected static function onBeforeChangedGlobal(){return true;}
 
 	abstract static public function getTableName();
 
@@ -107,7 +107,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 获取数据库表主键
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function getPrimaryKey(){
 		$attrs = static::getAttributes();
@@ -122,7 +122,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 获取主键值
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function getPrimaryKeyValue(){
 		$pk = static::getPrimaryKey();
@@ -143,7 +143,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 解释SQL语句
 	 * @param string $query
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function explainQuery($query){
 		return static::getDbDriver(self::OP_READ)->explain($query);
@@ -212,7 +212,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 执行当前查询
 	 * @return \PDOStatement
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function execute(){
 		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
@@ -342,7 +342,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 创建新对象
 	 * @param $data
 	 * @return bool|static
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function create($data){
 		$obj = new static();
@@ -357,7 +357,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $val
 	 * @param bool $as_array
 	 * @return static|DBQuery|array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function findOneByPk($val, $as_array = false){
 		$pk = static::getPrimaryKey();
@@ -368,7 +368,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param $val
 	 * @param bool $as_array
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function findOneByPkOrFail($val, $as_array = false){
 		$data = static::findOneByPk($val, $as_array);
@@ -384,7 +384,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param array $pk_values
 	 * @param bool $as_array
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function findByPks(array $pk_values, $as_array = false){
 		if(!$pk_values){
@@ -398,7 +398,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 根据主键值删除一条记录
 	 * @param string $val
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function delByPk($val){
 		$pk = static::getPrimaryKey();
@@ -410,7 +410,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 根据主键删除记录
 	 * @param $val
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
 	public static function delByPkOrFail($val){
@@ -427,7 +427,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $val 主键值
 	 * @param array $data
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function updateByPk($val, array $data){
 		$pk = static::getPrimaryKey();
@@ -439,7 +439,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string[]|number[] $pks
 	 * @param array $data
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function updateByPks($pks, array $data){
 		$pk = static::getPrimaryKey();
@@ -452,7 +452,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制更新数量，可设置为0
 	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
 	 * @return bool;
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function updateWhere(array $data, $limit, $statement){
 		if(self::onBeforeChangedGlobal() === false){
@@ -471,7 +471,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制删除数量，可设置为0
 	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function deleteWhere($limit, $statement){
 		$args = func_get_args();
@@ -485,7 +485,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 清空数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function truncate(){
 		$table = static::getTableName();
@@ -497,7 +497,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param bool $as_array return as array
 	 * @param string $unique_key 用于组成返回数组的唯一性key
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function all($as_array = false, $unique_key = ''){
 		$list = static::getDbDriver(self::OP_READ)->getAll($this->query);
@@ -513,7 +513,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象数组
 	 * @param string $unique_key 用于组成返回数组的唯一性key
 	 * @return static[]
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function paginate($page = null, $as_array = false, $unique_key = ''){
 		$list = static::getDbDriver(self::OP_READ)->getPage($this->query, $page);
@@ -551,7 +551,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 获取一条记录
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
 	 * @return static|array|null
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function one($as_array = false){
 		$data = static::getDbDriver(self::OP_READ)->getOne($this->query);
@@ -570,7 +570,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 获取一条记录，为空时抛异常
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
 	 * @return static
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
 	public function oneOrFail($as_array = false){
@@ -585,7 +585,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 获取一个记录字段
 	 * @param string|null $key 如字段为空，则取第一个结果
 	 * @return mixed|null
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function ceil($key = ''){
 		$attr_names = static::getEntityAttributeNames();
@@ -629,7 +629,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string|array $fields 需要计算字段名称（列表）
 	 * @param array $group_by 使用指定字段（列表）作为合并维度
 	 * @return number|array 结果总和，或以指定字段列表作为下标的结果总和
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 * @example
 	 * <pre>
 	 * $report->sum('order_price', 'original_price');
@@ -678,7 +678,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $sort_key 排序字段名称，默认为sort
 	 * @param string $statement 排序范围过滤表达式，默认为所有数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
 		$pk = static::getPrimaryKey();
@@ -730,7 +730,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 获取指定列，作为一维数组返回
 	 * @param $key
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function column($key){
 		$this->query->field($key);
@@ -748,7 +748,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param $key
 	 * @param $val
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function map($key, $val){
 		if(is_string($val)){
@@ -778,7 +778,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param callable $handler 回调函数
 	 * @param bool $as_array 查询结果作为数组格式回调
 	 * @return bool 是否执行了分块动作
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function chunk($size, $handler, $as_array = false){
 		$total = $this->count();
@@ -806,7 +806,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $sleep_interval_sec 无数据时睡眠时长（秒）
 	 * @param bool|callable|null $debugger 数据信息调试器
 	 * @return bool 是否正常执行
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
 		if($debugger === true) {
@@ -843,7 +843,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			unset($obj);
 			if($break){
 				$debugger('Handler Break!');
-				return false;
+				break;
 			}
 			if(!$exists){
 				$debugger('No data found, sleep for '.$sleep_interval_sec.' seconds.');
@@ -859,7 +859,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 获取当前查询条数
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function count(){
 		$driver = static::getDbDriver(self::OP_READ);
@@ -870,7 +870,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 更新当前对象
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return bool|number
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function update($flush_all = false){
 		if($this->onBeforeUpdate() === false || $this->onBeforeChanged() === false){
@@ -893,7 +893,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 插入当前对象
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return string|bool 返回插入的id，或者失败(false)
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function insert($flush_all = false){
 		if($this->onBeforeInsert() === false || $this->onBeforeChanged() === false){
@@ -918,7 +918,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $limit
 	 * @param array ...$args 查询条件
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function replace(array $data, $limit = 0, ...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -933,7 +933,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $limit 条数限制，默认为0表示不限制更新条数
 	 * @param array ...$args 查询条件
 	 * @return int
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function increase($field, $offset, $limit = 0, ...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -947,7 +947,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $query_type 数据库操作类型
 	 * @param bool $flush_all 是否校验全部数据，包含readonly数据
 	 * @return array $data
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	private function validate($src_data = [], $query_type = DBQuery::INSERT, $flush_all = false){
 		$attrs = self::getEntityAttributes();
@@ -1048,39 +1048,37 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 		$required = !$attr->is_null_allow && !$attr->hasSysDefinedDefaultValue();
 
-		//type
-		if(!$err){
-			switch($attr->type){
-				case Attribute::TYPE_INT:
-					if(strlen($value) && !is_numeric($value)){
-						$err = $name.'格式不正确';
-					}
-					break;
+		//数据类型检查
+		switch($attr->type){
+			case Attribute::TYPE_INT:
+				if(strlen($value) && !is_numeric($value)){
+					$err = $name.'格式不正确';
+				}
+				break;
 
-				case Attribute::TYPE_FLOAT:
-				case Attribute::TYPE_DOUBLE:
-				case Attribute::TYPE_DECIMAL:
-					if(!(!$required && !strlen($value.'')) && isset($value) && !is_numeric($value)){
-						$err = $name.'格式不正确';
-					}
-					break;
+			case Attribute::TYPE_FLOAT:
+			case Attribute::TYPE_DOUBLE:
+			case Attribute::TYPE_DECIMAL:
+				if(!(!$required && !strlen($value.'')) && isset($value) && !is_numeric($value)){
+					$err = $name.'格式不正确';
+				}
+				break;
 
-				case Attribute::TYPE_ENUM:
-					$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? '请选择'.$name : '';
-					break;
+			case Attribute::TYPE_ENUM:
+				$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? '请选择'.$name : '';
+				break;
 
-				//string暂不校验
-				case Attribute::TYPE_STRING:
-					break;
-			}
+			//string暂不校验
+			case Attribute::TYPE_STRING:
+				break;
 		}
 
-		//required
+		//必填项检查
 		if(!$err && $required && !isset($value)){
 			$err = "请输入{$name}";
 		}
 
-		//length
+		//数据长度检查
 		if(!$err && $attr->length && $attr->type && !in_array($attr->type, [
 				Attribute::TYPE_DATETIME,
 				Attribute::TYPE_DATE,
@@ -1112,8 +1110,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 由于这里插入会涉及到数据检查，最终效果还是一条一条的插入
 	 * @param $data_list
 	 * @param bool $break_on_fail
-	 * @return array|bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @return array
+	 * @throws DBException
 	 * @throws \Exception
 	 */
 	public static function insertMany($data_list, $break_on_fail = true){
@@ -1142,7 +1140,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 快速批量插入数据，不进行ORM检查
 	 * @param $data_list
 	 * @return mixed
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public static function insertManyQuick($data_list){
 		if(self::onBeforeChangedGlobal() === false){
@@ -1154,7 +1152,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 从数据库从删除当前对象对应的记录
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function delete(){
 		if($this->onBeforeDelete() === false){
@@ -1169,7 +1167,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 解析SQL查询中的条件表达式
 	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
-	 * @param string|\LFPhp\PORM\ORM\Model $model_class
+	 * @param Model|string $model_class
 	 * @return string
 	 */
 	private static function parseConditionStatement($args, $model_class){
@@ -1203,7 +1201,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 保存当前对象变更之后的数值
 	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
 	 * @return bool
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	public function save($flush_all = false){
 		if($this->onBeforeSave() === false){
@@ -1255,7 +1253,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $method_name
 	 * @param array $params
 	 * @return static|DBQuery
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws DBException
 	 */
 	final public function __call($method_name, $params){
 		if(method_exists($this->query, $method_name)){
