@@ -1,7 +1,10 @@
 <?php
 namespace LFPhp\PORM\DB;
 
+use LFPhp\Logger\Logger;
 use LFPhp\PORM\Exception\DBException;
+use LFPhp\PORM\Exception\Exception;
+use function LFPhp\Func\dump;
 
 class DBQuery {
 	const SELECT = 'SELECT';
@@ -80,7 +83,6 @@ class DBQuery {
 	/**
 	 * 设置查询语句
 	 * @param $sql
-	 * @return $this
 	 */
 	public function setSql($sql){
 		$this->__construct($sql);
@@ -291,7 +293,7 @@ class DBQuery {
 	/**
 	 * get join query string
 	 * @param array $joins
-	 * @return mixed
+	 * @return string
 	 */
 	private function getJoinStr($joins = []){
 		$str = [];
@@ -375,11 +377,12 @@ class DBQuery {
 	/**
 	 * 设置查询限制，如果提供的参数为0，则表示不进行限制
 	 * @return $this
+	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function limit(/**$p1,$p2**/){
 		$tmp = func_get_args();
-		$p1 = isset($tmp[0]) ? $tmp[0] : 0;
-		$p2 = isset($tmp[1]) ? $tmp[1] : 0;
+		$p1 = $tmp[0] ?? 0;
+		$p2 = $tmp[1] ?? 0;
 		if($p2){
 			$this->limit = array($p1, $p2);
 		}else if(is_array($p1)){
@@ -387,14 +390,65 @@ class DBQuery {
 		}else if(is_scalar($p1) && $p1 != 0){
 			$this->limit = array(0, $p1);
 		}
-
 		if($this->sql && $this->limit){
-			if(preg_match('/\slimit\s/i', $this->sql)){
-				$this->sql = preg_replace('/\slimit\s.*$/i', '', $this->sql); //移除原有limit限制信息
-			}
-			$this->sql = $this->sql.' LIMIT '.$this->limit[0].','.$this->limit[1];
+			$this->sql = self::patchLimitation($this->sql, $this->limit);
 		}
 		return $this;
+	}
+
+	/**
+	 * 解析SQL中的limit信息
+	 * limit常见格式有：limit n，limit m offset n， limit 1,3
+	 * @param string $org_sql
+	 * @param array $limit_info
+	 * @return string
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public static function patchLimitation($org_sql, $limit_info){
+		$sql = trim(rtrim($org_sql, ';'));
+		$pattern = '/\s?LIMIT\s(.*?)$/i';
+		if(preg_match($pattern, $sql, $matches)){
+			$last_limit_seg = $matches[count($matches) - 1];
+			$last_limit_seg = preg_replace('/\s+OFFSET\s+/i', ',', $last_limit_seg, null, $offset_hit);
+			$ls = explode(',', str_replace(' ', '', $last_limit_seg));
+			if(count($ls) == 1){
+				$org_limit_info = [0, (int)$ls[0]];
+			}else if(count($ls) == 2){
+				$org_limit_info = $offset_hit ? [(int)$ls[1], (int)$ls[2]] : [(int)$ls[0], (int)$ls[1]];
+			}else{
+				throw new Exception('Limitation resolve fail:'.$sql);
+			}
+			Logger::info($org_limit_info, $limit_info);
+			$limit_info = self::calcLimitInfo($org_limit_info, $limit_info);
+			Logger::info('result', $limit_info);
+			$sql = preg_replace($pattern, '', $sql);
+		}
+		Logger::info($org_sql, $limit_info, "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}");
+		return "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}";
+	}
+
+	/**
+	 * @param array $org_limit_info [start_position, size]
+	 * @param array|number $paginate_info [page_start, page_size] or [size] 分页大小，该分页信息是基于limit查询条件再进行分页的。
+	 * @return array
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	private static function calcLimitInfo($org_limit_info, $paginate_info){
+		list($start, $size) = $org_limit_info;
+		if(is_numeric($paginate_info)){
+			return [$start, min($size, $paginate_info)];
+		}
+		list($page_start, $page_size) = $paginate_info;
+		if($page_start > ($start + $size)){
+			throw new Exception('paginate setting error,new:'.json_encode($paginate_info).',org:'.json_encode($org_limit_info));
+		}
+		if($page_start >= $size){
+			$fetch_size = 0;
+		}
+		else {
+			$fetch_size = min($size - $page_start, $page_size);
+		}
+		return [$page_start + $start, $fetch_size];
 	}
 
 	/**
@@ -499,6 +553,7 @@ class DBQuery {
 	/**
 	 * 输出SQL查询语句
 	 * @return string
+	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function __toString(){
 		return $this->toSQL();

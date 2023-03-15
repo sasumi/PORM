@@ -397,7 +397,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键值删除一条记录
 	 * @param string $val
-	 * @return bool
+	 * @return int
 	 * @throws DBException
 	 */
 	public static function delByPk($val){
@@ -409,7 +409,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 根据主键删除记录
 	 * @param $val
-	 * @return bool
+	 * @return int
 	 * @throws DBException
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
@@ -513,7 +513,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象数组
 	 * @param string $unique_key 用于组成返回数组的唯一性key
 	 * @return static[]
-	 * @throws DBException
+	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function paginate($page = null, $as_array = false, $unique_key = ''){
 		$list = static::getDbDriver(self::OP_READ)->getPage($this->query, $page);
@@ -778,7 +778,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param callable $handler 回调函数
 	 * @param bool $as_array 查询结果作为数组格式回调
 	 * @return bool 是否执行了分块动作
-	 * @throws DBException
+	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function chunk($size, $handler, $as_array = false){
 		$total = $this->count();
@@ -806,7 +806,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $sleep_interval_sec 无数据时睡眠时长（秒）
 	 * @param bool|callable|null $debugger 数据信息调试器
 	 * @return bool 是否正常执行
-	 * @throws DBException
+	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
 		if($debugger === true) {
@@ -1040,7 +1040,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	private function validateField($attr, $value){
 		$err = '';
-		$name = $attr->alias ? $attr->alias : $attr->name;
+		$name = $attr->alias ?: $attr->name;
 		$options = $attr->options;
 		if(is_callable($options)){
 			$options = call_user_func($options, $this);
@@ -1139,7 +1139,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 快速批量插入数据，不进行ORM检查
 	 * @param $data_list
-	 * @return mixed
+	 * @return false|\PDOStatement
 	 * @throws DBException
 	 */
 	public static function insertManyQuick($data_list){
@@ -1252,7 +1252,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 调用查询对象其他方法
 	 * @param string $method_name
 	 * @param array $params
-	 * @return static|DBQuery
+	 * @return static
 	 * @throws DBException
 	 */
 	final public function __call($method_name, $params){

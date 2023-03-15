@@ -11,6 +11,7 @@ use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
 use PDOStatement;
+use function LFPhp\Func\dump;
 
 /**
  * Class DBAbstract
@@ -361,7 +362,7 @@ class DBDriver {
 
 	/**
 	 * 获取正在提交中的查询
-	 * @return mixed
+	 * @return DBQuery
 	 */
 	public static function getProcessingQuery(){
 		return self::$processing_query;
@@ -369,9 +370,9 @@ class DBDriver {
 
 	/**
 	 * 转义数组
-	 * @param $data
+	 * @param array $data
 	 * @param array $types
-	 * @return mixed
+	 * @return array
 	 */
 	public function quoteArray(array $data, array $types){
 		foreach($data as $k => $item){
@@ -385,7 +386,7 @@ class DBDriver {
 	 * @param DBQuery|string $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getPage($q, $pager = null){
 		if($q instanceof DBQuery){
@@ -405,6 +406,7 @@ class DBDriver {
 		if($limit){
 			$query->limit($limit);
 		}
+
 		$cache_key = $this->dsn.'/'.$query;
 		$result = null;
 		if(self::$query_cache_on){
@@ -425,11 +427,11 @@ class DBDriver {
 	/**
 	 * 获取所有查询记录
 	 * @param DBQuery|string $query
-	 * @return mixed
+	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function getAll($query){
-		return $this->getPage($query, null);
+		return $this->getPage($query);
 	}
 
 	/**
@@ -577,7 +579,7 @@ class DBDriver {
 	 * @param $table
 	 * @param array $data
 	 * @param null $condition
-	 * @return mixed
+	 * @return PDOStatement
 	 * @throws DBException
 	 * @throws NullOperation
 	 */
@@ -649,17 +651,19 @@ class DBDriver {
 
 		//为了避免order中出现field，在select里面定义，select里面被删除了，导致order里面的field未定义。
 		//同时提升Count性能
-		$query = preg_replace('/\sorder\s+by\s.*$/i', '', $query);
-
+		$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
 		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $query)){
-			if(preg_match('/\sGROUP\s+by\s/i', $query) || preg_match('/^\s*SELECT\s+DISTINCT\s/i', $query)){
+			if(preg_match('/\sGROUP\s+by\s/i', $query) ||
+				preg_match('/^\s*SELECT\s+DISTINCT\s/i', $query) ||
+				preg_match('/\sLIMIT\s/i', $query)
+			){
 				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
 			}else{
 				$query = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
-			$result = $this->getOne($query);
+			$result = $this->getPage($query);
 			if($result){
-				return (int)$result['__NUM_COUNT__'];
+				return (int)$result[0]['__NUM_COUNT__'];
 			}
 		}
 		return 0;
