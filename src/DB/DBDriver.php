@@ -2,6 +2,7 @@
 namespace LFPhp\PORM\DB;
 
 use Exception;
+use LFPhp\Logger\Logger;
 use LFPhp\Logger\LoggerTrait;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
@@ -643,15 +644,18 @@ class DBDriver {
 	 * 获取条数
 	 * @param DBQuery|string $query
 	 * @return int
-	 * @throws DBException
+	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getCount($query){
 		$query .= '';
 		$query = str_replace(array("\n", "\r"), '', trim($query));
+		$query = trim($query, ';');
 
+		//针对 order by 识别不足，后期引入 https://github.com/greenlion/PHP-SQL-Parser 再处理
 		//为了避免order中出现field，在select里面定义，select里面被删除了，导致order里面的field未定义。
 		//同时提升Count性能
-		$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
+		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
+
 		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $query)){
 			if(preg_match('/\sGROUP\s+by\s/i', $query) ||
 				preg_match('/^\s*SELECT\s+DISTINCT\s/i', $query) ||
