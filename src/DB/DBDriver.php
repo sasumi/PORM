@@ -648,22 +648,21 @@ class DBDriver {
 	 */
 	public function getCount($query){
 		$query .= '';
-		$query = str_replace(array("\n", "\r"), '', trim($query));
-		$query = trim($query, ';');
+		$query = trim(trim($query), ';');
 
 		//针对 order by 识别不足，后期引入 https://github.com/greenlion/PHP-SQL-Parser 再处理
 		//为了避免order中出现field，在select里面定义，select里面被删除了，导致order里面的field未定义。
 		//同时提升Count性能
 		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
 
-		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/i', $query)){
-			if(preg_match('/\sGROUP\s+by\s/i', $query) ||
-				preg_match('/^\s*SELECT\s+DISTINCT\s/i', $query) ||
+		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/im', $query)){
+			if(preg_match('/\sGROUP\s+by\s/im', $query) ||
+				preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) ||
 				preg_match('/\sLIMIT\s/i', $query)
 			){
 				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
 			}else{
-				$query = preg_replace('/^\s*select.*?\s+from/i', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
+				$query = preg_replace('/^\s*select.*?\s+from/im', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
 			$result = $this->getPage($query);
 			if($result){
