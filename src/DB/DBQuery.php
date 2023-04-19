@@ -418,12 +418,10 @@ class DBQuery {
 			}else{
 				throw new Exception('Limitation resolve fail:'.$sql);
 			}
-			Logger::info($org_limit_info, $limit_info);
 			$limit_info = self::calcLimitInfo($org_limit_info, $limit_info);
-			Logger::info('result', $limit_info);
 			$sql = preg_replace($pattern, '', $sql);
 		}
-		Logger::info($org_sql, $limit_info, "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}");
+		Logger::info('patchLimitation Result:', $org_sql, $limit_info, "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}");
 		return "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}";
 	}
 

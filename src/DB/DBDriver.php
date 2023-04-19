@@ -12,7 +12,6 @@ use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
 use PDOStatement;
-use function LFPhp\Func\dump;
 
 /**
  * Class DBAbstract
@@ -644,7 +643,7 @@ class DBDriver {
 	 * 获取条数
 	 * @param DBQuery|string $query
 	 * @return int
-	 * @throws DBException|\LFPhp\PORM\Exception\Exception
+	 * @throws DBException
 	 */
 	public function getCount($query){
 		$query .= '';
@@ -655,19 +654,22 @@ class DBDriver {
 		//同时提升Count性能
 		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
 
-		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/im', $query)){
+		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/is', $query)){
 			if(preg_match('/\sGROUP\s+by\s/im', $query) ||
 				preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) ||
-				preg_match('/\sLIMIT\s/i', $query)
+				preg_match('/\sLIMIT\s/im', $query)
 			){
 				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
 			}else{
-				$query = preg_replace('/^\s*select.*?\s+from/im', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
+				$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
 			$result = $this->getPage($query);
+			Logger::info('SQL Count:'.$query, ' Count:'.json_encode($result));
 			if($result){
 				return (int)$result[0]['__NUM_COUNT__'];
 			}
+		} else {
+			Logger::warning('SQL NO Select:'.$query);
 		}
 		return 0;
 	}
