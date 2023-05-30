@@ -252,6 +252,8 @@ abstract class DSLHelper {
 			'text'       => [Attribute::TYPE_STRING, true, 65535],
 			'tinytext'   => [Attribute::TYPE_STRING, true, 255],
 
+			'json'       => [Attribute::TYPE_STRING, true],
+
 			'tinyint'   => [Attribute::TYPE_INT, true],
 			'smallint'  => [Attribute::TYPE_INT, true],
 			'int'       => [Attribute::TYPE_INT, true],
