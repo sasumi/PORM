@@ -15,6 +15,7 @@ use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
+use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
 
 abstract class Model implements JsonSerializable, ArrayAccess {
@@ -1066,6 +1067,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 			case Attribute::TYPE_ENUM:
 				$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? '请选择'.$name : '';
+				break;
+
+			case Attribute::TYPE_JSON:
+				if(strlen($value) && !is_json($value)){
+					$err = $name.'必须为JSON格式';
+				}
 				break;
 
 			//string暂不校验

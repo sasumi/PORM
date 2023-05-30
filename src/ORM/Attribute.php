@@ -10,6 +10,7 @@ class Attribute {
 	const TYPE_DECIMAL = 'decimal';
 	const TYPE_DOUBLE = 'double';
 	const TYPE_STRING = 'string';
+	const TYPE_JSON = 'json';
 	const TYPE_ENUM = 'enum';
 	const TYPE_SET = 'set';
 	const TYPE_BOOL = 'bool';
