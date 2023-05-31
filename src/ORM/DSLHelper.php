@@ -3,6 +3,8 @@ namespace LFPhp\PORM\ORM;
 
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
+use function LFPhp\Func\db_update;
+use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;
@@ -16,6 +18,7 @@ abstract class DSLHelper {
 		Attribute::TYPE_DATE      => 'string',
 		Attribute::TYPE_TIME      => 'string',
 		Attribute::TYPE_DATETIME  => 'string',
+		Attribute::TYPE_JSON      => 'string',
 		Attribute::TYPE_TIMESTAMP => 'string',
 		Attribute::TYPE_YEAR      => 'int',
 		Attribute::TYPE_SET       => 'array',
@@ -29,7 +32,7 @@ abstract class DSLHelper {
 	 * @return array [string:表名, string:表备注, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public static function resolveDSLByModel($model_class){
+	public static function getTableInfoByModel($model_class){
 		if(!class_exists($model_class)){
 			throw new Exception('Class no exists:'.$model_class);
 		}
@@ -38,20 +41,31 @@ abstract class DSLHelper {
 		}
 		$dsn = $model_class::getDbDsn();
 		$table = $model_class::getTableName();
-		return self::resolveDSLByDSN($dsn, $table);
+		return self::getTableInfoByDSN($dsn, $table);
 	}
 
 	/**
-	 * 从DSN中解析
+	 * 获取表信息（表名、表备注、表属性列表）
 	 * @param \LFPhp\PDODSN\DSN $dsn
 	 * @param string $table
 	 * @return array [string:表名, string:表备注, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public static function resolveDSLByDSN($dsn, $table){
-		$pdo = DBDriver::instance($dsn);
-		$dsl = $pdo->getDSLSchema($table);
+	public static function getTableInfoByDSN($dsn, $table){
+		$dsl = self::getTableDSLByDSN($dsn, $table);
 		return self::resolveDSL($dsl);
+	}
+
+	/**
+	 * 获取表DSL
+	 * @param \LFPhp\PDODSN\DSN $dsn
+	 * @param $table
+	 * @return string
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 */
+	public static function getTableDSLByDSN($dsn, $table){
+		$pdo = DBDriver::instance($dsn);
+		return $pdo->getDSLSchema($table);
 	}
 
 	/**
@@ -73,6 +87,7 @@ abstract class DSLHelper {
 	 * @param Attribute $attr
 	 * @param bool $full_define
 	 * @return string
+	 * @throws \ReflectionException
 	 */
 	public static function convertAttrToCode($attr, $full_define = false){
 		$default_attr = new Attribute();
@@ -93,7 +108,7 @@ abstract class DSLHelper {
 			"/'$const_placeholder(.*?)'/",
 			"/'".preg_quote(Attribute::DEFAULT_CURRENT_TIMESTAMP)."'/",
 			"/'".preg_quote(Attribute::DEFAULT_NULL)."'/",
-			'/\)$/'
+			'/\)$/',
 		], [
 			'[',
 			'Attribute::'.'$1',
@@ -124,7 +139,7 @@ abstract class DSLHelper {
 	/**
 	 * 从DSL中解析生成：表名+表备注+Attribute清单
 	 * @param string $dsl
-	 * @return array [string:表名, string:表备注, array:Attribute[]]
+	 * @return array[] [string:表名, string:表备注, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public static function resolveDSL($dsl){
@@ -132,7 +147,7 @@ abstract class DSLHelper {
 		$attrs = [];
 		$table_name = '';
 		$table_description = '';
-		foreach($lines as $ln => $line){
+		foreach($lines as $line){
 			$attr = new Attribute();
 			if(!$table_name && preg_match('/^CREATE\s+TABLE\s+`([^`]+)`/', $line, $matches)){
 				$table_name = $matches[1];
@@ -247,38 +262,37 @@ abstract class DSLHelper {
 		$type_map = [
 			'varchar'    => [Attribute::TYPE_STRING, true],
 			'char'       => [Attribute::TYPE_STRING, true],
+			'json'       => [Attribute::TYPE_JSON, true],
 			'longtext'   => [Attribute::TYPE_STRING, true, 4294967295],
 			'mediumtext' => [Attribute::TYPE_STRING, true, 16777215],
 			'text'       => [Attribute::TYPE_STRING, true, 65535],
 			'tinytext'   => [Attribute::TYPE_STRING, true, 255],
-
-			'json'       => [Attribute::TYPE_STRING, true],
 
 			'tinyint'   => [Attribute::TYPE_INT, true],
 			'smallint'  => [Attribute::TYPE_INT, true],
 			'int'       => [Attribute::TYPE_INT, true],
 			'mediumint' => [Attribute::TYPE_INT, true],
 			'bigint'    => [Attribute::TYPE_INT, true],
-			'decimal'   => [Attribute::TYPE_DECIMAL, true],
-			'float'     => [Attribute::TYPE_FLOAT, true],
-			'double'    => [Attribute::TYPE_DOUBLE, true],
 
-			'set' => [Attribute::TYPE_SET, false],
+			'decimal' => [Attribute::TYPE_DECIMAL, true],
+			'float'   => [Attribute::TYPE_FLOAT, true],
+			'double'  => [Attribute::TYPE_DOUBLE, true],
 
 			'datetime'  => [Attribute::TYPE_DATETIME, false],
 			'date'      => [Attribute::TYPE_DATE, false],
 			'time'      => [Attribute::TYPE_TIME, false],
 			'year'      => [Attribute::TYPE_YEAR, false],
 			'timestamp' => [Attribute::TYPE_TIMESTAMP, false],
-			'enum'      => [Attribute::TYPE_ENUM, false],
+
+			'enum' => [Attribute::TYPE_ENUM, false],
+			'set'  => [Attribute::TYPE_SET, false],
 		];
 
 		if(preg_match('/(\w+)\(([^)]+)\)/', $type_def, $matches) || preg_match('/(\w+)\s*$/', $type_def, $matches)){
-			$ts = $matches[1];
+			$type_str = $matches[1];
 			$val = $matches[2];
-			if(isset($type_map[$ts])){
-				list($type, $is_scalar, $def_len) = $type_map[$ts];
-
+			if(isset($type_map[$type_str])){
+				list($type, $is_scalar, $def_len) = $type_map[$type_str];
 				//scalar
 				if($is_scalar){
 					$precision = null;
@@ -290,14 +304,14 @@ abstract class DSLHelper {
 				else if($type == Attribute::TYPE_ENUM || $type == Attribute::TYPE_SET){
 					$keys = explode_by(',', str_replace("'", '', $val));
 
-					//必须匹配 {NAME}(MARK1, MARK2)
+					//必须匹配: {NAME}(MARK1, MARK2) 格式，才能解析出里面的选项名称
 					if(preg_match('/\sCOMMENT\s\'(.*?)\(([^)]+)\)\'/', $tail_sql, $ms)){
 						$remarks = explode_by(',', $ms[2]);
 						if(count($remarks) == count($keys)){
 							return [Attribute::TYPE_ENUM, null, null, array_combine($keys, $remarks)];
 						}
 					}else{
-						return [Attribute::TYPE_ENUM, null, null, array_combine($keys, $keys)];
+						return [$type, null, null, array_combine($keys, $keys)];
 					}
 				}//time
 				else{

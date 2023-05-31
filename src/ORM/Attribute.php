@@ -51,7 +51,7 @@ class Attribute {
 	public $alias = ''; //别名(中文名)
 	public $description = ''; //描述
 	public $default = null; //默认值
-	public $options = []; //选项(ENum类型有效)
+	public $options = []; //选项(ENUM类型有效)
 	public $length = null; //长度
 	public $precision = null; //精度
 	public $is_readonly = false; //是否只读

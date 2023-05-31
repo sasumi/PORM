@@ -173,7 +173,7 @@ class DBDriver {
 	 * 数据转义
 	 * @param string $data
 	 * @param string $type
-	 * @return mixed
+	 * @return false|string
 	 */
 	public function quote($data, $type = null) {
 		if(is_array($data)){
@@ -428,7 +428,7 @@ class DBDriver {
 	 * 获取所有查询记录
 	 * @param DBQuery|string $query
 	 * @return array
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getAll($query){
 		return $this->getPage($query);
@@ -438,7 +438,7 @@ class DBDriver {
 	 * 获取指定表创建语句
 	 * @param string $table
 	 * @return string create table DSL
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getDSLSchema($table){
 		$ret = $this->getAll(new DBQuery("SHOW CREATE TABLE `$table`"));
@@ -449,7 +449,7 @@ class DBDriver {
 	 * 获取一条查询记录
 	 * @param DBQuery|string $query
 	 * @return array | null
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getOne($query){
 		$rst = $this->getPage($query, 1);
@@ -464,7 +464,7 @@ class DBDriver {
 	 * @param DBQuery|string $query
 	 * @param string $key
 	 * @return mixed|null
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getField($query, $key=''){
 		$rst = $this->getOne($query);
@@ -498,7 +498,7 @@ class DBDriver {
 	 * @param int $limit 更新影响条数
 	 * @return int affect line number
 	 * @throws \LFPhp\PORM\Exception\DBException
-	 * @throws NullOperation
+	 * @throws NullOperation|\LFPhp\PORM\Exception\Exception
 	 */
 	public function update($table, array $data, $condition = '', $limit = 1){
 		if(empty($data)){
@@ -520,7 +520,7 @@ class DBDriver {
 	 * @param int $limit
 	 * @return int
 	 * @throws DBException
-	 * @throws NullOperation
+	 * @throws NullOperation|\LFPhp\PORM\Exception\Exception
 	 */
 	public function replace($table, array $data, $condition = '', $limit = 0){
 		if(empty($data)){
@@ -643,7 +643,7 @@ class DBDriver {
 	 * 获取条数
 	 * @param DBQuery|string $query
 	 * @return int
-	 * @throws DBException
+	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getCount($query){
 		$query .= '';
