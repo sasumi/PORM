@@ -80,8 +80,8 @@ class Attribute {
 		return $this->default === self::DEFAULT_NULL || $this->default === self::DEFAULT_CURRENT_TIMESTAMP;
 	}
 
-	public function __construct(array $data = []){
-		foreach($data as $k => $v){
+	public function __construct(array $attr_info = []){
+		foreach($attr_info as $k => $v){
 			$this->$k = $v;
 		}
 	}
