@@ -11,7 +11,6 @@ $dsn = new MySQL();
 $dsn->host = '';
 $dsn->user = '';
 $dsn->password = '';
-$dsn->port = '';
 $dsn->database = '';
 
 const TEST_TABLE = 'table_log';
@@ -21,11 +20,6 @@ dump($dsl);
 
 list($table, $table_desc, $attributes) = DSLHelper::resolveDSL($dsl);
 dump($table, $table_desc);
-foreach($attributes as $attr){
-	if($attr->name === 'type'){
-		dump($attr, 1);
-	}
-}
 
 $str = DSLHelper::buildTemplate($table, $table_desc, $attributes);
 file_put_contents(__DIR__."/$table.php", $str);

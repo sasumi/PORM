@@ -97,10 +97,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public static function getAttributeByName($name){
 		$attrs = static::getAttributes();
-		foreach($attrs as $attr){
-			if($attr->name == $name){
-				return $attr;
-			}
+		if(isset($attrs[$name])){
+			return $attrs[$name];
 		}
 		throw new Exception('No attribute '.$name.' found.');
 	}

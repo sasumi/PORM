@@ -23,11 +23,9 @@ class <?php echo underscores_to_pascalcase($table, true);?> extends Model {
 	 */
 	static public function getAttributes(){
 		return [
-<?php
-foreach($attributes as $attr){
-	echo "\t\t\t".DSLHelper::convertAttrToCode($attr, false).",".PHP_EOL;
-}
-?>
+<?php foreach($attributes as $attr): ?>
+			'<?=$attr->name;?>' => <?=DSLHelper::convertAttrToCode($attr, false);?>,
+<?php endforeach;?>
 		];
 	}
 
