@@ -188,7 +188,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 设置查询SQL语句
 	 * @param string|DBQuery $query
-	 * @return static
+	 * @return static|DBQuery
 	 * @throws \Exception
 	 */
 	public static function setQuery($query){
@@ -251,7 +251,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 查找
 	 * @param string $statement 条件表达式
 	 * @param string $var,... 条件表达式扩展
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = new static;
@@ -266,7 +266,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 添加更多查询条件
 	 * @param array $args 查询条件
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -278,7 +278,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 快速查询用户请求过来的信息，只有第二个参数为不为空的时候才去查询，空数组还是会去查。
 	 * @param string $st
 	 * @param string|int|array|null $val
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public function whereOnSet($st, $val){
 		$args = func_get_args();
@@ -330,7 +330,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 批量LIKE查询（whereLikeOnSet方法快捷用法）
 	 * @param array $fields
 	 * @param $val
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public function whereLikeOnSetBatch(array $fields, $val){
 		$st = join(' LIKE ? OR ', $fields).' LIKE ?';
@@ -345,7 +345,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param number|null $min 最小端
 	 * @param number|null $max 最大端
 	 * @param bool $equal_cmp 是否包含等于
-	 * @return static
+	 * @return static|DBQuery
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
 		$cmp = $equal_cmp ? '=' : '';
@@ -395,7 +395,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * @param $val
 	 * @param bool $as_array
-	 * @return static
+	 * @return static|DBQuery
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function findOneByPkOrFail($val, $as_array = false){
@@ -597,7 +597,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 获取一条记录，为空时抛异常
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
-	 * @return static
+	 * @return static|DBQuery
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
@@ -1286,7 +1286,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 调用查询对象其他方法
 	 * @param string $method_name
 	 * @param array $params
-	 * @return static
+	 * @return static|DBQuery
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	final public function __call($method_name, $params){
