@@ -85,6 +85,31 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
+	 * 设置属性定义
+	 * @param array $attributes
+	 * @param string $attr_name 属性名称
+	 * @param string|array $sets 定义字段名，或 [定义字段名 => 定义值] 键值对
+	 * @param mixed $val 定义值
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	static public function updateAttribute($attributes, $attr_name, $sets, $val = null){
+		if(!isset($attributes[$attr_name])){
+			throw new \LFPhp\PORM\Exception\Exception('attribute no found:'.$attr_name);
+		}
+		$pairs = [];
+		if(is_string($sets)){
+			$pairs[$sets] = $val;
+		}else if(is_array($sets)){
+			$pairs = $sets;
+		}else{
+			throw new \LFPhp\PORM\Exception\Exception('updateAttribute parameter invalid');
+		}
+		foreach($pairs as $field => $define){
+			$attributes[$attr_name]->{$field} = $define;
+		}
+	}
+
+	/**
 	 * DBModel constructor.
 	 * @param array $data
 	 */
@@ -1416,5 +1441,38 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function setProperty($key, $value){
 		$this->__set($key, $value);
+	}
+
+	/**
+	 * 显示字段值（适配某些不能直接用于显示的字段）
+	 * @param string $attr_name 属性名称
+	 * @return string 用于显示的字符串
+	 * @throws \Exception
+	 */
+	public function display($attr_name){
+		$attr = self::getAttributeByName($attr_name);
+		$value = $this->{$attr_name};
+		$text = $value;
+		switch($attr->type){
+			case Attribute::TYPE_SET:
+				$tmp = explode(',', $value);
+				$ret = [];
+				foreach($tmp as $item){
+					$ret[] = $attr->options[$item];
+				}
+				return join(", ", $ret);
+			case Attribute::TYPE_ENUM:
+				return $attr->options[$value];
+			case Attribute::TYPE_TIMESTAMP:
+				return date('Y-m-d H:i:s', $value);
+			case Attribute::TYPE_INT:
+				if(!$attr->is_primary_key){
+					return number_format($text);
+				}
+				break;
+			case Attribute::TYPE_BOOL:
+				return $text ? 'Ture' : 'False';
+		}
+		return $text;
 	}
 }
