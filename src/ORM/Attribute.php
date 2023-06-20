@@ -60,7 +60,7 @@ class Attribute {
 	public $is_primary_key = false; //是否主键
 	public $is_null_allow = false; //是否允许为空
 	public $is_unique = false; //是否唯一
-	public $is_virtual = false; //是否虚拟
+	public $is_virtual = true; //是否虚拟，默认用户新建属性都为虚拟属性，非实际表中存在的属性
 	public $collate = ''; //字符集
 	public $charset = ''; //编码
 	public $setter;

@@ -1418,7 +1418,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function getProperties(){
 		$ps = [];
 		foreach($this->properties as $name=>$p){
-			$ps[] = $this->__get($name);
+			$ps[$name] = $this->__get($name);
 		}
 		return $ps;
 	}
