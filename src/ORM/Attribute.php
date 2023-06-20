@@ -22,6 +22,7 @@ class Attribute {
 
 	const DEFAULT_NULL = "__ATTRIBUTE_DEFAULT_NULL__";
 	const DEFAULT_CURRENT_TIMESTAMP = "__ATTRIBUTE_DEFAULT_CURRENT_TIMESTAMP__";
+	const ON_UPDATE_CURRENT_TIMESTAMP = '__ATTRIBUTE_ON_UPDATE_CURRENT_TIMESTAMP__';
 
 	const ALL_TYPES = [
 		self::TYPE_INT,
@@ -51,6 +52,7 @@ class Attribute {
 	public $alias = ''; //别名(中文名)
 	public $description = ''; //描述
 	public $default = null; //默认值
+	public $ext_attr = null; //额外属性
 	public $options = []; //选项(ENUM类型有效)
 	public $length = null; //长度
 	public $precision = null; //精度
@@ -73,6 +75,14 @@ class Attribute {
 	}
 
 	/**
+	 * 属性是否有默认更新值
+	 * @return bool
+	 */
+	public function hasUpdateDefault(){
+		return $this->ext_attr === self::ON_UPDATE_CURRENT_TIMESTAMP;
+	}
+
+	/**
 	 * 是否有系统定义默认值
 	 * @return bool
 	 */
@@ -80,6 +90,10 @@ class Attribute {
 		return $this->default === self::DEFAULT_NULL || $this->default === self::DEFAULT_CURRENT_TIMESTAMP;
 	}
 
+	/**
+	 * 属性初始化
+	 * @param array $attr_info
+	 */
 	public function __construct(array $attr_info = []){
 		foreach($attr_info as $k => $v){
 			$this->$k = $v;

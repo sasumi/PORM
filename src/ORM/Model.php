@@ -2,7 +2,7 @@
 namespace LFPhp\PORM\ORM;
 
 use ArrayAccess;
-use Exception;
+use LFPhp\PORM\Exception\Exception;
 use JsonSerializable;
 use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\Database\MySQL;
@@ -94,7 +94,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	static public function updateAttribute($attributes, $attr_name, $sets, $val = null){
 		if(!isset($attributes[$attr_name])){
-			throw new \LFPhp\PORM\Exception\Exception('attribute no found:'.$attr_name);
+			throw new Exception('attribute no found:'.$attr_name);
 		}
 		$pairs = [];
 		if(is_string($sets)){
@@ -102,7 +102,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}else if(is_array($sets)){
 			$pairs = $sets;
 		}else{
-			throw new \LFPhp\PORM\Exception\Exception('updateAttribute parameter invalid');
+			throw new Exception('updateAttribute parameter invalid');
 		}
 		foreach($pairs as $field => $define){
 			$attributes[$attr_name]->{$field} = $define;

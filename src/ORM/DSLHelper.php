@@ -3,6 +3,7 @@ namespace LFPhp\PORM\ORM;
 
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
+use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;
@@ -76,7 +77,9 @@ abstract class DSLHelper {
 		$code = '';
 		foreach($attrs as $attr){
 			$readonly_patch = $attr->is_readonly ? '-read' : '';
-			$code .= "{$tab_prefix}@property{$readonly_patch} ".(self::PHP_TYPE_MAP[$attr->type] ?? $attr->type)." \${$attr->name} {$attr->alias} {$attr->description}".PHP_EOL;
+			$type = self::PHP_TYPE_MAP[$attr->type] ?? $attr->type;
+			$ext_desc = $attr->ext_attr === Attribute::ON_UPDATE_CURRENT_TIMESTAMP ? '(更新时自动更新时间)' : '';
+			$code .= "{$tab_prefix}@property{$readonly_patch} ".$type." \${$attr->name} {$attr->alias} {$attr->description} {$ext_desc}".PHP_EOL;
 		}
 		return $code;
 	}
@@ -191,6 +194,12 @@ abstract class DSLHelper {
 			}
 			if(self::_resolveDirective($line, 'NOT NULL')){
 				$attr->is_null_allow = false;
+			}
+			if(self::_resolveDirective($line, 'ON UPDATE', $on_update)){
+				//这里可能包含其他函数参数，暂不支持指定参数形式
+				if($on_update === 'current_timestamp()'){
+					$attr->ext_attr = Attribute::ON_UPDATE_CURRENT_TIMESTAMP;
+				}
 			}
 			if(self::_resolveDirective($line, 'COMMENT', $comment)){
 				$comment = trim($comment, "'");
