@@ -3,8 +3,6 @@ namespace LFPhp\PORM\ORM;
 
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
-use function LFPhp\Func\db_update;
-use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;
@@ -22,7 +20,7 @@ abstract class DSLHelper {
 		Attribute::TYPE_TIMESTAMP => 'string',
 		Attribute::TYPE_YEAR      => 'int',
 		Attribute::TYPE_SET       => 'array',
-		Attribute::TYPE_ENUM      => 'array',
+		Attribute::TYPE_ENUM      => 'string',
 		Attribute::TYPE_DECIMAL   => 'float',
 	];
 
@@ -61,7 +59,7 @@ abstract class DSLHelper {
 	 * @param \LFPhp\PDODSN\DSN $dsn
 	 * @param $table
 	 * @return string
-	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function getTableDSLByDSN($dsn, $table){
 		$pdo = DBDriver::instance($dsn);
