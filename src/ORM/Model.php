@@ -78,6 +78,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	abstract static public function getTableName();
 
 	/**
+	 * 获取特征
 	 * @return Attribute[]
 	 */
 	static public function getAttributes(){
@@ -1403,22 +1404,32 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * alias for getProperties
+	 * @param bool $strict_format 返回数据是否使用严格数据类型
 	 * @return array
 	 * @throws \Exception
 	 */
-	public function getData(){
-		return $this->getProperties();
+	public function getData($strict_format = false){
+		return $this->getProperties($strict_format);
 	}
 
 	/**
 	 * 获取属性
+	 * @param bool $strict_format 返回数据是否使用严格数据类型
 	 * @return array
 	 * @throws \Exception
 	 */
-	public function getProperties(){
+	public function getProperties($strict_format = false){
 		$ps = [];
-		foreach($this->properties as $name=>$p){
-			$ps[$name] = $this->__get($name);
+		$attrs = [];
+		if($strict_format){
+			$attrs = static::getAttributes();
+		}
+		foreach($this->properties as $name => $p){
+			$val = $this->__get($name);
+			if($strict_format && isset($attrs[$name])){
+				$val = Attribute::strictTypeConvert($val, $attrs[$name]->type);
+			}
+			$ps[$name] = $val;
 		}
 		return $ps;
 	}

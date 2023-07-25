@@ -1,6 +1,8 @@
 <?php
 namespace LFPhp\PORM\ORM;
 
+use LFPhp\PORM\Exception\Exception;
+
 /**
  * 数据库元数据抽象类
  */
@@ -65,6 +67,42 @@ class Attribute {
 	public $charset = ''; //编码
 	public $setter;
 	public $getter;
+
+	/**
+	 * 变量类型转换成严格类型
+	 * @param string $val 值（一般来源于数据库查询结果）
+	 * @param string $type 属性类型
+	 * @return bool|float|int|string|string[]
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public static function strictTypeConvert($val, $type){
+		switch($type){
+			case self::TYPE_TIMESTAMP:
+			case self::TYPE_YEAR:
+			case self::TYPE_INT:
+				return intval($val);
+
+			case self::TYPE_BOOL:
+				return !!$val;
+
+			case self::TYPE_FLOAT:
+			case self::TYPE_DECIMAL:
+			case self::TYPE_DOUBLE:
+				return floatval($val);
+
+			case self::TYPE_STRING:
+			case self::TYPE_ENUM:
+			case self::TYPE_DATE:
+			case self::TYPE_TIME:
+			case self::TYPE_DATETIME:
+				return $val.'';
+
+			case self::TYPE_SET:
+				return explode(",", $val);
+			default:
+				throw new Exception("type no support:".$type);
+		}
+	}
 
 	/**
 	 * 属性是否具备用户设定默认值
