@@ -3,6 +3,7 @@ namespace LFPhp\PORM\ORM;
 
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
+use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;
@@ -311,8 +312,9 @@ abstract class DSLHelper {
 						list($val, $precision) = explode(',', $val);
 					}
 					return [$type, (int)$val ?: $def_len, $precision];
-				}//enum、set
-				else if($type == Attribute::TYPE_ENUM || $type == Attribute::TYPE_SET){
+				}
+				//enum、set
+				if($type == Attribute::TYPE_ENUM || $type == Attribute::TYPE_SET){
 					$keys = explode_by(',', str_replace("'", '', $val));
 
 					//必须匹配: {NAME}(MARK1, MARK2) 格式，才能解析出里面的选项名称
@@ -321,13 +323,11 @@ abstract class DSLHelper {
 						if(count($remarks) == count($keys)){
 							return [Attribute::TYPE_ENUM, null, null, array_combine($keys, $remarks)];
 						}
-					}else{
-						return [$type, null, null, array_combine($keys, $keys)];
 					}
-				}//time
-				else{
-					return [$type, null, null, []];
+					return [$type, null, null, array_combine($keys, $keys)];
 				}
+				//time
+				return [$type, null, null, []];
 			}
 		}
 		throw new Exception('type resolve fail:'.$type_def);
