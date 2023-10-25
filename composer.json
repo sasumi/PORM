@@ -21,9 +21,9 @@
 		"ext-pdo": "*",
 		"ext-json": "*",
 		"ext-mysqli": "*",
-		"lfphp/pdodsn": "^0.0.8",
 		"lfphp/logger": "^1.1",
-		"lfphp/func": "^1.1"
+		"lfphp/func": "^1.1",
+		"lfphp/pdodsn": "^0.0.10"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^9.5"
