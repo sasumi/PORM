@@ -94,7 +94,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	static public function updateAttribute($attributes, $attr_name, $sets, $val = null){
-		if(!isset($attributes[$attr_name])){
+		$attr = null;
+		foreach($attributes as $at){
+			if($at->name === $attr_name){
+				$attr = $at;
+				break;
+			}
+		}
+		if(!$attr){
 			throw new Exception('attribute no found:'.$attr_name);
 		}
 		$pairs = [];
@@ -106,7 +113,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			throw new Exception('updateAttribute parameter invalid');
 		}
 		foreach($pairs as $field => $define){
-			$attributes[$attr_name]->{$field} = $define;
+			$attr->{$field} = $define;
 		}
 	}
 
