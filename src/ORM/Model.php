@@ -2,7 +2,6 @@
 namespace LFPhp\PORM\ORM;
 
 use ArrayAccess;
-use LFPhp\PORM\Exception\Exception;
 use JsonSerializable;
 use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\Database\MySQL;
@@ -10,6 +9,7 @@ use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
+use LFPhp\PORM\Exception\Exception;
 use LFPhp\PORM\Exception\NotFoundException;
 use function LFPhp\Func\array_clear_fields;
 use function LFPhp\Func\array_first;
@@ -152,8 +152,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public static function getAttributeByName($name){
 		$attrs = static::getAttributes();
-		if(isset($attrs[$name])){
-			return $attrs[$name];
+		foreach($attrs as $attr){
+			if($attr->name === $name){
+				return $attr;
+			}
 		}
 		throw new Exception('No attribute '.$name.' found.');
 	}
@@ -1420,14 +1422,17 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function getProperties($strict_format = false){
 		$ps = [];
-		$attrs = [];
+		$attr_map = [];
 		if($strict_format){
-			$attrs = static::getAttributes();
+			$tmp = static::getAttributes();
+			foreach($tmp as $at){
+				$attr_map[$at->name] = $at;
+			}
 		}
 		foreach($this->properties as $name => $p){
 			$val = $this->__get($name);
-			if($strict_format && isset($attrs[$name])){
-				$val = Attribute::strictTypeConvert($val, $attrs[$name]->type);
+			if($strict_format && isset($attr_map[$name])){
+				$val = Attribute::strictTypeConvert($val, $attr_map[$name]->type);
 			}
 			$ps[$name] = $val;
 		}
