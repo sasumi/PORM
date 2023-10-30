@@ -70,7 +70,7 @@ class Attribute {
 
 	/**
 	 * 变量类型转换成严格类型
-	 * @param string $val 值（一般来源于数据库查询结果）
+	 * @param string|mixed $val 值（一般来源于数据库查询结果）
 	 * @param string $type 属性类型
 	 * @return bool|float|int|string|string[]
 	 * @throws \LFPhp\PORM\Exception\Exception
@@ -101,7 +101,7 @@ class Attribute {
 			case self::TYPE_SET:
 				return explode(",", $val);
 			default:
-				throw new Exception("type no support:".$type);
+				throw new Exception("Type no support:".$type);
 		}
 	}
 
