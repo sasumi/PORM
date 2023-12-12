@@ -632,7 +632,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * 获取一条记录，为空时抛异常
 	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
-	 * @return static|array
+	 * @return static|DBQuery
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */

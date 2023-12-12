@@ -89,19 +89,6 @@ class DBDriver {
 	}
 
 	/**
-	 * 是否切换到严格模式
-	 * @param bool $to_strict
-	 */
-	public function toggleStrictMode($to_strict = false){
-		if($to_strict){
-			$sql = "set session sql_mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'";
-		} else {
-			$sql = "SET sql_mode ='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'";
-		}
-		$this->conn->query($sql);
-	}
-
-	/**
 	 * PDO判别是否为连接丢失异常
 	 * @param \Exception $exception
 	 * @return bool
@@ -697,9 +684,6 @@ class DBDriver {
 			return $this->conn;
 		}
 		$this->conn = $dsn->pdoConnect();
-		if(isset($dsn->strict_mode)){
-			$this->toggleStrictMode($dsn->strict_mode);
-		}
 		return $this->conn;
 	}
 
