@@ -874,7 +874,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
 		if($debugger === true) {
 			$debugger = function(...$args){
-				echo "\n".date('Y-m-d H:i:s')."\t".join("\t", func_get_args());
+				echo date('Y-m-d H:i:s')."\t".join("\t", func_get_args()), PHP_EOL;
 			};
 		} else if(!$debugger || !is_callable($debugger)){
 			$debugger = function(){};
