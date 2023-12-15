@@ -436,7 +436,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public static function findOneByPkOrFail($val, $as_array = false){
 		$data = static::findOneByPk($val, $as_array);
 		if(!$data){
-			throw new NotFoundException('找不到相关数据(pk:'.$val.')。');
+			$table_desc = static::getModelDesc() ?: static::getTableName();
+			$pk_field_name = static::getPrimaryKey() ?: 'PK';
+			throw new NotFoundException("在{$table_desc}中找不到相关数据({$pk_field_name}: {$val})");
 		}
 		return $data;
 	}
