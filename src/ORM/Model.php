@@ -690,6 +690,19 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
+	 * 转换model对象列表为数组
+	 * @param static[] $model_list
+	 * @return array
+	 */
+	public static function convertModelListToArray($model_list){
+		$tmp = [];
+		foreach($model_list as $m){
+			$tmp[] = $m->getData();
+		}
+		return $tmp;
+	}
+
+	/**
 	 * 计算字段值总和
 	 * @param string|array $fields 需要计算字段名称（列表）
 	 * @param array $group_by 使用指定字段（列表）作为合并维度
