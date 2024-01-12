@@ -658,7 +658,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			$this->query->field($key);
 		}
 		$data = static::getDbDriver(self::OP_READ)->getOne($this->query);
-		return $data ? array_pop($data) : null;
+		if(!$data){
+			return null;
+		}
+		return $key ? $data[$key] : array_pop($data);
 	}
 
 	/**
