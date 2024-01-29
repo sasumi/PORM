@@ -1516,4 +1516,38 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 		return $text;
 	}
+
+	/**
+	 * 克隆所有结果
+	 * @param $override_data
+	 * @return static[]
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public function cloneAll($override_data = []){
+		$list = $this->all();
+		foreach($list as $k=>$item){
+			$list[$k] = $item->clone($override_data);
+		}
+		return $list;
+	}
+
+	/**
+	 * 克隆当前对象并保存
+	 * @param array $override_data 覆盖数据
+	 * @return $this
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public function clone($override_data = []){
+		$pk = static::getPrimaryKey();
+		if($pk){
+			$this->{$pk} = null;
+		}
+		foreach($override_data as $k=> $v){
+			$this->{$k} = $v;
+		}
+		$this->save();
+		return $this;
+	}
 }
