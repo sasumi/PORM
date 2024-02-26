@@ -651,12 +651,12 @@ class DBDriver {
 				$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
 			$result = $this->getPage($query);
-			Logger::info('SQL Count:'.$query, ' Count:'.json_encode($result));
+			self::getLogger()->info('SQL Count:'.$query, ' Count:'.json_encode($result));
 			if($result){
 				return (int)$result[0]['__NUM_COUNT__'];
 			}
 		} else {
-			Logger::warning('SQL NO Select:'.$query);
+			self::getLogger()->warning('SQL NO Select:'.$query);
 		}
 		return 0;
 	}

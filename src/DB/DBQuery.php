@@ -1,12 +1,13 @@
 <?php
 namespace LFPhp\PORM\DB;
 
-use LFPhp\Logger\Logger;
+use LFPhp\Logger\LoggerTrait;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\Exception;
-use function LFPhp\Func\dump;
 
 class DBQuery {
+	use LoggerTrait;
+
 	const SELECT = 'SELECT';
 	const UPDATE = 'UPDATE';
 	const DELETE = 'DELETE';
@@ -421,7 +422,7 @@ class DBQuery {
 			$limit_info = self::calcLimitInfo($org_limit_info, $limit_info);
 			$sql = preg_replace($pattern, '', $sql);
 		}
-		Logger::info('patchLimitation Result:', $org_sql, $limit_info, "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}");
+		self::getLogger()->info('patchLimitation Result:', $org_sql, $limit_info, "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}");
 		return "$sql LIMIT {$limit_info[0]}, {$limit_info[1]}";
 	}
 

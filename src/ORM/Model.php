@@ -4,6 +4,7 @@ namespace LFPhp\PORM\ORM;
 use ArrayAccess;
 use JsonSerializable;
 use LFPhp\Logger\Logger;
+use LFPhp\Logger\LoggerTrait;
 use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\DB\DBDriver;
@@ -25,6 +26,8 @@ use function LFPhp\Func\time_range_v;
 abstract class Model implements JsonSerializable, ArrayAccess {
 	const OP_READ = 1;
 	const OP_WRITE = 2;
+
+	use LoggerTrait;
 
 	/** @var \LFPhp\PDODSN\DSN */
 	private $dsn;
@@ -1296,7 +1299,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		if(!$this->property_changes){
-			Logger::instance()->warning('no property changes');
+			self::getLogger()->warning('no property changes');
 			return false;
 		}
 
