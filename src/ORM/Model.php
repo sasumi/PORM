@@ -17,6 +17,7 @@ use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
+use function LFPhp\Func\format_size;
 use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
 
@@ -930,7 +931,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 				break;
 			}
 			if(!$exists){
-				$debugger('No data found, sleep for '.$sleep_interval_sec.' seconds.');
+				$debugger('no data found, sleep for '.$sleep_interval_sec.' seconds, mem:', format_size(memory_get_usage(true)));
 				sleep($sleep_interval_sec);
 			}
 		}

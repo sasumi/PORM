@@ -272,9 +272,11 @@ class DBDriver {
 	 * @param $charset
 	 * @return \LFPhp\PORM\DB\DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @see https://stackoverflow.com/questions/3513773/change-mysql-default-character-set-to-utf-8-in-my-cnf
 	 */
 	public function setCharset($charset){
-		$this->query("SET NAMES '".$charset."'");
+		$this->query("SET NAMES '$charset'");
+		$this->query("SET CHARACTER SET '$charset'");
 		return $this;
 	}
 
