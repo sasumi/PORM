@@ -3,7 +3,6 @@ namespace LFPhp\PORM\ORM;
 
 use LFPhp\PORM\DB\DBDriver;
 use LFPhp\PORM\Exception\Exception;
-use function LFPhp\Func\dump;
 use function LFPhp\Func\explode_by;
 use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;

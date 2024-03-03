@@ -3,7 +3,6 @@ namespace LFPhp\PORM\ORM;
 
 use ArrayAccess;
 use JsonSerializable;
-use LFPhp\Logger\Logger;
 use LFPhp\Logger\LoggerTrait;
 use LFPhp\PDODSN\Database\MySQL;
 use LFPhp\PDODSN\DSN;
