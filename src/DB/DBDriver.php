@@ -2,7 +2,6 @@
 namespace LFPhp\PORM\DB;
 
 use Exception;
-use LFPhp\Logger\Logger;
 use LFPhp\Logger\LoggerTrait;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;

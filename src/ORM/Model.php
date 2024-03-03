@@ -953,11 +953,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * 更新当前对象
-	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
+	 * @param bool $validate_all 是否刷新全部数据，包含readonly数据
 	 * @return bool|number
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function update($flush_all = false){
+	public function update($validate_all = false){
 		if($this->onBeforeUpdate() === false || $this->onBeforeChanged() === false){
 			return false;
 		}
@@ -967,7 +967,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 		//只更新改变的值
 		$data = array_clear_fields($this->property_changes, $data);
-		$data = $this->validate($data, DBQuery::UPDATE, $flush_all);
+		$data = $this->validate($data, DBQuery::UPDATE, $validate_all);
 		static::getDbDriver()->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
 		$this->onAfterUpdate();
 		$this->property_changes = [];
@@ -976,16 +976,16 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * 插入当前对象
-	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
+	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
 	 * @return string|bool 返回插入的id，或者失败(false)
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function insert($flush_all = false){
+	public function insert($validate_all = false){
 		if($this->onBeforeInsert() === false || $this->onBeforeChanged() === false){
 			return false;
 		}
 		$data = $this->getProperties();
-		$data = $this->validate($data, DBQuery::INSERT, $flush_all);
+		$data = $this->validate($data, DBQuery::INSERT, $validate_all);
 		$result = static::getDbDriver()->insert(static::getTableName(), $data);
 		if($result){
 			$pk_val = static::getDbDriver()->getLastInsertId();
@@ -1030,11 +1030,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * 数据校验
 	 * @param array $src_data 元数据
 	 * @param string $query_type 数据库操作类型
-	 * @param bool $flush_all 是否校验全部数据，包含readonly数据
+	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
 	 * @return array $data
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	private function validate($src_data = [], $query_type = DBQuery::INSERT, $flush_all = false){
+	private function validate($src_data = [], $query_type = DBQuery::INSERT, $validate_all = false){
 		$attrs = self::getEntityAttributes();
 		$attr_maps = [];
 		foreach($attrs as $attr){
@@ -1070,7 +1070,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		//移除readonly属性
-		if(!$flush_all){
+		if(!$validate_all){
 			$attr_maps = array_filter($attr_maps, function($attr){
 				return !$attr->is_readonly;
 			});
@@ -1107,7 +1107,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 		//属性校验
 		foreach($attr_maps as $k => $attr){
-			if(!$attr->is_readonly || $flush_all){
+			if(!$attr->is_readonly || $validate_all){
 				if($msg = $this->validateField($attr, $data[$k])){
 					throw new DBException($msg, null, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
 				}
@@ -1289,12 +1289,26 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
+	 * 调整数据长度，自动截取字符串
+	 */
+	public function fixedData(){
+		$data = $this->getProperties();
+		$attributes = static::getAttributes();
+		foreach($attributes as $attr){
+			if($attr->type === Attribute::TYPE_STRING && isset($data[$attr->name]) && $attr->length){
+				$val = mb_substr($data[$attr->name], 0, $attr->length);
+				$this->setProperty($attr->name, $val);
+			}
+		}
+	}
+
+	/**
 	 * 保存当前对象变更之后的数值
-	 * @param bool $flush_all 是否刷新全部数据，包含readonly数据
+	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function save($flush_all = false){
+	public function save($validate_all = false){
 		if($this->onBeforeSave() === false){
 			return false;
 		}
@@ -1307,9 +1321,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$data = $this->getProperties();
 		$has_pk = !empty($data[static::getPrimaryKey()]);
 		if($has_pk){
-			return $this->update($flush_all);
+			return $this->update($validate_all);
 		} else if(!empty($data)){
-			return $this->insert($flush_all);
+			return $this->insert($validate_all);
 		}
 		return false;
 	}
