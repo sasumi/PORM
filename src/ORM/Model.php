@@ -1567,4 +1567,19 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$this->save();
 		return $this;
 	}
+
+	/**
+	 * 获取属性变化清单
+	 * @return array [key=>new_data, ...]
+	 */
+	public function getPropertyChanges(){
+		if(!$this->property_changes){
+			return [];
+		}
+		$changes = [];
+		foreach($this->property_changes as $attr_key){
+			$changes[$attr_key] = $this->properties[$attr_key];
+		}
+		return $changes;
+	}
 }
