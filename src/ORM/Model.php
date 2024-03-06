@@ -930,7 +930,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 				break;
 			}
 			if(!$exists){
-				$debugger('no data found, sleep for '.$sleep_interval_sec.' seconds, mem:', format_size(memory_get_usage(true)));
+				$debugger('no data found, sleep for '.$sleep_interval_sec.' sec, mem:'.format_size(memory_get_usage(true)));
 				sleep($sleep_interval_sec);
 			}
 		}
