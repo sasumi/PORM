@@ -21,6 +21,14 @@ dump($dsl);
 list($table, $table_desc, $attributes) = DSLHelper::resolveDSL($dsl);
 dump($table, $table_desc);
 
-$str = DSLHelper::buildTemplate($table, $table_desc, $attributes);
+function build_template($template){
+	ob_start();
+	include $template;
+	$str = ob_get_contents();
+	ob_clean();
+	return $str;
+}
+
+$str = build_template($table, $table_desc, $attributes);
 file_put_contents(__DIR__."/$table.php", $str);
 dump(__DIR__."/$table.php", 1);

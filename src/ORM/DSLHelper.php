@@ -12,6 +12,10 @@ use function LFPhp\Func\var_export_min;
  */
 abstract class DSLHelper {
 	const DEFAULT_MODEL_TPL = __DIR__.'/model.tpl.php';
+
+	/**
+	 * 属性类型映射到PHP类型
+	 */
 	const PHP_TYPE_MAP = [
 		Attribute::TYPE_DATE      => 'string',
 		Attribute::TYPE_TIME      => 'string',
@@ -22,6 +26,39 @@ abstract class DSLHelper {
 		Attribute::TYPE_SET       => 'array',
 		Attribute::TYPE_ENUM      => 'string',
 		Attribute::TYPE_DECIMAL   => 'float',
+	];
+
+	/**
+	 * MySQL类型映射到属性类型
+	 * 数据库字段类型 => [属性类型, 是否标量, 系统定义长度]
+	 */
+	const DB_FIELD_TYPE_MAP = [
+		'varchar'    => [Attribute::TYPE_STRING, true],
+		'char'       => [Attribute::TYPE_STRING, true],
+		'json'       => [Attribute::TYPE_JSON, true],
+		'longtext'   => [Attribute::TYPE_STRING, true, 4294967295],
+		'mediumtext' => [Attribute::TYPE_STRING, true, 16777215],
+		'text'       => [Attribute::TYPE_STRING, true, 65535],
+		'tinytext'   => [Attribute::TYPE_STRING, true, 255],
+
+		'tinyint'   => [Attribute::TYPE_INT, true],
+		'smallint'  => [Attribute::TYPE_INT, true],
+		'int'       => [Attribute::TYPE_INT, true],
+		'mediumint' => [Attribute::TYPE_INT, true],
+		'bigint'    => [Attribute::TYPE_INT, true],
+
+		'decimal' => [Attribute::TYPE_DECIMAL, true],
+		'float'   => [Attribute::TYPE_FLOAT, true],
+		'double'  => [Attribute::TYPE_DOUBLE, true],
+
+		'datetime'  => [Attribute::TYPE_DATETIME, false],
+		'date'      => [Attribute::TYPE_DATE, false],
+		'time'      => [Attribute::TYPE_TIME, false],
+		'year'      => [Attribute::TYPE_YEAR, false],
+		'timestamp' => [Attribute::TYPE_TIMESTAMP, false],
+
+		'enum' => [Attribute::TYPE_ENUM, false],
+		'set'  => [Attribute::TYPE_SET, false],
 	];
 
 	/**
@@ -122,22 +159,6 @@ abstract class DSLHelper {
 		], $str);
 		$code .= "new Attribute($s)";
 		return $code;
-	}
-
-	/**
-	 * 构建Model模板
-	 * @param string $table
-	 * @param string $table_description
-	 * @param \LFPhp\PORM\ORM\Attribute[] $attributes
-	 * @param string $template
-	 * @return false|string
-	 */
-	public static function buildTemplate($table, $table_description, $attributes, $template = self::DEFAULT_MODEL_TPL){
-		ob_start();
-		include $template;
-		$str = ob_get_contents();
-		ob_clean();
-		return $str;
 	}
 
 	/**
@@ -270,40 +291,11 @@ abstract class DSLHelper {
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	private static function __resolveTypes($type_def, $tail_sql){
-		$type_map = [
-			'varchar'    => [Attribute::TYPE_STRING, true],
-			'char'       => [Attribute::TYPE_STRING, true],
-			'json'       => [Attribute::TYPE_JSON, true],
-			'longtext'   => [Attribute::TYPE_STRING, true, 4294967295],
-			'mediumtext' => [Attribute::TYPE_STRING, true, 16777215],
-			'text'       => [Attribute::TYPE_STRING, true, 65535],
-			'tinytext'   => [Attribute::TYPE_STRING, true, 255],
-
-			'tinyint'   => [Attribute::TYPE_INT, true],
-			'smallint'  => [Attribute::TYPE_INT, true],
-			'int'       => [Attribute::TYPE_INT, true],
-			'mediumint' => [Attribute::TYPE_INT, true],
-			'bigint'    => [Attribute::TYPE_INT, true],
-
-			'decimal' => [Attribute::TYPE_DECIMAL, true],
-			'float'   => [Attribute::TYPE_FLOAT, true],
-			'double'  => [Attribute::TYPE_DOUBLE, true],
-
-			'datetime'  => [Attribute::TYPE_DATETIME, false],
-			'date'      => [Attribute::TYPE_DATE, false],
-			'time'      => [Attribute::TYPE_TIME, false],
-			'year'      => [Attribute::TYPE_YEAR, false],
-			'timestamp' => [Attribute::TYPE_TIMESTAMP, false],
-
-			'enum' => [Attribute::TYPE_ENUM, false],
-			'set'  => [Attribute::TYPE_SET, false],
-		];
-
 		if(preg_match('/(\w+)\(([^)]+)\)/', $type_def, $matches) || preg_match('/(\w+)\s*$/', $type_def, $matches)){
 			$type_str = $matches[1];
 			$val = $matches[2];
-			if(isset($type_map[$type_str])){
-				list($type, $is_scalar, $def_len) = $type_map[$type_str];
+			if(isset(self::DB_FIELD_TYPE_MAP[$type_str])){
+				list($type, $is_scalar, $def_len) = self::DB_FIELD_TYPE_MAP[$type_str];
 				//scalar
 				if($is_scalar){
 					$precision = null;

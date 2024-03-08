@@ -36,7 +36,7 @@
 	"autoload-dev": {
 		"psr-4": {
 			"LFPhp\\PORM\\": "src/",
-			"LFPhp\\PORM\\tests\\": "tests/"
+			"LFPhp\\PORM\\tests\\": "test/"
 		}
 	}
 }

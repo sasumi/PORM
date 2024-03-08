@@ -13,7 +13,7 @@ use PDOException;
 use PDOStatement;
 
 /**
- * Class DBAbstract
+ * DB驱动
  * @package LFPhp\PORM\Driver
  */
 class DBDriver {
