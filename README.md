@@ -58,7 +58,7 @@ $cfg =  new MySQL([
 			'host'=>'localhost',
 			'user'=>'root',
 			'password'=>'123456',
-			'database'=>'zardem'
+			'database'=>'database'
 		]);
 
 //创建数据库链接实例
@@ -81,3 +81,18 @@ $count = $ins->getCount($query);
 此时，需保证类注释规则包含以下类型注解：
 
 1. @property string $name 名称(名称备注)
+### 3.2 数据库重连支持
+在数据库配置中添加 `max_reconnect_count` 项目，可以设置数据库在丢失连接时（非首次连接）自动重新连接数据库。
+```php
+<?php
+//创建数据库配置
+$cfg =  new MySQL([
+			'host'=>'localhost',
+			'user'=>'root',
+			'password'=>'123456',
+			'database'=>'database',
+            'max_reconnect_count' => 10, //设置最大重连次数   
+		]);
+$ins = DBAbstract::instance($config);
+//...
+```
