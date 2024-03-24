@@ -84,6 +84,7 @@ class DBDriver {
 	 */
 	private function __construct(DSN $dsn){
 		$this->dsn = $dsn;
+		$this->max_reconnect_count = $dsn->max_reconnect_count;
 		$this->connect($this->dsn);
 	}
 
@@ -100,6 +101,58 @@ class DBDriver {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 连接数据库接口
+	 * @param DSN $dsn <p>数据库连接配置，
+	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
+	 * </p>
+	 * @param boolean $force_reconnect 是否强制重新连接
+	 * @return \PDO|null
+	 */
+	public function connect(DSN $dsn, $force_reconnect = false){
+		if(!$force_reconnect && $this->conn){
+			return $this->conn;
+		}
+		$this->conn = $dsn->pdoConnect();
+		return $this->conn;
+	}
+
+	/**
+	 * 获取最大链接重试次数
+	 * @return int
+	 */
+	public function getMaxReconnectCount(){
+		return $this->max_reconnect_count;
+	}
+
+	/**
+	 * 设置链接重试次数
+	 * @param int $max_reconnect_count
+	 * @return \LFPhp\PORM\DB\DBDriver
+	 */
+	public function setMaxReconnectCount($max_reconnect_count){
+		$this->max_reconnect_count = $max_reconnect_count;
+		return $this;
+	}
+
+	/**
+	 * 获取重连间隔时间
+	 * @return int 毫秒
+	 */
+	public function getReconnectInterval(){
+		return $this->reconnect_interval;
+	}
+
+	/**
+	 * 设置重连间隔时间（毫秒）
+	 * @param int $reconnect_interval
+	 * @return DBDriver
+	 */
+	public function setReconnectInterval($reconnect_interval){
+		$this->reconnect_interval = $reconnect_interval;
+		return $this;
 	}
 
 	/**
@@ -670,57 +723,5 @@ class DBDriver {
 	 */
 	public function quoteLike($statement, $escape_char = '\\'){
 		return $this->quote($statement)." ESCAPE '$escape_char'";
-	}
-
-	/**
-	 * 连接数据库接口
-	 * @param DSN $dsn <p>数据库连接配置，
-	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
-	 * </p>
-	 * @param boolean $re_connect 是否重新连接
-	 * @return \PDO|null
-	 */
-	public function connect(DSN $dsn, $re_connect = false){
-		if(!$re_connect && $this->conn){
-			return $this->conn;
-		}
-		$this->conn = $dsn->pdoConnect();
-		return $this->conn;
-	}
-
-	/**
-	 * 获取最大链接重试次数
-	 * @return int
-	 */
-	public function getMaxReconnectCount(){
-		return $this->max_reconnect_count;
-	}
-
-	/**
-	 * 设置链接重试次数
-	 * @param int $max_reconnect_count
-	 * @return \LFPhp\PORM\DB\DBDriver
-	 */
-	public function setMaxReconnectCount($max_reconnect_count){
-		$this->max_reconnect_count = $max_reconnect_count;
-		return $this;
-	}
-
-	/**
-	 * 获取重连间隔时间
-	 * @return int 毫秒
-	 */
-	public function getReconnectInterval(){
-		return $this->reconnect_interval;
-	}
-
-	/**
-	 * 设置重连间隔时间（毫秒）
-	 * @param int $reconnect_interval
-	 * @return DBDriver
-	 */
-	public function setReconnectInterval($reconnect_interval){
-		$this->reconnect_interval = $reconnect_interval;
-		return $this;
 	}
 }
