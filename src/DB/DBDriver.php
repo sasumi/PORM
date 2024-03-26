@@ -709,7 +709,6 @@ class DBDriver {
 				$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
 			}
 			$result = $this->getPage($query);
-			self::getLogger()->info('SQL Count:'.$query, ' Count:'.json_encode($result));
 			if($result){
 				return (int)$result[0]['__NUM_COUNT__'];
 			}
