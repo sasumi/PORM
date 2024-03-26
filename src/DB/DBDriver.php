@@ -649,8 +649,12 @@ class DBDriver {
 	final public function query($query){
 		try{
 			self::$processing_query = $query;
-			self::getLogger()->info('Query: '.$query);
+
+			$st = microtime(true);
 			$result = $this->dbQuery($query);
+			$tms = round((microtime(true)-$st)*1000).'ms';
+			self::getLogger()->info("Query[$tms] $query");
+
 			self::$processing_query = null;
 
 			//由于PHP对数据库查询返回结果并非报告Exception，
