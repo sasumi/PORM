@@ -667,12 +667,12 @@ class DBDriver {
 				$reconnect_count_map[$k] = 0;
 			}
 			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count_map[$k] < $this->max_reconnect_count)){
-				self::getLogger()->warning('DB lost connection, reconnecting');
+				$reconnect_count_map[$k]++;
+				self::getLogger()->warning('DB lost connection, reconnecting(CNT:'.$reconnect_count_map[$k].')');
 				//间隔时间之后重新连接
 				if($this->reconnect_interval){
 					usleep($this->reconnect_interval*1000);
 				}
-				$reconnect_count_map[$k]++;
 				try{
 					$this->connect($this->dsn, true);
 				}catch(Exception $e){
