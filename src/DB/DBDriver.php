@@ -675,6 +675,7 @@ class DBDriver {
 				}
 				try{
 					$this->connect($this->dsn, true);
+					self::getLogger()->info('DB reconnect success');
 				}catch(Exception $e){
 					self::getLogger()->warning('DB reconnect fail:'.$e->getMessage());
 					//ignore reconnect exception
