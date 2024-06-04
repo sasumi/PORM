@@ -1,32 +1,30 @@
 <?php
 namespace LFPhp\PORM\DB;
 
-use Exception;
-use LFPhp\Logger\LoggerTrait;
+use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
+use LFPhp\PORM\Exception\Exception;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
 use PDOStatement;
+use function LFPhp\Func\event_fire;
+use function LFPhp\Func\event_register;
 
 /**
  * DB驱动
  * @package LFPhp\PORM\Driver
  */
 class DBDriver {
-	use LoggerTrait;
-	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY';
-	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY';
-	const EVENT_DB_QUERY_ERROR = __CLASS__.'EVENT_DB_QUERY_ERROR';
-	const EVENT_BEFORE_DB_GET_LIST = __CLASS__.'EVENT_BEFORE_DB_GET_LIST';
-	const EVENT_AFTER_DB_GET_LIST = __CLASS__.'EVENT_AFTER_DB_GET_LIST';
-	const EVENT_ON_DB_CONNECT = __CLASS__.'EVENT_ON_DB_CONNECT';
-	const EVENT_ON_DB_CONNECT_FAIL = __CLASS__.'EVENT_ON_DB_CONNECT_FAIL';
-	const EVENT_ON_DB_QUERY_DISTINCT = __CLASS__.'EVENT_ON_DB_QUERY_DISTINCT';
-	const EVENT_ON_DB_RECONNECT = __CLASS__.'EVENT_ON_DB_RECONNECT';
+	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY'; //回调参数[sql]
+	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY'; //回调参数[sql, result]
+	const EVENT_ON_DB_QUERY_ERROR = __CLASS__.'EVENT_ON_DB_QUERY_ERROR'; //回调参数[query, exception]
+	const EVENT_BEFORE_DB_CONNECT = __CLASS__.'EVENT_BEFORE_DB_CONNECT'; //回调参数[dsn, counter第几次连接]
+	const EVENT_AFTER_DB_CONNECT = __CLASS__.'EVENT_AFTER_DB_CONNECT'; //回调参数[dsn, counter第几次连接]
+	const EVENT_ON_DB_CONNECT_FAIL = __CLASS__.'EVENT_ON_DB_CONNECT_FAIL'; //回调参数[exception, dsn, counter第几次连接]
 
 	//LIKE 保留字符
 	const LIKE_RESERVED_CHARS = ['%', '_'];
@@ -45,11 +43,6 @@ class DBDriver {
 	// so，如果程序需要，可以通过 DBAbstract::distinctQueryOff() 关闭这个选项
 	private static $query_cache_on = false;
 	private static $query_cache_data = [];
-
-	/**
-	 * @var DBQuery current processing db query, support for exception handle
-	 */
-	private static $processing_query;
 
 	/** @var \LFPhp\PDODSN\DSN */
 	public $dsn;
@@ -88,12 +81,40 @@ class DBDriver {
 		$this->connect($this->dsn);
 	}
 
+	public static function setLogger(Logger $logger){
+		$st = null;
+		event_register(self::EVENT_BEFORE_DB_QUERY, function($sql) use (&$st){
+			$st = microtime(true);
+		});
+		event_register(self::EVENT_AFTER_DB_QUERY, function($sql, $result) use ($logger, &$st){
+			$tms = round((microtime(true) - $st)*1000).'ms';
+			$logger->debug("Query[$tms] $sql");
+		});
+		event_register(self::EVENT_ON_DB_QUERY_ERROR, function($query, $exception) use ($logger){
+			$logger->error("DB Query Fail: $query");
+			$logger->exception($exception);
+		});
+		event_register(self::EVENT_BEFORE_DB_CONNECT, function($dsn, $counter) use ($logger){
+			if($counter > 1){
+				$logger->warning("DB re-connecting [$counter]", $dsn->__toString());
+			}else{
+				$logger->debug('DB connecting', $dsn->__toString());
+			}
+		});
+		event_register(self::EVENT_AFTER_DB_CONNECT, function($dsn, $counter) use ($logger){
+			$logger->debug('DB connect success', $dsn->__toString(), $counter);
+		});
+		event_register(self::EVENT_ON_DB_CONNECT_FAIL, function($ex, $dsn, $counter) use ($logger){
+			$logger->error('DB connect fail:'.$ex->getMessage(), $dsn->__toString(), $counter);
+			$logger->exception($ex);
+		});
+	}
+
 	/**
 	 * PDO判别是否为连接丢失异常
-	 * @param \Exception $exception
 	 * @return bool
 	 */
-	protected static function isConnectionLost(Exception $exception){
+	protected static function isConnectionLost(\Exception $exception){
 		if($exception instanceof PDOException){
 			$lost_code_map = ['08S01', 'HY000'];
 			if(in_array($exception->getCode(), $lost_code_map)){
@@ -115,8 +136,33 @@ class DBDriver {
 		if(!$force_reconnect && $this->conn){
 			return $this->conn;
 		}
-		$this->conn = $dsn->pdoConnect();
-		return $this->conn;
+
+		$dsn_key = $this->dsn->__toString();
+		static $connect_counter;
+		if(!isset($connect_counter[$dsn_key])){
+			$connect_counter[$dsn_key] = 0;
+		}
+		if(!$this->max_reconnect_count && $connect_counter[$dsn_key]){
+			throw new Exception('Connect Lost');
+		}
+		while(true){
+			try{
+				$connect_counter[$dsn_key]++;
+				event_fire(self::EVENT_BEFORE_DB_CONNECT, $dsn, $connect_counter[$dsn_key]);
+				$this->conn = $dsn->pdoConnect();
+				event_fire(self::EVENT_AFTER_DB_CONNECT, $dsn, $connect_counter[$dsn_key]);
+				return $this->conn;
+			}catch(\Exception $ex){
+				event_fire(self::EVENT_ON_DB_CONNECT_FAIL, $ex, $dsn, $connect_counter[$dsn_key]);
+				if($connect_counter[$dsn_key] > $this->max_reconnect_count){
+					throw $ex;
+				}
+				//间隔时间之后重新连接
+				if($this->reconnect_interval){
+					usleep($this->reconnect_interval*1000);
+				}
+			}
+		}
 	}
 
 	/**
@@ -171,7 +217,10 @@ class DBDriver {
 	 */
 	protected function dbQuery($query){
 		$this->_last_query_result = null;
-		$result = $this->conn->query($query.'');
+		$sql = $query.'';
+		event_fire(self::EVENT_BEFORE_DB_QUERY, $sql);
+		$result = $this->conn->query($sql);
+		event_fire(self::EVENT_AFTER_DB_QUERY, $sql, $result);
 		$this->_last_query_result = $result;
 		return $result;
 	}
@@ -399,14 +448,6 @@ class DBDriver {
 		self::setQueryCacheOff();
 		call_user_func($callback);
 		self::$query_cache_on = $st;
-	}
-
-	/**
-	 * 获取正在提交中的查询
-	 * @return DBQuery
-	 */
-	public static function getProcessingQuery(){
-		return self::$processing_query;
 	}
 
 	/**
@@ -648,38 +689,13 @@ class DBDriver {
 	 */
 	final public function query($query){
 		try{
-			self::$processing_query = $query;
-
-			$st = microtime(true);
-			$result = $this->dbQuery($query);
-			$tms = round((microtime(true)-$st)*1000).'ms';
-			self::getLogger()->info("Query[$tms] $query");
-
-			self::$processing_query = null;
-
 			//由于PHP对数据库查询返回结果并非报告Exception，
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
-			return $result;
+			return $this->dbQuery($query);
 		}catch(Exception $ex){
-			static $reconnect_count_map;
-			$k = $this->dsn->__toString();
-			if(!isset($reconnect_count_map[$k])){
-				$reconnect_count_map[$k] = 0;
-			}
-			if(static::isConnectionLost($ex) && $this->max_reconnect_count && ($reconnect_count_map[$k] < $this->max_reconnect_count)){
-				$reconnect_count_map[$k]++;
-				self::getLogger()->warning('DB lost connection, reconnecting(CNT:'.$reconnect_count_map[$k].')');
-				//间隔时间之后重新连接
-				if($this->reconnect_interval){
-					usleep($this->reconnect_interval*1000);
-				}
-				try{
-					$this->connect($this->dsn, true);
-					self::getLogger()->info('DB reconnect success');
-				}catch(Exception $e){
-					self::getLogger()->warning('DB reconnect fail:'.$e->getMessage());
-					//ignore reconnect exception
-				}
+			event_fire(self::EVENT_ON_DB_QUERY_ERROR, $query, $ex);
+			if(static::isConnectionLost($ex)){
+				$this->connect($this->dsn, true);
 				return $this->query($query);
 			}
 			throw new QueryException($ex->getMessage(), $ex->getCode(), $ex, $query, $this->dsn);
@@ -714,10 +730,9 @@ class DBDriver {
 			if($result){
 				return (int)$result[0]['__NUM_COUNT__'];
 			}
-		} else {
-			self::getLogger()->warning('SQL NO Select:'.$query);
+			throw new Exception("Query get counter fail: $query");
 		}
-		return 0;
+		throw new Exception("Query resolve select seg fail: $query");
 	}
 
 	/**
