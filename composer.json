@@ -22,8 +22,8 @@
 		"ext-json": "*",
 		"ext-mysqli": "*",
 		"lfphp/logger": "^1.1",
-		"lfphp/func": "^1.2",
-		"lfphp/pdodsn": "^0.0.12"
+		"lfphp/pdodsn": "^0.0.13",
+		"lfphp/func": "^1.2"
 	},
 	"autoload": {
 		"psr-4": {
