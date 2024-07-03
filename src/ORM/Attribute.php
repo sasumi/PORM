@@ -68,6 +68,9 @@ class Attribute {
 	public $setter;
 	public $getter;
 
+	/** @var callable $on_display 显示处理绑定函数 */
+	public $on_display;
+
 	/**
 	 * 变量类型转换成严格类型
 	 * @param string|mixed $val 值（一般来源于数据库查询结果）
@@ -119,6 +122,38 @@ class Attribute {
 	 */
 	public function hasUpdateDefault(){
 		return $this->ext_attr === self::ON_UPDATE_CURRENT_TIMESTAMP;
+	}
+
+	/**
+	 * 获取属性值显示字符串
+	 * @param $value
+	 * @return string
+	 */
+	public function display($value){
+		if($this->on_display){
+			return strval(call_user_func($this->on_display, $value));
+		}
+		switch($this->type){
+			case self::TYPE_SET:
+				$tmp = explode(',', $value);
+				$ret = [];
+				foreach($tmp as $item){
+					$ret[] = $this->options[$item];
+				}
+				return join(", ", $ret);
+			case self::TYPE_ENUM:
+				return strval($this->options[$value]);
+			case self::TYPE_TIMESTAMP:
+				return date('Y-m-d H:i:s', $value);
+			case self::TYPE_INT:
+				if(!$this->is_primary_key){
+					return number_format($value);
+				}
+				break;
+			case self::TYPE_BOOL:
+				return $value ? 'ture' : 'false';
+		}
+		return strval($value);
 	}
 
 	/**

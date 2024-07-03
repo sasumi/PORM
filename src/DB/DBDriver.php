@@ -4,7 +4,7 @@ namespace LFPhp\PORM\DB;
 use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
-use LFPhp\PORM\Exception\Exception;
+use LFPhp\PORM\Exception\Exception as PORMException;
 use LFPhp\PORM\Exception\NullOperation;
 use LFPhp\PORM\Exception\QueryException;
 use LFPhp\PORM\Misc\PaginateInterface;
@@ -143,7 +143,7 @@ class DBDriver {
 			$connect_counter[$dsn_key] = 0;
 		}
 		if(!$this->max_reconnect_count && $connect_counter[$dsn_key]){
-			throw new Exception('Connect Lost');
+			throw new PORMException('Connect Lost');
 		}
 		while(true){
 			try{
@@ -692,7 +692,7 @@ class DBDriver {
 			//由于PHP对数据库查询返回结果并非报告Exception，
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
 			return $this->dbQuery($query);
-		}catch(Exception $ex){
+		}catch(\Exception $ex){
 			event_fire(self::EVENT_ON_DB_QUERY_ERROR, $query, $ex);
 			if(static::isConnectionLost($ex)){
 				$this->connect($this->dsn, true);
@@ -730,9 +730,9 @@ class DBDriver {
 			if($result){
 				return (int)$result[0]['__NUM_COUNT__'];
 			}
-			throw new Exception("Query get counter fail: $query");
+			throw new PORMException("Query get counter fail: $query");
 		}
-		throw new Exception("Query resolve select seg fail: $query");
+		throw new PORMException("Query resolve select seg fail: $query");
 	}
 
 	/**

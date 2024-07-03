@@ -1510,28 +1510,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function display($attr_name){
 		$attr = self::getAttributeByName($attr_name);
 		$value = $this->{$attr_name};
-		$text = $value;
-		switch($attr->type){
-			case Attribute::TYPE_SET:
-				$tmp = explode(',', $value);
-				$ret = [];
-				foreach($tmp as $item){
-					$ret[] = $attr->options[$item];
-				}
-				return join(", ", $ret);
-			case Attribute::TYPE_ENUM:
-				return $attr->options[$value];
-			case Attribute::TYPE_TIMESTAMP:
-				return date('Y-m-d H:i:s', $value);
-			case Attribute::TYPE_INT:
-				if(!$attr->is_primary_key){
-					return number_format($text);
-				}
-				break;
-			case Attribute::TYPE_BOOL:
-				return $text ? 'Ture' : 'False';
-		}
-		return $text;
+		return $attr->display($value);
 	}
 
 	/**
