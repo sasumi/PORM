@@ -323,8 +323,8 @@ class DBDriver {
 	public function getDictionary(){
 		$tables = self::getTables();
 		foreach($tables as $k=>$tbl_info){
-			$fields = self::getFields($tbl_info['TABLE_NAME']);
-			$tables[$k]['FIELDS'] = $fields;
+			$fields = self::getFields($tbl_info['table_name']);
+			$tables[$k]['fields'] = $fields;
 		}
 		return $tables;
 	}
@@ -337,7 +337,11 @@ class DBDriver {
 		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment FROM `information_schema`.`tables` WHERE `table_schema`=?";
 		$sth = $this->conn->prepare($query);
 		$sth->execute([$this->dsn->database]);
-		return $sth->fetchAll(PDO::FETCH_ASSOC);
+		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
+		foreach($tmp as $k => $item){
+			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
+		}
+		return $tmp;
 	}
 
 	/**
@@ -352,7 +356,11 @@ class DBDriver {
 		$sth = $this->conn->prepare($query);
 		$db = $this->dsn->database;
 		$sth->execute([$db, $table]);
-		return $sth->fetchAll(PDO::FETCH_ASSOC);
+		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
+		foreach($tmp as $k => $item){
+			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
+		}
+		return $tmp;
 	}
 
 	/**
