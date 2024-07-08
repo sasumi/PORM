@@ -13,6 +13,7 @@ use PDOException;
 use PDOStatement;
 use function LFPhp\Func\event_fire;
 use function LFPhp\Func\event_register;
+use function LFPhp\Func\array_first;
 
 /**
  * DB驱动
@@ -81,6 +82,11 @@ class DBDriver {
 		$this->connect($this->dsn);
 	}
 
+	/**
+	 * 绑定logger
+	 * @param \LFPhp\Logger\Logger $logger
+	 * @return void
+	 */
 	public static function setLogger(Logger $logger){
 		$st = null;
 		event_register(self::EVENT_BEFORE_DB_QUERY, function($sql) use (&$st){
@@ -321,12 +327,27 @@ class DBDriver {
 	 * @return array
 	 */
 	public function getDictionary(){
-		$tables = self::getTables();
+		$tables = $this->getTables();
 		foreach($tables as $k=>$tbl_info){
-			$fields = self::getFields($tbl_info['table_name']);
+			$fields = $this->getFields($tbl_info['table_name']);
 			$tables[$k]['fields'] = $fields;
 		}
 		return $tables;
+	}
+
+	/**
+	 * 获取数据库列表
+	 * @return string[]
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public function getDatabaseList(){
+		$tmp = $this->getAll('SHOW DATABASES');
+		$list = [];
+		foreach($tmp as $item){
+			$list[] = array_first($item);
+		}
+		return $list;
 	}
 
 	/**
@@ -334,10 +355,13 @@ class DBDriver {
 	 * @return array
 	 */
 	public function getTables(){
-		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment FROM `information_schema`.`tables` WHERE `table_schema`=?";
+		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment 
+					FROM `information_schema`.`tables` 
+					WHERE `table_schema`=?";
 		$sth = $this->conn->prepare($query);
 		$sth->execute([$this->dsn->database]);
 		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
+		//不同版本mysql返回字段名可能是大写的，需要强制转换一次
 		foreach($tmp as $k => $item){
 			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
 		}
@@ -357,6 +381,7 @@ class DBDriver {
 		$db = $this->dsn->database;
 		$sth->execute([$db, $table]);
 		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
+		//不同版本mysql返回字段名可能是大写的，需要强制转换一次
 		foreach($tmp as $k => $item){
 			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
 		}
