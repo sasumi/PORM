@@ -874,8 +874,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$page_index = 0;
 		$page_total = ceil($total/$size);
 		while($start<$total){
-			$data = $this->paginate(array($start, $size), $as_array);
-			if(call_user_func($handler, $data, $page_index++, $page_total, $total) === false){
+			$list = $this->paginate(array($start, $size), $as_array);
+			if(call_user_func($handler, $list, $page_index++, $page_total, $total) === false){
 				break;
 			}
 			$start += $size;
