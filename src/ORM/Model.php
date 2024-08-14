@@ -156,9 +156,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * 根据字段名获取属性
-	 * @param $name
+	 * @param string $name 属性名
 	 * @return Attribute
-	 * @throws \Exception
 	 */
 	public static function getAttributeByName($name){
 		$attrs = static::getAttributes();
@@ -167,7 +166,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 				return $attr;
 			}
 		}
-		throw new Exception('No attribute '.$name.' found.');
+		return null;
 	}
 
 	/**
@@ -1509,13 +1508,16 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function display($attr_name){
 		$attr = self::getAttributeByName($attr_name);
+		if(!$attr){
+			throw new Exception('No attribute '.$attr_name.' found.');
+		}
 		$value = $this->{$attr_name};
 		return $attr->display($value);
 	}
 
 	/**
 	 * 克隆所有结果
-	 * @param $override_data
+	 * @param array $override_data 覆盖数据
 	 * @return static[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
