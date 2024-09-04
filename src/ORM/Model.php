@@ -1061,7 +1061,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 				}
 				if($count){
-					throw new DBException("{$attr->alias}：{$data->{$field}}已经存在，不能重复添加");
+					throw new DBException("{$attr->alias}：“{$data[$field]}” 已经存在，请勿重复添加。");
 				}
 			}
 		}
