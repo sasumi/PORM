@@ -16,6 +16,7 @@ use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
+use function LFPhp\Func\array_unset;
 use function LFPhp\Func\format_size;
 use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
@@ -329,6 +330,16 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			$this->query->where($statement);
 		}
 		return $this;
+	}
+
+	public function allFieldsExclude(...$fields){
+		$attrs = static::getAttributes();
+		$all_fields = array_keys($attrs);
+		if(!$all_fields){
+			throw new Exception('no fields found in define');
+		}
+		$all_fields  = array_unset($all_fields, ...$fields);
+		return $this->fields($all_fields);
 	}
 
 	/**
@@ -835,12 +846,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function map($key, $val){
 		if(is_string($val)){
-//			$this->query->field($key, $val); //查询中可能已经通过 field() 设置自定义字段，这里的$key可能无效。
+			//			$this->query->field($key, $val); //查询中可能已经通过 field() 设置自定义字段，这里的$key可能无效。
 			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			return array_combine(array_column($tmp, $key), array_column($tmp, $val));
 		} else if(is_array($val)){
 			$tmp[] = $key;
-//			$this->query->fields($tmp);
+			//			$this->query->fields($tmp);
 			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			$ret = [];
 			foreach($tmp as $item){
