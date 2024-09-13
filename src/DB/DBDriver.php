@@ -1,6 +1,7 @@
 <?php
 namespace LFPhp\PORM\DB;
 
+use Exception;
 use LFPhp\Logger\Logger;
 use LFPhp\PDODSN\DSN;
 use LFPhp\PORM\Exception\DBException;
@@ -11,9 +12,9 @@ use LFPhp\PORM\Misc\PaginateInterface;
 use PDO;
 use PDOException;
 use PDOStatement;
+use function LFPhp\Func\array_first;
 use function LFPhp\Func\event_fire;
 use function LFPhp\Func\event_register;
-use function LFPhp\Func\array_first;
 
 /**
  * DB驱动
@@ -116,16 +117,40 @@ class DBDriver {
 		});
 	}
 
+	private static function _str_contains_all($haystack){
+		$args = func_get_args();
+		array_shift($args);
+		foreach($args as $str){
+			if(strpos($haystack, $str) === false){
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * PDO判别是否为连接丢失异常
 	 * @return bool
 	 */
-	protected static function isConnectionLost(\Exception $exception){
+	protected static function isConnectionLostException(Exception $exception){
 		if($exception instanceof PDOException){
-			$lost_code_map = ['08S01', 'HY000'];
-			if(in_array($exception->getCode(), $lost_code_map)){
+			$msg = $exception->getMessage();
+			//https://stackoverflow.com/questions/21091850/error-2013-hy000-lost-connection-to-mysql-server-at-reading-authorization-pa
+			//ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 0
+			//这种情况可能是连接超时时间（connect_timeout）设置不够，导致mysql服务连接中被断开
+			if(self::_str_contains_all($msg, 'HY000', '2013')){
 				return true;
 			}
+
+			//https://stackoverflow.com/questions/7942154/mysql-error-2006-mysql-server-has-gone-away
+			//2006, MySQL server has gone away
+			//这种有可能是执行过程超时导致，例如packet太小（my.cnf max_allowed_packet 设置太小，或者超时时间 wait_timeout 之类的）
+			if(self::_str_contains_all($msg, 'HY000', '2006')){
+				return true;
+			}
+
+			//more
+			//[ERROR 2003 (HY000): Can't connect to MySQL server on 'localhost:3306' (10061)]
 		}
 		return false;
 	}
@@ -158,7 +183,7 @@ class DBDriver {
 				$this->conn = $dsn->pdoConnect();
 				event_fire(self::EVENT_AFTER_DB_CONNECT, $dsn, $connect_counter[$dsn_key]);
 				return $this->conn;
-			}catch(\Exception $ex){
+			}catch(Exception $ex){
 				event_fire(self::EVENT_ON_DB_CONNECT_FAIL, $ex, $dsn, $connect_counter[$dsn_key]);
 				if($connect_counter[$dsn_key] > $this->max_reconnect_count){
 					throw $ex;
@@ -725,9 +750,9 @@ class DBDriver {
 			//由于PHP对数据库查询返回结果并非报告Exception，
 			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
 			return $this->dbQuery($query);
-		}catch(\Exception $ex){
+		}catch(Exception $ex){
 			event_fire(self::EVENT_ON_DB_QUERY_ERROR, $query, $ex);
-			if(static::isConnectionLost($ex)){
+			if(static::isConnectionLostException($ex)){
 				$this->connect($this->dsn, true);
 				return $this->query($query);
 			}
