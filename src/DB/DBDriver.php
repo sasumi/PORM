@@ -48,11 +48,7 @@ class DBDriver {
 
 	/** @var \LFPhp\PDODSN\DSN */
 	public $dsn;
-
-	/**
-	 * @var PDOStatement
-	 */
-	private $_last_query_result = null;
+	private $last_affect_num = 0;
 
 	/**
 	 * PDO TYPE MAP
@@ -90,10 +86,10 @@ class DBDriver {
 	 */
 	public static function setLogger(Logger $logger){
 		$st = null;
-		event_register(self::EVENT_BEFORE_DB_QUERY, function($sql) use (&$st){
+		event_register(self::EVENT_BEFORE_DB_QUERY, function() use (&$st){
 			$st = microtime(true);
 		});
-		event_register(self::EVENT_AFTER_DB_QUERY, function($sql, $result) use ($logger, &$st){
+		event_register(self::EVENT_AFTER_DB_QUERY, function($sql) use ($logger, &$st){
 			$tms = round((microtime(true) - $st)*1000).'ms';
 			$logger->debug("Query[$tms] $sql");
 		});
@@ -135,6 +131,8 @@ class DBDriver {
 	protected static function isConnectionLostException(Exception $exception){
 		if($exception instanceof PDOException){
 			$msg = $exception->getMessage();
+			//HY000 means general error.
+
 			//https://stackoverflow.com/questions/21091850/error-2013-hy000-lost-connection-to-mysql-server-at-reading-authorization-pa
 			//ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 0
 			//这种情况可能是连接超时时间（connect_timeout）设置不够，导致mysql服务连接中被断开
@@ -247,12 +245,12 @@ class DBDriver {
 	 * @return PDOStatement
 	 */
 	protected function dbQuery($query){
-		$this->_last_query_result = null;
 		$sql = $query.'';
+		$this->last_affect_num = 0;
 		event_fire(self::EVENT_BEFORE_DB_QUERY, $sql);
 		$result = $this->conn->query($sql);
 		event_fire(self::EVENT_AFTER_DB_QUERY, $sql, $result);
-		$this->_last_query_result = $result;
+		$this->last_affect_num = $result->rowCount();
 		return $result;
 	}
 
@@ -340,11 +338,11 @@ class DBDriver {
 
 	/**
 	 * 查询最近db执行影响行数
-	 * @description 该方法调用时候需要谨慎，需要避免_last_query_result被覆盖
+	 * @description 该方法调用时候需要谨慎，需要避免 last_affect_num 被覆盖
 	 * @return integer
 	 */
 	public function getAffectNum() {
-		return $this->_last_query_result ? $this->_last_query_result->rowCount() : 0;
+		return $this->last_affect_num;
 	}
 
 	/**

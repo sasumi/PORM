@@ -834,6 +834,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * 以映射数组方式返回
+	 * 这里不进行字段过滤，查询中可能已经通过 field() 设置自定义字段，这里的$key可能无效。
 	 * <pre>
 	 * $query->map('id', 'name'); //返回： [[id_val=>name_val],...] 格式数据
 	 * $query->map('id', ['name']); //返回： [[id_val=>[name=>name_val],...] 格式数据
@@ -846,12 +847,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function map($key, $val){
 		if(is_string($val)){
-			//			$this->query->field($key, $val); //查询中可能已经通过 field() 设置自定义字段，这里的$key可能无效。
 			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			return array_combine(array_column($tmp, $key), array_column($tmp, $val));
-		} else if(is_array($val)){
+		}else if(is_array($val)){
 			$tmp[] = $key;
-			//			$this->query->fields($tmp);
 			$tmp = static::getDbDriver(self::OP_READ)->getAll($this->query);
 			$ret = [];
 			foreach($tmp as $item){
