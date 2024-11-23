@@ -11,12 +11,11 @@ use LFPhp\PORM\DB\DBQuery;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\Exception;
 use LFPhp\PORM\Exception\NotFoundException;
-use function LFPhp\Func\array_clear_fields;
+use function LFPhp\Func\array_filter_fields;
 use function LFPhp\Func\array_first;
 use function LFPhp\Func\array_group;
 use function LFPhp\Func\array_index;
 use function LFPhp\Func\array_orderby;
-use function LFPhp\Func\array_unset;
 use function LFPhp\Func\format_size;
 use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
@@ -361,7 +360,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if(!$all_fields){
 			throw new Exception('no fields found in define');
 		}
-		$all_fields = array_unset($all_fields, ...$fields);
+		$all_fields = array_filter_fields($all_fields, [], $fields);
 		return $this->fields($all_fields);
 	}
 
@@ -996,7 +995,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$pk = static::getPrimaryKey();
 
 		// Update only changed values
-		$data = array_clear_fields($this->property_changes, $data);
+		$data = array_filter_fields($data, $this->property_changes);
 		$data = $this->validate($data, DBQuery::UPDATE, $validate_all);
 		static::getDbDriver()->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
 		$this->onAfterUpdate();
@@ -1094,8 +1093,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 				}
 				if($count){
-					throw new DBException("{$attr->alias}: "{
-						$data[$field]}" already exists, please do not add it again.");
+					throw new DBException("{$attr->alias}: \"{$data[$field]}\" already exists, please do not add it again.");
 				}
 			}
 		}
@@ -1108,7 +1106,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		//Clean up useless data
-		$data = array_clear_fields(array_keys($attr_maps), $data);
+		$data = array_filter_fields($data, array_keys($attr_maps));
 
 		//Fill in the default value when inserting
 		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
