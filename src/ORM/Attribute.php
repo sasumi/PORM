@@ -4,7 +4,7 @@ namespace LFPhp\PORM\ORM;
 use LFPhp\PORM\Exception\Exception;
 
 /**
- * 数据库元数据抽象类
+ * Database metadata abstract class
  */
 class Attribute {
 	const TYPE_INT = 'int';
@@ -48,33 +48,32 @@ class Attribute {
 		self::TYPE_FLOAT,
 		self::TYPE_DOUBLE,
 	];
-
-	public $name; //名称
-	public $type; //类型
-	public $alias = ''; //别名(中文名)
-	public $description = ''; //描述
-	public $default = null; //默认值
-	public $ext_attr = null; //额外属性
-	public $options = []; //选项(ENUM类型有效)
-	public $length = null; //长度
-	public $precision = null; //精度
-	public $is_readonly = false; //是否只读
-	public $is_primary_key = false; //是否主键
-	public $is_null_allow = false; //是否允许为空
-	public $is_unique = false; //是否唯一
-	public $is_virtual = true; //是否虚拟，默认用户新建属性都为虚拟属性，非实际表中存在的属性
-	public $collate = ''; //字符集
-	public $charset = ''; //编码
+	public $name; //name
+	public $type; //type
+	public $alias = ''; //alias (Chinese name)
+	public $description = ''; //description
+	public $default = null; //default value
+	public $ext_attr = null; //extra attributes
+	public $options = []; //options (ENUM type valid)
+	public $length = null; //length
+	public $precision = null; //precision
+	public $is_readonly = false; //read-only
+	public $is_primary_key = false; //primary key
+	public $is_null_allow = false; //null allowed
+	public $is_unique = false; //unique
+	public $is_virtual = true; //virtual or not, by default, all newly created attributes are virtual attributes, not attributes that exist in the actual table
+	public $collate = ''; //character set
+	public $charset = ''; //encoding
 	public $setter;
 	public $getter;
 
-	/** @var callable $on_display 显示处理绑定函数 */
+	/** @var callable $on_display on display field handler */
 	public $on_display;
 
 	/**
-	 * 变量类型转换成严格类型
-	 * @param string|mixed $val 值（一般来源于数据库查询结果）
-	 * @param string $type 属性类型
+	 * Convert variable types to strict types
+	 * @param string|mixed $val Value (usually derived from database query results)
+	 * @param string $type Property Type
 	 * @return bool|float|int|string|string[]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
@@ -109,7 +108,7 @@ class Attribute {
 	}
 
 	/**
-	 * 属性是否具备用户设定默认值
+	 * Whether the attribute has a user-defined default value
 	 * @return bool
 	 */
 	public function hasUserDefinedDefaultValue(){
@@ -117,7 +116,7 @@ class Attribute {
 	}
 
 	/**
-	 * 属性是否有默认更新值
+	 * Does the property have a default update value?
 	 * @return bool
 	 */
 	public function hasUpdateDefault(){
@@ -125,7 +124,7 @@ class Attribute {
 	}
 
 	/**
-	 * 获取属性值显示字符串
+	 * Get the attribute value display string
 	 * @param $value
 	 * @return string
 	 */
@@ -157,7 +156,7 @@ class Attribute {
 	}
 
 	/**
-	 * 是否有系统定义默认值
+	 * Is there a system defined default value?
 	 * @return bool
 	 */
 	public function hasSysDefinedDefaultValue(){
@@ -165,7 +164,6 @@ class Attribute {
 	}
 
 	/**
-	 * 属性初始化
 	 * @param array $attr_info
 	 */
 	public function __construct(array $attr_info = []){

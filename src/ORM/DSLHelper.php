@@ -8,13 +8,13 @@ use function LFPhp\Func\get_constant_name;
 use function LFPhp\Func\var_export_min;
 
 /**
- * 数据库元数据抽象辅助
+ * Database metadata abstraction assistance
  */
 abstract class DSLHelper {
 	const DEFAULT_MODEL_TPL = __DIR__.'/model.tpl.php';
 
 	/**
-	 * 属性类型映射到PHP类型
+	 * Attribute types are mapped to PHP types
 	 */
 	const PHP_TYPE_MAP = [
 		Attribute::TYPE_DATE      => 'string',
@@ -29,8 +29,8 @@ abstract class DSLHelper {
 	];
 
 	/**
-	 * MySQL类型映射到属性类型
-	 * 数据库字段类型 => [属性类型, 是否标量, 系统定义长度]
+	 * MySQL type mapping to attribute type
+	 * Database field type => [attribute type, whether scalar, system defined length]
 	 */
 	const DB_FIELD_TYPE_MAP = [
 		'varchar'    => [Attribute::TYPE_STRING, true],
@@ -62,9 +62,9 @@ abstract class DSLHelper {
 	];
 
 	/**
-	 * 从Model中解析获取DSL信息
+	 * Parse and obtain DSL information from Model
 	 * @param Model|string $model_class
-	 * @return array [string:表名, string:表备注, array:Attribute[]]
+	 * @return array [string: table name, string: table notes, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public static function getTableInfoByModel($model_class){
@@ -80,10 +80,10 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 获取表信息（表名、表备注、表属性列表）
+	 * Get table information (table name, table notes, table attribute list)
 	 * @param \LFPhp\PDODSN\DSN $dsn
 	 * @param string $table
-	 * @return array [string:表名, string:表备注, array:Attribute[]]
+	 * @return array [string: table name, string: table notes, array:Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public static function getTableInfoByDSN($dsn, $table){
@@ -92,7 +92,7 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 获取表DSL
+	 * Get Table DSL
 	 * @param \LFPhp\PDODSN\DSN $dsn
 	 * @param $table
 	 * @return string
@@ -104,7 +104,7 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 转化属性表到文档声明
+	 * Convert property lists to document declarations
 	 * @param Attribute[] $attrs
 	 * @return string
 	 */
@@ -113,7 +113,7 @@ abstract class DSLHelper {
 		foreach($attrs as $attr){
 			$readonly_patch = $attr->is_readonly ? '-read' : '';
 			$type = self::PHP_TYPE_MAP[$attr->type] ?? $attr->type;
-			$ext_desc = $attr->ext_attr === Attribute::ON_UPDATE_CURRENT_TIMESTAMP ? '(更新时自动更新时间)' : '';
+			$ext_desc = $attr->ext_attr === Attribute::ON_UPDATE_CURRENT_TIMESTAMP ? '(auto update time)' : '';
 			$str = "@property{$readonly_patch} ".$type." \${$attr->name} {$attr->alias} {$attr->description} {$ext_desc}";
 			$str = preg_replace("/\s+/", " ", $str);
 			$str = trim($str);
@@ -162,9 +162,9 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 从DSL中解析生成：表名+表备注+Attribute清单
+	 * Parse and generate from DSL: table name + table notes + attribute list
 	 * @param string $dsl
-	 * @return array[] [string:表名, string:表备注, array:Attribute[]]
+	 * @return array[] [string: table name, string: table notes, array: Attribute[]]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public static function resolveDSL($dsl){
@@ -221,7 +221,7 @@ abstract class DSLHelper {
 				$attr->is_null_allow = false;
 			}
 			if(self::_resolveDirective($line, 'ON UPDATE', $on_update)){
-				//这里可能包含其他函数参数，暂不支持指定参数形式
+				//This may contain other function parameters, and the specified parameter form is not currently supported
 				if(stripos($on_update, 'current_timestamp') !== false){
 					$attr->ext_attr = Attribute::ON_UPDATE_CURRENT_TIMESTAMP;
 				}
@@ -248,7 +248,7 @@ abstract class DSLHelper {
 					}
 				});
 			}
-			//当前仅支持单字段唯一
+			//Currently only single field uniqueness is supported
 			if(preg_match('/^UNIQUE\sKEY.*\(`([^`]+)`\)/i', $line, $matches)){
 				array_walk($attrs, function($at) use ($matches){
 					/** @var Attribute $at */
@@ -265,11 +265,11 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 解析SQL DSL语言中的指令
+	 * Parse the instructions in SQL DSL language
 	 * @param string $line
-	 * @param string $directive 指令
-	 * @param null $result 返回结果
-	 * @return bool 是否匹配
+	 * @param string $directive instruction
+	 * @param null $result return result
+	 * @return bool match
 	 */
 	private static function _resolveDirective($line, $directive, &$result = null){
 		if($directive == 'COMMENT' && preg_match('/\sCOMMENT\s(.*)$/', $line, $matches)){
@@ -284,10 +284,10 @@ abstract class DSLHelper {
 	}
 
 	/**
-	 * 解析数据库定义类型
+	 * Parse database definition type
 	 * @param string $type_def
 	 * @param string $tail_sql
-	 * @return array [$type:类型, $len:长度, $precision:精度, $opts:其他选项]
+	 * @return array [$type: type, $len: length, $precision: precision, $opts: other options]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	private static function __resolveTypes($type_def, $tail_sql){
@@ -308,7 +308,7 @@ abstract class DSLHelper {
 				if($type == Attribute::TYPE_ENUM || $type == Attribute::TYPE_SET){
 					$keys = explode_by(',', str_replace("'", '', $val));
 
-					//必须匹配: {NAME}(MARK1, MARK2) 格式，才能解析出里面的选项名称
+					//Must match: {NAME}(MARK1, MARK2) format to parse the option name
 					if(preg_match('/\sCOMMENT\s\'(.*?)\(([^)]+)\)\'/', $tail_sql, $ms)){
 						$remarks = explode_by(',', $ms[2]);
 						if(count($remarks) == count($keys)){

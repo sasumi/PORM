@@ -17,32 +17,32 @@ use function LFPhp\Func\event_fire;
 use function LFPhp\Func\event_register;
 
 /**
- * DB驱动
+ * DB driver
  * @package LFPhp\PORM\Driver
  */
 class DBDriver {
-	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY'; //回调参数[sql]
-	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY'; //回调参数[sql, result]
-	const EVENT_ON_DB_QUERY_ERROR = __CLASS__.'EVENT_ON_DB_QUERY_ERROR'; //回调参数[query, exception]
-	const EVENT_BEFORE_DB_CONNECT = __CLASS__.'EVENT_BEFORE_DB_CONNECT'; //回调参数[dsn, counter第几次连接]
-	const EVENT_AFTER_DB_CONNECT = __CLASS__.'EVENT_AFTER_DB_CONNECT'; //回调参数[dsn, counter第几次连接]
-	const EVENT_ON_DB_CONNECT_FAIL = __CLASS__.'EVENT_ON_DB_CONNECT_FAIL'; //回调参数[exception, dsn, counter第几次连接]
+	const EVENT_BEFORE_DB_QUERY = __CLASS__.'EVENT_BEFORE_DB_QUERY'; //Callback parameter [sql]
+	const EVENT_AFTER_DB_QUERY = __CLASS__.'EVENT_AFTER_DB_QUERY'; //Callback parameters [sql, result]
+	const EVENT_ON_DB_QUERY_ERROR = __CLASS__.'EVENT_ON_DB_QUERY_ERROR'; //Callback parameters [query, exception]
+	const EVENT_BEFORE_DB_CONNECT = __CLASS__.'EVENT_BEFORE_DB_CONNECT'; //Callback parameters [dsn, counter, the number of connections]
+	const EVENT_AFTER_DB_CONNECT = __CLASS__.'EVENT_AFTER_DB_CONNECT'; //Callback parameters [dsn, counter, the number of connections]
+	const EVENT_ON_DB_CONNECT_FAIL = __CLASS__.'EVENT_ON_DB_CONNECT_FAIL'; //Callback parameters [exception, dsn, counter, the number of connections]
 
-	//LIKE 保留字符
+	//LIKE reserved characters
 	const LIKE_RESERVED_CHARS = ['%', '_'];
 
-	//最大重试次数，如果该数据配置为0，将不进行重试
+	//Maximum number of retries. If this data is configured as 0, no retries will be performed.
 	protected $max_reconnect_count = 0;
 
-	//重新连接间隔时间（毫秒）
+	//Reconnection interval (milliseconds)
 	protected $reconnect_interval = 1000;
 
-	//是否在更新空数据时抛异常，缺省不抛异常
+	//Whether to throw an exception when updating empty data, by default no exception is thrown
 	public static $THROW_EXCEPTION_ON_UPDATE_EMPTY_DATA = false;
 
-	// select查询去重，默认关闭（避免影响业务）
-	// 这部分逻辑可能针对某些业务逻辑有影响，如：做某些操作之后立即查询这种
-	// so，如果程序需要，可以通过 DBAbstract::distinctQueryOff() 关闭这个选项
+	// Select query deduplication, closed by default (to avoid affecting business)
+	// This part of the logic may have an impact on some business logic, such as: querying this immediately after performing certain operations
+	// so, if the program needs it, you can turn off this option via DBAbstract::distinctQueryOff()
 	private static $query_cache_on = false;
 	private static $query_cache_data = [];
 
@@ -54,7 +54,7 @@ class DBDriver {
 	 * PDO TYPE MAP
 	 * @var array
 	 */
-	private static $PDO_TYPE_MAP = array(
+	private static $PDO_TYPE_MAP = [
 		'bool'    => PDO::PARAM_BOOL,
 		'null'    => PDO::PARAM_BOOL,
 		'int'     => PDO::PARAM_INT,
@@ -62,7 +62,7 @@ class DBDriver {
 		'decimal' => PDO::PARAM_INT,
 		'double'  => PDO::PARAM_INT,
 		'string'  => PDO::PARAM_STR,
-	);
+	];
 
 	/**
 	 * @var PDO pdo connect resource
@@ -70,7 +70,7 @@ class DBDriver {
 	private $conn = null;
 
 	/**
-	 * 数据库连接初始化，连接数据库，设置查询字符集，设置时区
+	 * Initialize database connection, connect to database, set query character set, set time zone
 	 * @param DSN $dsn
 	 */
 	private function __construct(DSN $dsn){
@@ -80,7 +80,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 绑定logger
+	 * Bind logger
 	 * @param \LFPhp\Logger\Logger $logger
 	 * @return void
 	 */
@@ -125,7 +125,7 @@ class DBDriver {
 	}
 
 	/**
-	 * PDO判别是否为连接丢失异常
+	 * PDO determines whether the connection is lost abnormally
 	 * @return bool
 	 */
 	protected static function isConnectionLostException(Exception $exception){
@@ -135,14 +135,14 @@ class DBDriver {
 
 			//https://stackoverflow.com/questions/21091850/error-2013-hy000-lost-connection-to-mysql-server-at-reading-authorization-pa
 			//ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 0
-			//这种情况可能是连接超时时间（connect_timeout）设置不够，导致mysql服务连接中被断开
+			//This may be because the connection timeout (connect_timeout) is not set enough, causing the MySQL service connection to be disconnected
 			if(self::_str_contains_all($msg, 'HY000', '2013')){
 				return true;
 			}
 
 			//https://stackoverflow.com/questions/7942154/mysql-error-2006-mysql-server-has-gone-away
 			//2006, MySQL server has gone away
-			//这种有可能是执行过程超时导致，例如packet太小（my.cnf max_allowed_packet 设置太小，或者超时时间 wait_timeout 之类的）
+			//This may be caused by a timeout in the execution process, for example, the packet is too small (the my.cnf max_allowed_packet setting is too small, or the timeout wait_timeout, etc.)
 			if(self::_str_contains_all($msg, 'HY000', '2006')){
 				return true;
 			}
@@ -154,11 +154,11 @@ class DBDriver {
 	}
 
 	/**
-	 * 连接数据库接口
-	 * @param DSN $dsn <p>数据库连接配置，
-	 * 格式为：['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
+	 * Connect to database interface
+	 * @param DSN $dsn <p>Database connection configuration,
+	 * The format is: ['type'=>'', 'driver'=>'', 'charset' => '', 'host'=>'', 'database'=>'', 'user'=>'', 'password'=>'', 'port'=>'']
 	 * </p>
-	 * @param boolean $force_reconnect 是否强制重新连接
+	 * @param boolean $force_reconnect whether to force reconnect
 	 * @return \PDO|null
 	 */
 	public function connect(DSN $dsn, $force_reconnect = false){
@@ -186,7 +186,7 @@ class DBDriver {
 				if($connect_counter[$dsn_key] > $this->max_reconnect_count){
 					throw $ex;
 				}
-				//间隔时间之后重新连接
+				//Reconnect after the interval
 				if($this->reconnect_interval){
 					usleep($this->reconnect_interval*1000);
 				}
@@ -195,7 +195,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取最大链接重试次数
+	 * Get the maximum number of link retries
 	 * @return int
 	 */
 	public function getMaxReconnectCount(){
@@ -203,7 +203,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 设置链接重试次数
+	 * Set the number of link retries
 	 * @param int $max_reconnect_count
 	 * @return \LFPhp\PORM\DB\DBDriver
 	 */
@@ -213,15 +213,15 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取重连间隔时间
-	 * @return int 毫秒
+	 * Get the reconnection interval
+	 * @return int milliseconds
 	 */
 	public function getReconnectInterval(){
 		return $this->reconnect_interval;
 	}
 
 	/**
-	 * 设置重连间隔时间（毫秒）
+	 * Set the reconnection interval (milliseconds)
 	 * @param int $reconnect_interval
 	 * @return DBDriver
 	 */
@@ -231,11 +231,11 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取最后插入ID
+	 * Get the last inserted ID
 	 * @param string $name
 	 * @return string
 	 */
-	public function getLastInsertId($name = null) {
+	public function getLastInsertId($name = null){
 		return $this->conn->lastInsertId($name);
 	}
 
@@ -255,7 +255,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 开启事务操作
+	 * Start transaction operation
 	 * @return bool
 	 */
 	public function beginTransaction(){
@@ -263,7 +263,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 回滚事务
+	 * Rollback transaction
 	 * @return bool
 	 */
 	public function rollback(){
@@ -271,7 +271,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 提交事务
+	 * Commit the transaction
 	 * @return bool
 	 */
 	public function commit(){
@@ -279,7 +279,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 取消事务自动提交状态
+	 * Cancel the automatic commit state of the transaction
 	 * @return bool
 	 */
 	public function cancelTransactionState(){
@@ -287,12 +287,12 @@ class DBDriver {
 	}
 
 	/**
-	 * 数据转义
+	 * Data escape
 	 * @param string $data
 	 * @param string $type
 	 * @return false|string
 	 */
-	public function quote($data, $type = null) {
+	public function quote($data, $type = null){
 		if(is_array($data)){
 			$data = join(',', $data);
 		}
@@ -301,28 +301,28 @@ class DBDriver {
 	}
 
 	/**
-	 * 设置SQL查询条数限制信息
+	 * Set SQL query limit information
 	 * @param $sql
 	 * @param $limit
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
-	public function setLimit($sql, $limit) {
+	public function setLimit($sql, $limit){
 		if(preg_match('/\sLIMIT\s/i', $sql)){
-			throw new DBException('SQL LIMIT BEEN SET:' . $sql);
+			throw new DBException('SQL LIMIT BEEN SET:'.$sql);
 		}
 		if(is_array($limit)){
-			return $sql . ' LIMIT ' . $limit[0] . ',' . $limit[1];
+			return $sql.' LIMIT '.$limit[0].','.$limit[1];
 		}
-		return $sql . ' LIMIT ' . $limit;
+		return $sql.' LIMIT '.$limit;
 	}
 
 	/**
-	 * 获取所有行
+	 * Get all rows
 	 * @param PDOStatement $resource
 	 * @return array
 	 */
-	public function fetchAll($resource) {
+	public function fetchAll($resource){
 		$resource->setFetchMode(PDO::FETCH_ASSOC);
 		return $resource->fetchAll();
 	}
@@ -332,26 +332,26 @@ class DBDriver {
 	 * @param PDOStatement $rs
 	 * @return string
 	 */
-	public static function fetchColumn(PDOStatement $rs) {
+	public static function fetchColumn(PDOStatement $rs){
 		return $rs->fetchColumn();
 	}
 
 	/**
-	 * 查询最近db执行影响行数
-	 * @description 该方法调用时候需要谨慎，需要避免 last_affect_num 被覆盖
+	 * Query the number of rows affected by the recent db execution
+	 * @description This method needs to be called with caution to avoid last_affect_num being overwritten
 	 * @return integer
 	 */
-	public function getAffectNum() {
+	public function getAffectNum(){
 		return $this->last_affect_num;
 	}
 
 	/**
-	 * 数据库数据字典
+	 * Database data dictionary
 	 * @return array
 	 */
 	public function getDictionary(){
 		$tables = $this->getTables();
-		foreach($tables as $k=>$tbl_info){
+		foreach($tables as $k => $tbl_info){
 			$fields = $this->getFields($tbl_info['table_name']);
 			$tables[$k]['fields'] = $fields;
 		}
@@ -359,7 +359,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取数据库列表
+	 * Get the database list
 	 * @return string[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
@@ -374,17 +374,17 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取数据库表清单
+	 * Get a list of database tables
 	 * @return array
 	 */
 	public function getTables(){
-		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment 
-					FROM `information_schema`.`tables` 
+		$query = "SELECT `table_name` AS table_name, `engine` AS engine, `table_collation` AS table_collation, `table_comment` AS table_comment
+					FROM `information_schema`.`tables`
 					WHERE `table_schema`=?";
 		$sth = $this->conn->prepare($query);
 		$sth->execute([$this->dsn->database]);
 		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
-		//不同版本mysql返回字段名可能是大写的，需要强制转换一次
+		//Different versions of MySQL may return uppercase field names, so they need to be converted once
 		foreach($tmp as $k => $item){
 			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
 		}
@@ -392,19 +392,19 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取数据库表字段清单
+	 * Get the database table field list
 	 * @param $table
 	 * @return array
 	 */
 	public function getFields($table){
 		$query = "SELECT `column_name`, `column_type`, `collation_name`, `is_nullable`, `column_key`, `column_default`, `extra`, `privileges`, `column_comment`
-				    FROM `information_schema`.`columns`
-				    WHERE `table_schema`=? AND `table_name`=?";
+				FROM `information_schema`.`columns`
+				WHERE `table_schema`=? AND `table_name`=?";
 		$sth = $this->conn->prepare($query);
 		$db = $this->dsn->database;
 		$sth->execute([$db, $table]);
 		$tmp = $sth->fetchAll(PDO::FETCH_ASSOC) ?: [];
-		//不同版本mysql返回字段名可能是大写的，需要强制转换一次
+		//Different versions of MySQL may return uppercase field names, so they need to be converted once
 		foreach($tmp as $k => $item){
 			$tmp[$k] = array_change_key_case($item, CASE_LOWER);
 		}
@@ -412,7 +412,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 解析SQL语句
+	 * Parse SQL statements
 	 * @param DBQuery|string $query
 	 * @return array
 	 * @throws DBException
@@ -425,7 +425,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 设置查询字符集
+	 * Set the query character set
 	 * @param $charset
 	 * @return \LFPhp\PORM\DB\DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
@@ -438,7 +438,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 设置时区
+	 * Set time zone
 	 * @param string $timezone
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -454,7 +454,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 单例
+	 * Singleton
 	 * @param DSN $dsn
 	 * @return static
 	 */
@@ -474,7 +474,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取当前去重查询开启状态
+	 * Get the current deduplication query opening status
 	 * @return bool
 	 */
 	public static function getQueryCacheState(){
@@ -482,21 +482,21 @@ class DBDriver {
 	}
 
 	/**
-	 * 打开查询缓存
+	 * Enable query cache
 	 */
 	public static function setQueryCacheOn(){
 		self::$query_cache_on = true;
 	}
 
 	/**
-	 * 关闭查询缓存
+	 * Disable query cache
 	 */
 	public static function setQueryCacheOff(){
 		self::$query_cache_on = false;
 	}
 
 	/**
-	 * 以非去重模式（强制查询模式）进行查询
+	 * Query in non-deduplicate mode (forced query mode)
 	 * @param callable $callback
 	 */
 	public static function noQueryCacheMode(callable $callback){
@@ -507,7 +507,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 转义数组
+	 * Escape array
 	 * @param array $data
 	 * @param array $types
 	 * @return array
@@ -520,7 +520,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取一页数据
+	 * Get a page of data
 	 * @param DBQuery|string $q
 	 * @param PaginateInterface|array|number $pager
 	 * @return array
@@ -563,7 +563,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取所有查询记录
+	 * Get all query records
 	 * @param DBQuery|string $query
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
@@ -573,7 +573,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取指定表创建语句
+	 * Get the specified table creation statement
 	 * @param string $table
 	 * @return string create table DSL
 	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
@@ -584,7 +584,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取一条查询记录
+	 * Get a query record
 	 * @param DBQuery|string $query
 	 * @return array | null
 	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
@@ -598,13 +598,13 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取一个字段
+	 * Get a field
 	 * @param DBQuery|string $query
 	 * @param string $key
 	 * @return mixed|null
 	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function getField($query, $key=''){
+	public function getField($query, $key = ''){
 		$rst = $this->getOne($query);
 		if($rst){
 			return $key ? $rst[$key] : current($rst);
@@ -613,11 +613,11 @@ class DBDriver {
 	}
 
 	/**
-	 * 更新数量
+	 * Update quantity
 	 * @param string $table
 	 * @param string $field
-	 * @param integer $offset_count 增量（实数）
-	 * @return int 更新影响条数
+	 * @param integer $offset_count increment (real number)
+	 * @return int the number of items affected by the update
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
 	public function updateCount($table, $field, $offset_count = 1){
@@ -629,11 +629,11 @@ class DBDriver {
 	}
 
 	/**
-	 * 数据更新
+	 * Data update
 	 * @param string $table
 	 * @param array $data
 	 * @param string $condition
-	 * @param int $limit 更新影响条数
+	 * @param int $limit The number of items affected by the update
 	 * @return int affect line number
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws NullOperation|\LFPhp\PORM\Exception\Exception
@@ -677,7 +677,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 插入数据
+	 * Insert data
 	 * @param $table
 	 * @param $field
 	 * @param int $offset
@@ -696,10 +696,10 @@ class DBDriver {
 	}
 
 	/**
-	 * 删除数据库数据
+	 * Delete database data
 	 * @param $table
 	 * @param $condition
-	 * @param int $limit 参数为0表示不进行限制
+	 * @param int $limit parameter is 0, which means no limit
 	 * @return bool
 	 * @throws DBException
 	 */
@@ -713,7 +713,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 数据插入
+	 * Data insertion
 	 * @param $table
 	 * @param array $data
 	 * @param null $condition
@@ -730,7 +730,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 产生Query对象
+	 * Generate Query object
 	 * @return DBQuery
 	 */
 	protected function genQuery(){
@@ -738,15 +738,15 @@ class DBDriver {
 	}
 
 	/**
-	 * SQL查询，支持重连数据库选项
+	 * SQL query, support for reconnecting to database option
 	 * @param DBQuery|string $query
 	 * @return \PDOStatement
 	 * @throws DBException
 	 */
 	final public function query($query){
 		try{
-			//由于PHP对数据库查询返回结果并非报告Exception，
-			//因此这里不会将查询结果false情况包装成为Exception，但会继续触发错误事件。
+			//Since PHP does not report Exception when querying the database,
+			//Therefore, the false query result will not be packaged as an Exception, but the error event will continue to be triggered.
 			return $this->dbQuery($query);
 		}catch(Exception $ex){
 			event_fire(self::EVENT_ON_DB_QUERY_ERROR, $query, $ex);
@@ -759,7 +759,7 @@ class DBDriver {
 	}
 
 	/**
-	 * 获取条数
+	 * Get the number of entries
 	 * @param DBQuery|string $query
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -768,16 +768,13 @@ class DBDriver {
 		$query .= '';
 		$query = trim(trim($query), ';');
 
-		//针对 order by 识别不足，后期引入 https://github.com/greenlion/PHP-SQL-Parser 再处理
-		//为了避免order中出现field，在select里面定义，select里面被删除了，导致order里面的field未定义。
-		//同时提升Count性能
+		//For insufficient recognition of order by, https://github.com/greenlion/PHP-SQL-Parser will be introduced for further processing
+		//In order to avoid the field appearing in order, it is defined in select, but deleted in select, resulting in undefined field in order.
+		//At the same time improve Count performance
 		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
 
 		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/is', $query)){
-			if(preg_match('/\sGROUP\s+by\s/im', $query) ||
-				preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) ||
-				preg_match('/\sLIMIT\s/im', $query)
-			){
+			if(preg_match('/\sGROUP\s+by\s/im', $query) || preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) || preg_match('/\sLIMIT\s/im', $query)){
 				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
 			}else{
 				$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
@@ -792,7 +789,7 @@ class DBDriver {
 	}
 
 	/**
-	 * Like操作语句转义
+	 * Like operation statement escape
 	 * @param $statement
 	 * @param string $escape_char
 	 * @return string

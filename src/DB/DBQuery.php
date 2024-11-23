@@ -33,7 +33,7 @@ class DBQuery {
 	public $data;
 
 	/**
-	 * 构造方法，初始化SQL语句
+	 * Constructor, initialize SQL statement
 	 * @param string $sql
 	 */
 	public function __construct($sql = ''){
@@ -42,7 +42,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 产生字段多重LIKE
+	 * Generate multiple LIKE fields
 	 * @param array $fields
 	 * @param array $likes
 	 * @return string
@@ -59,7 +59,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 解析sql类型
+	 * Parse sql type
 	 * @param string $sql
 	 * @return string|null
 	 */
@@ -67,10 +67,10 @@ class DBQuery {
 		$sql = trim($sql);
 		if(preg_match('/^(\w+)\s/', $sql, $matches)){
 			$key_mapping = [
-				'SELECT'  => self::SELECT,
-				'UPDATE'  => self::UPDATE,
-				'DELETE'  => self::DELETE,
-				'INSERT'  => self::INSERT,
+				'SELECT' => self::SELECT,
+				'UPDATE' => self::UPDATE,
+				'DELETE' => self::DELETE,
+				'INSERT' => self::INSERT,
 				'REPLACE' => self::REPLACE,
 			];
 			$ms = strtoupper($matches[1]);
@@ -82,7 +82,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 设置查询语句
+	 * Set the query statement
 	 * @param $sql
 	 */
 	public function setSql($sql){
@@ -90,7 +90,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 当前查询是否为全行查询
+	 * Whether the current query is a full-row query
 	 */
 	public function isFRQuery(){
 		return !$this->sql && (!$this->fields || $this->fields == array('*'));
@@ -154,36 +154,36 @@ class DBQuery {
 	 * update query
 	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 **/
-	public function update(){
+	public function update() {
 		$this->operation = self::UPDATE;
 		return $this;
 	}
 
-	public function replace(){
+	public function replace() {
 		$this->operation = self::REPLACE;
 		return $this;
 	}
 
 	/**
-	 * 插入
+	 * Insert
 	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 */
-	public function insert(){
+	public function insert() {
 		$this->operation = self::INSERT;
 		return $this;
 	}
 
 	/**
-	 * 删除
+	 * delete
 	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 */
-	public function delete(){
+	public function delete() {
 		$this->operation = self::DELETE;
 		return $this;
 	}
 
 	/**
-	 * 设置数据（仅对update, replace, insert有效)
+	 * Set data (only valid for update, replace, insert)
 	 * @param array $data
 	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 */
@@ -193,8 +193,8 @@ class DBQuery {
 	}
 
 	/**
-	 * 添加过滤字段
-	 * @param array $fields 字符串，或者只使用第一个数组参数
+	 * Add filter fields
+	 * @param array $fields string, or just use the first array parameter
 	 * @return \LFPhp\PORM\ORM\Model|\LFPhp\PORM\DB\DBQuery
 	 */
 	public function fields($fields){
@@ -207,7 +207,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 表
+	 * surface
 	 * @param string $str
 	 * @return \LFPhp\PORM\DB\DBQuery $this
 	 **/
@@ -221,37 +221,37 @@ class DBQuery {
 	}
 
 	/**
-	 * 添加查询条件 <p>
-	 * 调用范例：$query->addWhere(null, 'name', 'like', '%john%');
+	 * Add query conditions<p>
+	 * Calling example: $query->addWhere(null, 'name', 'like', '%john%');
 	 * $query->addWhere($conditions);
 	 * </p>
-	 * @param mixed $arg1 type为数组表示提交多个查询，如果为函数，则表示嵌套查询
+	 * @param mixed $arg1 type is an array, which means submitting multiple queries. If it is a function, it means nested queries.
 	 * @param $field
 	 * @param null $operator
 	 * @param null $compare
 	 */
 	public function addWhere($arg1, $field, $operator = null, $compare = null){
 		$arg1 = $arg1 ?: self::OP_AND;
-		//嵌套子语句模式
+		//Nested sub-statement mode
 		if(is_callable($field)){
 			$ws = call_user_func($field);
 			$this->where[] = array(
-				'type'  => $arg1,
+				'type' => $arg1,
 				'field' => $this->getWhereStr($ws),
 			);
-		}//二维数组，循环添加
+		}//Two-dimensional array, loop addition
 		else if(is_array($arg1) && count($arg1, COUNT_RECURSIVE) != count($arg1)){
 			$this->where = array_merge($this->where, $arg1);
-		}//普通数组模式
+		}//Normal array mode
 		else if(is_array($arg1)){
 			$this->where = array_merge($this->where, $arg1);
-		}//普通模式
+		}//Normal mode
 		else if($field){
 			$this->where[] = array(
-				'type'     => $arg1,
-				'field'    => $field,
+				'type' => $arg1,
+				'field' => $field,
 				'operator' => $operator,
-				'compare'  => $compare,
+				'compare' => $compare,
 			);
 		}
 	}
@@ -268,8 +268,8 @@ class DBQuery {
 	}
 
 	/**
-	 * 设置AND查询条件 <p>
-	 * 调用范例：$query->where('age', '>', 18)->where('gender', '=', 'male')->where('name', 'like', '%moon%');
+	 * Set AND query condition<p>
+	 * Calling example: $query->where('age', '>', 18)->where('gender', '=', 'male')->where('name', 'like', '% moon%');
 	 * </p>
 	 * @param $field
 	 * @param null $operator
@@ -282,7 +282,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 设置OR查询条件
+	 * Set OR query condition
 	 * @param $field
 	 * @param null $operator
 	 * @param null $compare
@@ -332,18 +332,18 @@ class DBQuery {
 			$f = $w['field'];
 			$k = $w['type'] == self::OP_AND ? 'AND' : 'OR';
 			if(!empty($w['operator']) && isset($w['compare'])){
-				//数组，拼接数组
+				//Array, concatenate arrays
 				if(is_array($w['compare'])){
 					if(!empty($w['compare'])){
 						foreach($w['compare'] as $_ => $item){
 							$w['compare'][$_] = addslashes($item);
 						}
-						$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' (\''.join("','", $w['compare']).'\')';
+						$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' (\''.join("','" , $w['compare']).'\')';
 					}else{
 						$str .= ($str ? " $k " : '').' FALSE';
 					}
 				}else{
-					$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' \''.addslashes($w['compare']).'\'';
+					$str .= ($str ? " $k " : '').self::escapeKey($f).' '.$w['operator'].' \''.addslashes($w['compare' ]).'\'';
 				}
 			}else{
 				$str .= ($str ? " $k (" : '(').$f.')';
@@ -353,7 +353,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 排序
+	 * Sorting
 	 * @param string|array $str
 	 * @return DBQuery|static
 	 **/
@@ -366,7 +366,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 分组
+	 * Grouping
 	 * @param string $str
 	 * @return DBQuery
 	 **/
@@ -376,7 +376,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 设置查询限制，如果提供的参数为0，则表示不进行限制
+	 * Set query limits. If the provided parameter is 0, no limit is imposed.
 	 * @return $this
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
@@ -398,8 +398,8 @@ class DBQuery {
 	}
 
 	/**
-	 * 解析SQL中的limit信息
-	 * limit常见格式有：limit n，limit m offset n， limit 1,3
+	 * Parse limit information in SQL
+	 * Common formats of limit are: limit n, limit m offset n, limit 1,3
 	 * @param string $org_sql
 	 * @param array $limit_info
 	 * @return string
@@ -428,7 +428,7 @@ class DBQuery {
 
 	/**
 	 * @param array $org_limit_info [start_position, size]
-	 * @param array|number $paginate_info [page_start, page_size] or [size] 分页大小，该分页信息是基于limit查询条件再进行分页的。
+	 * @param array|number $paginate_info [page_start, page_size] or [size] Pagination size. The pagination information is paginated based on the limit query condition.
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
@@ -451,7 +451,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 判断当前操作语句是否为写入语句
+	 * Determine whether the current operation statement is a write statement
 	 * @param string|DBQuery $query
 	 * @return bool
 	 */
@@ -460,8 +460,8 @@ class DBQuery {
 	}
 
 	/**
-	 * 给字段名称添加保护（注意，该保护仅为保护SQL关键字，而非SQL注入保护）
-	 * 自动忽略存在空格、其他查询语句的情况
+	 * Add protection to field names (note that this protection only protects SQL keywords, not SQL injection protection)
+	 * Automatically ignore spaces and other query statements
 	 * @param $field
 	 * @return string|array
 	 */
@@ -473,12 +473,12 @@ class DBQuery {
 			}
 			return $ret;
 		}else{
-			return (strpos($field, '`') === false && strpos($field, '.') === false && strpos($field, ' ') === false && $field != '*') ? "`$field`" : $field;
+			return (strpos($field, '`') === false && strpos($field, '.') === false && strpos($field, ' ') === false && $field != '*' ) ? "`$field`" : $field;
 		}
 	}
 
 	/**
-	 * 获取当前查询SQL
+	 * Get the current query SQL
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -550,7 +550,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 输出SQL查询语句
+	 * Output SQL query statement
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -559,7 +559,7 @@ class DBQuery {
 	}
 
 	/**
-	 * 输出调试信息
+	 * Output debugging information
 	 * @return string[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */

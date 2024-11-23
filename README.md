@@ -1,19 +1,19 @@
-# PORM
-> PORM基于PHP5.6以上环境开发测试
+#PORM
+> PORM is developed and tested based on PHP5.6 and above
 
-PHP 数据库ORM抽象库，用于PHP程式独立使用数据库时，方便以ORM方式进行编码。PORM当前仅支持MySQL，且以MySQLi或PDO方式进行链接（建议使用PDO），请用户确保PHP中正确安装相应扩展。
+PHP database ORM abstraction library, used for PHP programs to use databases independently, convenient for coding in ORM mode. PORM currently only supports MySQL, and is linked in MySQLi or PDO mode (PDO is recommended). Please ensure that the corresponding extension is correctly installed in PHP.
 
-## 1. 快速安装
+## 1. Quick Installation
 
 ```shell
 composer require lfphp/porm
 ```
 
-## 2. 方法调用
+## 2. Usage
 
-PORM 支持通过定义ORM Model类方式进行调用，也支持直接链接数据库方式进行调用。
+PORM supports calling by defining the ORM Model class, and also supports calling by directly linking to the database.
 
-### 2.1 ORM方式
+### 2.1 ORM approach
 
 ```php
 <?php
@@ -22,76 +22,76 @@ use LFPhp\PORM\ORM\Model;
 class User extends Model {
 
 static public function getTableName(){
- // TODO: Implement getTableName() method.
+// TODO: Implement getTableName() method.
 }
 
 static public function getAttributes(){
- // TODO: Implement getAttributes() method.
+// TODO: Implement getAttributes() method.
 }
 
 static protected function getDBConfig($operate_type = self::OP_READ){
- // TODO: Implement getDBConfig() method.
+// TODO: Implement getDBConfig() method.
 }}
 
-//查询对象 
+//Query object
 $user = UserTable::findOneByPK(1);
 var_dump($user);
 
-//更改对象
+//Change the object
 $user->name = 'Jack';
 $user->save();
 
-//新增对象
+//Add new object
 $user = new UserTable();
 $user->name = 'Michel';
 $user->save();
 echo $user->id;
 ```
 
-### 2.2 数据库操作
+### 2.2 Database Operations
 
 ```php
 <?php
 
-//创建数据库配置
-$cfg =  new MySQL([
+//Create database configuration
+$cfg = new MySQL([
 			'host'=>'localhost',
 			'user'=>'root',
 			'password'=>'123456',
 			'database'=>'database'
 		]);
 
-//创建数据库链接实例
+//Create a database link instance
 $ins = DBAbstract::instance($config);
 
-//创建查询对象(查询语句)
+//Create a query object (query statement)
 $query = (new Query())->select()->field('id', 'title')->from('blog_article');
 
-//获取结果
+//Get the results
 $ret = $ins->getPage($query);
 
-//获取计数
+//Get the count
 $count = $ins->getCount($query);
 ```
 
-## 3. 其他
-### 3.1 注解规则
-> 通过在Model中引入使用`AttributeAnnotation`类，可自动根据当前类注释，生成`DBAttribute`注解。
+## 3. Others
+### 3.1 Annotation Rules
+> By introducing the `AttributeAnnotation` class in the Model, the `DBAttribute` annotation can be automatically generated based on the current class annotation.
 
-此时，需保证类注释规则包含以下类型注解：
+At this point, you need to ensure that the class annotation rules include the following type annotations:
 
-1. @property string $name 名称(名称备注)
-### 3.2 数据库重连支持
-在数据库配置中添加 `max_reconnect_count` 项目，可以设置数据库在丢失连接时（非首次连接）自动重新连接数据库。
+1. @property string $name name (name note)
+### 3.2 Database reconnection support
+Add the `max_reconnect_count` item in the database configuration to set the database to automatically reconnect to the database when the connection is lost (not the first connection).
 ```php
 <?php
-//创建数据库配置
-$cfg =  new MySQL([
+//Create database configuration
+$cfg = new MySQL([
 			'host'=>'localhost',
 			'user'=>'root',
 			'password'=>'123456',
 			'database'=>'database',
-            'max_reconnect_count' => 10, //设置最大重连次数   
+'max_reconnect_count' => 10, //Set the maximum number of reconnections
 		]);
 $ins = DBAbstract::instance($config);
 //...

@@ -2,18 +2,18 @@
 namespace LFPhp\PORM\Misc;
 
 /**
- * 分页抽象接口
+ * Paginate Interface
  */
 interface PaginateInterface {
 	/**
-	 * 设置总数
+	 * set records total
 	 * @param int $total
 	 * @return bool
 	 */
 	public function setItemTotal($total);
 
 	/**
-	 * 获取分页限定信息[$start, $offset]
+	 * get limit infos [$start, $offset]
 	 * @return mixed
 	 */
 	public function getLimit();

@@ -4,7 +4,7 @@ use ArrayAccess;
 use Iterator;
 
 /**
- * 引用参数辅助类，用于支持5.3以上非直接调用不能引用传参的问题
+ * Reference parameter auxiliary class, used to support the problem that non-direct calls above 5.3 cannot reference parameters
  */
 class RefParam implements Iterator, ArrayAccess{
 	private $data;

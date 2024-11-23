@@ -22,7 +22,7 @@ use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
 
 /**
- * ORM数据模型
+ * ORM data model
  */
 abstract class Model implements JsonSerializable, ArrayAccess {
 	const OP_READ = 1;
@@ -51,13 +51,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	protected $attributes = [];
 
 	/**
-	 * @var array 采用 key-value 键值对方式存储
-	 * 由于Attribute中存在动态 setter 和 getter，请使用 getProperties 方法获取该值
+	 * @var array uses key-value pairs for storage
+	 * Since there are dynamic setters and getters in Attribute, please use the getProperties method to obtain the value
 	 */
 	protected $properties = [];
 
 	/**
-	 * 属性值变更项
+	 * Property value changes
 	 * @var array
 	 */
 	protected $property_changes = [];
@@ -65,24 +65,47 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/** @var DBQuery db query object * */
 	private $query = null;
 
-	public function onBeforeUpdate(){return true;}
-	public function onAfterUpdate(){}
-	public function onBeforeInsert(){return true;}
-	public function onAfterInsert(){}
-	public function onBeforeDelete(){return true;}
-	public function onAfterDelete(){}
-	public function onBeforeSave(){return true;}
-	protected function onBeforeChanged(){return true;}
-	protected static function onBeforeChangedGlobal(){return true;}
+	public function onBeforeUpdate(){
+		return true;
+	}
+
+	public function onAfterUpdate(){
+	}
+
+	public function onBeforeInsert(){
+		return true;
+	}
+
+	public function onAfterInsert(){
+	}
+
+	public function onBeforeDelete(){
+		return true;
+	}
+
+	public function onAfterDelete(){
+	}
+
+	public function onBeforeSave(){
+		return true;
+	}
+
+	protected function onBeforeChanged(){
+		return true;
+	}
+
+	protected static function onBeforeChangedGlobal(){
+		return true;
+	}
 
 	/**
-	 * 获取表名
+	 * Get the table name
 	 * @return string
 	 */
 	abstract static public function getTableName();
 
 	/**
-	 * 获取特征
+	 * Get features
 	 * @return Attribute[]
 	 */
 	static public function getAttributes(){
@@ -90,11 +113,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 设置属性定义
+	 * Set property definition
 	 * @param array $attributes
-	 * @param string $attr_name 属性名称
-	 * @param string|array $sets 定义字段名，或 [定义字段名 => 定义值] 键值对
-	 * @param mixed $val 定义值
+	 * @param string $attr_name attribute name
+	 * @param string|array $sets Define field name, or [Define field name => Define value] key-value pair
+	 * @param mixed $val definition value
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	static public function updateAttribute($attributes, $attr_name, $sets, $val = null){
@@ -126,13 +149,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param array $data
 	 */
 	public function __construct($data = []){
-		foreach($data as $k=>$val){
+		foreach($data as $k => $val){
 			$this->{$k} = $val;
 		}
 	}
 
 	/**
-	 * 获取数据库表描述名称
+	 * Get the database table description name
 	 * @return string
 	 */
 	public static function getModelDesc(){
@@ -140,7 +163,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取数据库表名（附带数据库名）
+	 * Get the database table name (with database name)
 	 * @param int $op_type
 	 * @return string
 	 * @throws \Exception
@@ -156,8 +179,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据字段名获取属性
-	 * @param string $name 属性名
+	 * Get attributes based on field name
+	 * @param string $name attribute name
 	 * @return Attribute
 	 */
 	public static function getAttributeByName($name){
@@ -171,7 +194,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取数据库表主键
+	 * Get the database table primary key
 	 * @return string
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -186,7 +209,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取主键值
+	 * Get the primary key value
 	 * @return mixed
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -196,7 +219,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取db记录实例对象
+	 * Get the db record instance object
 	 * @param int $operate_type
 	 * @return DBDriver
 	 */
@@ -206,7 +229,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 解释SQL语句
+	 * Explain SQL statements
 	 * @param string $query
 	 * @return array
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -216,15 +239,15 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取数据库配置
-	 * 该方法可以被覆盖重写
+	 * Get database configuration
+	 * This method can be overridden
 	 * @param int $operate_type
 	 * @return \LFPhp\PDODSN\DSN
 	 */
 	abstract static public function getDbDsn($operate_type = self::OP_READ);
 
 	/**
-	 * 设置查询SQL语句
+	 * Set the query SQL statement
 	 * @param string|DBQuery $query
 	 * @return static|DBQuery
 	 * @throws \Exception
@@ -242,7 +265,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取当前查询对象
+	 * Get the current query object
 	 * @return \LFPhp\PORM\DB\DBQuery|null
 	 */
 	public function getQuery(){
@@ -250,9 +273,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 事务处理
-	 * @param callable $handler 处理函数，若函数返回false或抛出Exception，将停止提交，执行事务回滚
-	 * @return mixed 闭包函数返回值透传
+	 * Transaction processing
+	 * @param callable $handler processing function, if the function returns false or throws Exception, the submission will be stopped and the transaction will be rolled back
+	 * @return mixed closure function return value transparent transmission
 	 * @throws \Exception
 	 */
 	public static function transaction($handler){
@@ -276,7 +299,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 执行当前查询
+	 * Execute the current query
 	 * @return \PDOStatement
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -286,9 +309,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 查找
-	 * @param string $statement 条件表达式
-	 * @param string $var,... 条件表达式扩展
+	 * Search
+	 * @param string $statement conditional expression
+	 * @param string $var,... Conditional expression expansion
 	 * @return static|DBQuery
 	 */
 	public static function find($statement = '', $var = null){
@@ -302,8 +325,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 添加更多查询条件
-	 * @param array $args 查询条件
+	 * Add more query conditions
+	 * @param array $args query conditions
 	 * @return static|DBQuery
 	 */
 	public function where(...$args){
@@ -313,14 +336,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 快速查询用户请求过来的信息，只有第二个参数为不为空的时候才去查询，空数组还是会去查。
+	 * Quickly query the information requested by the user. The query will be performed only when the second parameter is not empty. The query will still be performed if the array is empty.
 	 * @param string $st
 	 * @param string|int|array|null $val
 	 * @return static|DBQuery
 	 */
 	public function whereOnSet($st, $val){
 		$args = func_get_args();
-		foreach($args as $k=>$arg){
+		foreach($args as $k => $arg){
 			if(is_string($arg)){
 				$args[$k] = trim($arg);
 			}
@@ -338,13 +361,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if(!$all_fields){
 			throw new Exception('no fields found in define');
 		}
-		$all_fields  = array_unset($all_fields, ...$fields);
+		$all_fields = array_unset($all_fields, ...$fields);
 		return $this->fields($all_fields);
 	}
 
 	/**
-	 * 自动检测变量类型、变量值设置匹对记录
-	 * 当前操作仅做“等于”，“包含”比对，不做其他比对
+	 * Automatically detect variable types and set matching records for variable values
+	 * The current operation only performs "equal to" and "contains" comparisons, and does not perform other comparisons
 	 * @param string[] $fields
 	 * @param string[]|number[] $param
 	 * @return $this
@@ -353,7 +376,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		foreach($fields as $field){
 			$val = $param[$field];
 			if(is_array($val) || strlen($val)){
-				$comparison =  is_array($val) ? 'IN' : '=';
+				$comparison = is_array($val) ? 'IN' : '=';
 				$this->whereOnSet("$field $comparison ?", $val);
 			}
 		}
@@ -361,7 +384,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 快速LIKE查询用户请求过来的信息，当LIKE内容为空时，不执行查询，如 %%。
+	 * Quickly LIKE to query the information requested by the user. When the LIKE content is empty, the query is not executed, such as %%.
 	 * @param string $st
 	 * @param string|number $val
 	 * @return static|DBQuery
@@ -369,13 +392,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function whereLikeOnSet($st, $val){
 		$args = func_get_args();
 		if(strlen(trim(str_replace(DBDriver::LIKE_RESERVED_CHARS, '', $val)))){
-			return call_user_func_array(array($this, 'whereOnSet'), $args);
+			return call_user_func_array([$this, 'whereOnSet'], $args);
 		}
 		return $this;
 	}
 
 	/**
-	 * 批量LIKE查询（whereLikeOnSet方法快捷用法）
+	 * Batch LIKE query (whereLikeOnSet method shortcut usage)
 	 * @param array $fields
 	 * @param $val
 	 * @return static|DBQuery
@@ -388,11 +411,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 检测字段是否处于指定范围之中
+	 * Check if the field is within the specified range
 	 * @param string $field
-	 * @param number|null $min 最小端
-	 * @param number|null $max 最大端
-	 * @param bool $equal_cmp 是否包含等于
+	 * @param number|null $min minimum end
+	 * @param number|null $max maximum end
+	 * @param bool $equal_cmp whether it contains equals
 	 * @return static|DBQuery
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
@@ -415,21 +438,21 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 创建新对象
+	 * Create a new object
 	 * @param $data
 	 * @return bool|static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function create($data){
 		$obj = new static();
-		foreach($data as $k=>$v){
+		foreach($data as $k => $v){
 			$obj->{$k} = $v;
 		}
 		return $obj->save() ? $obj : false;
 	}
 
 	/**
-	 * 由主键查询一条记录
+	 * Query a record by primary key
 	 * @param string $val
 	 * @param bool $as_array
 	 * @return array|static
@@ -451,14 +474,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if(!$data){
 			$table_desc = static::getModelDesc() ?: static::getTableName();
 			$pk_field_name = static::getPrimaryKey() ?: 'PK';
-			throw new NotFoundException("在{$table_desc}中找不到相关数据({$pk_field_name}: {$val})");
+			throw new NotFoundException("Cannot find relevant data in {$table_desc} ({$pk_field_name}: {$val})");
 		}
 		return $data;
 	}
 
 	/**
-	 * 有主键列表查询多条记录
-	 * 单主键列表为空，该方法会返回空数组结果
+	 * Query multiple records with primary key list
+	 * If the single primary key list is empty, this method will return an empty array result
 	 * @param array $pk_values
 	 * @param bool $as_array
 	 * @return static[]
@@ -473,7 +496,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据主键值删除一条记录
+	 * Delete a record based on the primary key value
 	 * @param string $val
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -485,7 +508,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据主键删除记录
+	 * Delete records based on primary key
 	 * @param $val
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -495,14 +518,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		static::delByPk($val);
 		$count = (new static)->getAffectNum();
 		if(!$count){
-			throw new NotFoundException('记录已被删除');
+			throw new NotFoundException('The record has been deleted');
 		}
 		return $count;
 	}
 
 	/**
-	 * 根据主键值更新记录
-	 * @param string $val 主键值
+	 * Update records based on primary key value
+	 * @param string $val primary key value
 	 * @param array $data
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -513,7 +536,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据主键值更新记录
+	 * Update records based on primary key value
 	 * @param string[]|number[] $pks
 	 * @param array $data
 	 * @return bool
@@ -525,10 +548,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据条件更新数据
+	 * Update data according to conditions
 	 * @param array $data
-	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制更新数量，可设置为0
-	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
+	 * @param int $limit For safety reasons, the caller must pass in a specific value. If you do not limit the number of updates, you can set it to 0
+	 * @param string $statement For security reasons, the caller must pass in specific conditions. If there is no restriction, it can be set to an empty string
 	 * @return bool;
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -545,9 +568,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据条件从表中删除记录
-	 * @param int $limit 为了安全，调用方必须传入具体数值，如不限制删除数量，可设置为0
-	 * @param string $statement 为了安全，调用方必须传入具体条件，如不限制，可设置为空字符串
+	 * Delete records from the table based on conditions
+	 * @param int $limit For safety reasons, the caller must pass in a specific value. If you do not limit the number of deletions, you can set it to 0
+	 * @param string $statement For security reasons, the caller must pass in specific conditions. If there is no restriction, it can be set to an empty string
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -556,12 +579,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$args = array_slice($args, 1);
 
 		$statement = self::parseConditionStatement($args, static::class);
-		return static::getDbDriver()
-			->delete(static::getTableName(), $statement, $limit);
+		return static::getDbDriver()->delete(static::getTableName(), $statement, $limit);
 	}
 
 	/**
-	 * 清空数据
+	 * Clear data
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -571,9 +593,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取所有记录
+	 * Get all records
 	 * @param bool $as_array return as array
-	 * @param string $unique_key 用于组成返回数组的唯一性key
+	 * @param string $unique_key is used to form the unique key of the returned array
 	 * @return static[]
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -586,10 +608,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 分页查询记录
+	 * Pagination query records
 	 * @param string $page
-	 * @param bool $as_array 是否以数组方式返回，默认为Model对象数组
-	 * @param string $unique_key 用于组成返回数组的唯一性key
+	 * @param bool $as_array whether to return as an array, the default is a Model object array
+	 * @param string $unique_key is used to form the unique key of the returned array
 	 * @return static[]
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -599,10 +621,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 格式化数据列表，预取数据
+	 * Format data list and prefetch data
 	 * @param static[]|array[] $list
-	 * @param bool $as_array 是否作为二维数组返回，默认为对象数组
-	 * @param string $unique_key 数组下标key
+	 * @param bool $as_array whether to return as a two-dimensional array, the default is an object array
+	 * @param string $unique_key array index key
 	 * @return array
 	 */
 	private function handleListResult(array $list, $as_array = false, $unique_key = ''){
@@ -618,7 +640,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			$tmp->property_changes = [];
 			if($unique_key){
 				$result[$item[$unique_key]] = $tmp;
-			} else{
+			}else{
 				$result[] = $tmp;
 			}
 		}
@@ -626,8 +648,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取一条记录
-	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
+	 * Get a record
+	 * @param bool $as_array whether to return as an array, the default is the Model object
 	 * @return static|array|null
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -645,8 +667,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取一条记录，为空时抛异常
-	 * @param bool $as_array 是否以数组方式返回，默认为Model对象
+	 * Get a record, throw an exception if it is empty
+	 * @param bool $as_array whether to return as an array, the default is the Model object
 	 * @return static|DBQuery
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
@@ -654,14 +676,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	public function oneOrFail($as_array = false){
 		$data = $this->one($as_array);
 		if(!$data){
-			throw new NotFoundException('找不到相关数据。'.$this->query, null, null, $this->query);
+			throw new NotFoundException('No relevant data found.'.$this->query, null, null, $this->query);
 		}
 		return $data;
 	}
 
 	/**
-	 * 获取一个记录字段
-	 * @param string|null $key 如字段为空，则取第一个结果
+	 * Get a record field
+	 * @param string|null $key If the field is empty, take the first result
 	 * @return mixed|null
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -678,7 +700,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取实体属性名列表
+	 * Get a list of entity attribute names
 	 * @return array
 	 */
 	protected static function getEntityAttributeNames(){
@@ -691,7 +713,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取实体属性列表
+	 * Get entity attribute list
 	 * @return Attribute[]
 	 */
 	protected static function getEntityAttributes(){
@@ -706,7 +728,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 转换model对象列表为数组
+	 * Convert the model object list to an array
 	 * @param static[] $model_list
 	 * @return array
 	 */
@@ -719,10 +741,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 计算字段值总和
-	 * @param string|array $fields 需要计算字段名称（列表）
-	 * @param array $group_by 使用指定字段（列表）作为合并维度
-	 * @return number|array 结果总和，或以指定字段列表作为下标的结果总和
+	 * Calculate the sum of field values
+	 * @param string|array $fields The field names to be calculated (list)
+	 * @param array $group_by uses the specified field (list) as the merge dimension
+	 * @return number|array The sum of the results, or the sum of the results with the specified field list as the subscript
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @example
 	 * <pre>
@@ -732,22 +754,22 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * sum(['price','count']); //[10.00, 14]
 	 * sum(['price', 'count'], ['platform','order_type']); //
 	 * [
-	 *  ['platform,order_type'=>'amazon', 'price'=>10.00, 'count'=>14],
-	 *  ['platform'=>'ebay', 'price'=>10.00, 'count'=>14],...
+	 * ['platform,order_type'=>'amazon', 'price'=>10.00, 'count'=>14],
+	 * ['platform'=>'ebay', 'price'=>10.00, 'count'=>14],...
 	 * ]
 	 * sum(['price', 'count'], ['platform', 'order_type']);
 	 * </pre>
 	 */
-	public function sum($fields, $group_by=[]){
-		$fields = is_array($fields)?$fields:[$fields];
+	public function sum($fields, $group_by = []){
+		$fields = is_array($fields) ? $fields : [$fields];
 		$str = [];
 		foreach($fields as $field){
 			$str[] = "SUM(`$field`) as $field";
 		}
 
 		if($group_by){
-			$str = array_merge($str,$group_by);
-			$this->query->group(implode(',',$group_by));
+			$str = array_merge($str, $group_by);
+			$this->query->group(implode(',', $group_by));
 		}
 		$this->query->fields($str);
 
@@ -757,20 +779,20 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 		if(count($fields) == 1){
 			return array_first(array_first($data));
-		} else {
+		}else{
 			return array_values(array_first($data));
 		}
 	}
 
 	/**
-	 * 对象重排序
-	 * 列表中以数值从大到小进行排序，每次调用将重新计算所有排序
-	 * 用法：<pre>
+	 * Object reordering
+	 * The list is sorted from large to small by value, and all sorting will be recalculated each time it is called
+	 * Usage: <pre>
 	 * $category->render(true, 'sort', 'status=?', $enabled);
 	 * </pre>
-	 * @param bool $move_up 是否为向上移动
-	 * @param string $sort_key 排序字段名称，默认为sort
-	 * @param string $statement 排序范围过滤表达式，默认为所有数据
+	 * @param bool $move_up whether to move up
+	 * @param string $sort_key sort field name, default is sort
+	 * @param string $statement sort range filter expression, default is all data
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -798,30 +820,30 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			return false;
 		}
 
-		//已经是置顶或者置底
-		if($move_up && $current_idx == 0 || (!$move_up && $current_idx == $count-1)){
+		//Already pinned to the top or bottom
+		if($move_up && $current_idx == 0 || (!$move_up && $current_idx == $count - 1)){
 			return true;
 		}
 
 		if($move_up){
-			$tmp = $sort_list[$current_idx-1];
-			$sort_list[$current_idx-1] = $sort_list[$current_idx];
+			$tmp = $sort_list[$current_idx - 1];
+			$sort_list[$current_idx - 1] = $sort_list[$current_idx];
 			$sort_list[$current_idx] = $tmp;
-		} else {
-			$tmp = $sort_list[$current_idx+1];
-			$sort_list[$current_idx+1] = $sort_list[$current_idx];
+		}else{
+			$tmp = $sort_list[$current_idx + 1];
+			$sort_list[$current_idx + 1] = $sort_list[$current_idx];
 			$sort_list[$current_idx] = $tmp;
 		}
 
 		//force reordering
 		foreach($sort_list as $k => $v){
-			static::updateWhere([$sort_key => $count-$k-1], 1, "`$pk` = ?", $v[$pk]);
+			static::updateWhere([$sort_key => $count - $k - 1], 1, "`$pk` = ?", $v[$pk]);
 		}
 		return true;
 	}
 
 	/**
-	 * 获取指定列，作为一维数组返回
+	 * Get the specified column and return it as a one-dimensional array
 	 * @param $key
 	 * @return array
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -833,12 +855,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 以映射数组方式返回
-	 * 这里不进行字段过滤，查询中可能已经通过 field() 设置自定义字段，这里的$key可能无效。
+	 * Return as a mapped array
+	 * No field filtering is performed here. The query may have set custom fields through field(), and the $key here may be invalid.
 	 * <pre>
-	 * $query->map('id', 'name'); //返回： [[id_val=>name_val],...] 格式数据
-	 * $query->map('id', ['name']); //返回： [[id_val=>[name=>name_val],...] 格式数据
-	 * $query->map('id', ['name', 'gender']); //返回： [[id_val=>[name=>name_val, gender=>gender_val],...] 格式数据
+	 * $query->map('id', 'name'); //Return: [[id_val=>name_val],...] format data
+	 * $query->map('id', ['name']); //Return: [[id_val=>[name=>name_val],...] format data
+	 * $query->map('id', ['name', 'gender']); //Return: [[id_val=>[name=>name_val, gender=>gender_val],...] format data
 	 * </pre>
 	 * @param $key
 	 * @param $val
@@ -865,11 +887,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 根据分段进行数据处理，常见用于节省WebServer内存操作
-	 * @param int $size 分块大小
-	 * @param callable $handler 回调函数
-	 * @param bool $as_array 查询结果作为数组格式回调
-	 * @return bool 是否执行了分块动作
+	 * Process data according to segments, commonly used to save WebServer memory operations
+	 * @param int $size chunk size
+	 * @param callable $handler callback function
+	 * @param bool $as_array Query result as array format callback
+	 * @return bool whether the block action is executed
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function chunk($size, $handler, $as_array = false){
@@ -881,8 +903,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 		$page_index = 0;
 		$page_total = ceil($total/$size);
-		while($start<$total){
-			$list = $this->paginate(array($start, $size), $as_array);
+		while($start < $total){
+			$list = $this->paginate([$start, $size], $as_array);
 			if(call_user_func($handler, $list, $page_index++, $page_total, $total) === false){
 				break;
 			}
@@ -892,21 +914,22 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 数据记录监听
-	 * @param callable $handler 处理函数，若返回false，则终端监听
-	 * @param int $chunk_size 获取数据时的分块大小
-	 * @param int $sleep_interval_sec 无数据时睡眠时长（秒）
-	 * @param bool|callable|null $debugger 数据信息调试器
-	 * @return bool 是否正常执行
+	 * Data record monitoring
+	 * @param callable $handler processing function, if it returns false, the terminal monitors
+	 * @param int $chunk_size Chunk size when getting data
+	 * @param int $sleep_interval_sec Sleep duration when there is no data (seconds)
+	 * @param bool|callable|null $debugger data information debugger
+	 * @return bool Whether the execution is normal
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
-		if($debugger === true) {
+		if($debugger === true){
 			$debugger = function(...$args){
-				echo date('Y-m-d H:i:s')."\t".join("\t", func_get_args()), PHP_EOL;
+				echo date('Ymd H:i:s')."\t".join("\t", func_get_args()), PHP_EOL;
 			};
-		} else if(!$debugger || !is_callable($debugger)){
-			$debugger = function(){};
+		}else if(!$debugger || !is_callable($debugger)){
+			$debugger = function(){
+			};
 		}
 
 		$cache_on = DBDriver::getQueryCacheState();
@@ -918,9 +941,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			$exists = $obj->chunk($chunk_size, function($data_list, $page_index, $page_total, $item_total) use ($handler, $chunk_size, $debugger, $start, &$break){
 				/** @var Model $item */
 				foreach($data_list as $k => $item){
-					$cur = $page_index*$chunk_size+$k+1;
+					$cur = $page_index*$chunk_size + $k + 1;
 					$now = microtime(true);
-					$left = ($now-$start)*($item_total-$cur)/$cur;
+					$left = ($now - $start)*($item_total - $cur)/$cur;
 					$left_time = time_range_v($left);
 					$debugger('Handling item: ['.$cur.'/'.$item_total." - $left_time]", substr(json_encode($item), 0, 200));
 					$ret = call_user_func($handler, $item, $page_index, $page_total, $item_total);
@@ -949,7 +972,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取当前查询条数
+	 * Get the current query count
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -959,8 +982,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 更新当前对象
-	 * @param bool $validate_all 是否刷新全部数据，包含readonly数据
+	 * Update the current object
+	 * @param bool $validate_all whether to refresh all data, including readonly data
 	 * @return bool|number
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -972,7 +995,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$data = $this->getProperties();
 		$pk = static::getPrimaryKey();
 
-		//只更新改变的值
+		// Update only changed values
 		$data = array_clear_fields($this->property_changes, $data);
 		$data = $this->validate($data, DBQuery::UPDATE, $validate_all);
 		static::getDbDriver()->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
@@ -982,9 +1005,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 插入当前对象
-	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
-	 * @return string|bool 返回插入的id，或者失败(false)
+	 * Insert the current object
+	 * @param bool $validate_all whether to validate all data, including readonly data
+	 * @return string|bool Returns the inserted id, or fails (false)
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function insert($validate_all = false){
@@ -1005,10 +1028,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 替换数据
+	 * Replace data
 	 * @param array $data
 	 * @param int $limit
-	 * @param array ...$args 查询条件
+	 * @param array ...$args query conditions
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -1019,11 +1042,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 增加或减少计数
-	 * @param string $field 计数使用的字段
-	 * @param int $offset 计数偏移量，如1，-1
-	 * @param int $limit 条数限制，默认为0表示不限制更新条数
-	 * @param array ...$args 查询条件
+	 * Increase or decrease the count
+	 * @param string $field The field used for counting
+	 * @param int $offset count offset, such as 1, -1
+	 * @param int $limit The number of entries is limited. The default value is 0, which means there is no limit on the number of entries to be updated.
+	 * @param array ...$args query conditions
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -1034,10 +1057,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 数据校验
-	 * @param array $src_data 元数据
-	 * @param string $query_type 数据库操作类型
-	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
+	 * Data verification
+	 * @param array $src_data metadata
+	 * @param string $query_type database operation type
+	 * @param bool $validate_all whether to validate all data, including readonly data
 	 * @return array $data
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -1049,61 +1072,62 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 		$pk = static::getPrimaryKey();
 
-		//转换set数据
+		//Convert set data
 		foreach($src_data as $k => $d){
 			if($attr_maps[$k]->type == Attribute::TYPE_SET && is_array($d)){
 				$src_data[$k] = join(',', $d);
 			}
 		}
 
-		//移除矢量数值
+		//Remove vector values
 		$data = array_filter($src_data, function($item){
 			return is_scalar($item) || is_null($item);
 		});
 
-		//unique校验
-		foreach($src_data as $field=>$_){
+		//unique check
+		foreach($src_data as $field => $_){
 			$attr = $attr_maps[$field];
 			if($attr->is_unique){
 				if($query_type == DBQuery::INSERT){
 					$count = $this::find("`$field`=?", $data[$field])->count();
-				} else{
+				}else{
 					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 				}
 				if($count){
-					throw new DBException("{$attr->alias}：“{$data[$field]}” 已经存在，请勿重复添加。");
+					throw new DBException("{$attr->alias}: "{
+						$data[$field]}" already exists, please do not add it again.");
 				}
 			}
 		}
 
-		//移除readonly属性
+		//Remove the readonly attribute
 		if(!$validate_all){
 			$attr_maps = array_filter($attr_maps, function($attr){
 				return !$attr->is_readonly;
 			});
 		}
 
-		//清理无用数据
+		//Clean up useless data
 		$data = array_clear_fields(array_keys($attr_maps), $data);
 
-		//插入时填充default值
+		//Fill in the default value when inserting
 		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
 			/**
-			 * 没有设置数据，属性定义没有默认值情况，需要填充定义默认值
+			 * No data is set, and the attribute definition has no default value. You need to fill in the default value
 			 * @var Attribute $attr
 			 */
 			if(!isset($data[$k]) && $attr->hasUserDefinedDefaultValue()){
 				if($query_type == DBQuery::INSERT){
-					if(!isset($data[$k])){ //允许提交空字符串
+					if(!isset($data[$k])){ //Allow submission of empty string
 						$data[$k] = $attr->default;
 					}
-				} else if(isset($data[$k]) && !strlen($data[$k])){
+				}else if(isset($data[$k]) && !strlen($data[$k])){
 					$data[$k] = $attr->default;
 				}
 			}
 		});
 
-		//更新时，只需要处理更新数据的属性
+		//When updating, you only need to process the properties of the updated data
 		if($query_type == DBQuery::UPDATE || $query_type == DBQuery::REPLACE){
 			foreach($attr_maps as $k => $attr){
 				if(!isset($data[$k])){
@@ -1112,11 +1136,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			}
 		}
 
-		//属性校验
+		//Attribute verification
 		foreach($attr_maps as $k => $attr){
 			if(!$attr->is_readonly || $validate_all){
 				if($msg = $this->validateField($attr, $data[$k])){
-					throw new DBException($msg, null, null, array('field' => $k, 'value' =>$data[$k], 'row' => $data));
+					throw new DBException($msg, null, null, ['field' => $k, 'value' => $data[$k], 'row' => $data]);
 				}
 			}
 		}
@@ -1124,7 +1148,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 字段校验
+	 * Field validation
 	 * @param \LFPhp\PORM\ORM\Attribute $attr
 	 * @param $value
 	 * @return string
@@ -1140,11 +1164,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 		$required = !$attr->is_null_allow && !$attr->hasSysDefinedDefaultValue();
 
-		//数据类型检查
+		//Data type check
 		switch($attr->type){
 			case Attribute::TYPE_INT:
 				if(strlen($value) && !is_numeric($value)){
-					$err = $name.'格式不正确';
+					$err = $name.'Incorrect format';
 				}
 				break;
 
@@ -1152,60 +1176,60 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 			case Attribute::TYPE_DOUBLE:
 			case Attribute::TYPE_DECIMAL:
 				if(!(!$required && !strlen($value.'')) && isset($value) && !is_numeric($value)){
-					$err = $name.'格式不正确';
+					$err = $name.'Incorrect format';
 				}
 				break;
 
 			case Attribute::TYPE_ENUM:
-				$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? '请选择'.$name : '';
+				$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? 'Please select'.$name : '';
 				break;
 
 			case Attribute::TYPE_JSON:
 				if(strlen($value) && !is_json($value)){
-					$err = $name.'必须为JSON格式';
+					$err = $name.'Must be in JSON format';
 				}
 				break;
 
-			//string暂不校验
+			// string is not checked yet
 			case Attribute::TYPE_STRING:
 				break;
 		}
 
-		//必填项检查
+		//Required item check
 		if(!$err && $required && !isset($value)){
-			$err = "请输入{$name}";
+			$err = "Please enter {$name}";
 		}
 
-		//数据长度检查
+		//Data length check
 		if(!$err && $attr->length && $attr->type && !in_array($attr->type, [
 				Attribute::TYPE_DATETIME,
 				Attribute::TYPE_DATE,
 				Attribute::TYPE_TIME,
-				Attribute::TYPE_TIMESTAMP
+				Attribute::TYPE_TIMESTAMP,
 			])){
 			if($attr->precision){
 				$int_len = strlen(substr($value, 0, strpos($value, '.')));
 				$precision_len = strpos($value, '.') !== false ? strlen(substr($value, strpos($value, '.') + 1)) : 0;
 				if($int_len > $attr->length || $precision_len > $attr->precision){
-					$err = "{$name}长度超出：$value";
+					$err = "{$name} length exceeds: $value";
 				}
 			}else{
-				//mysql字符计算采用mb_strlen计算字符个数
+				//MySQL character calculation uses mb_strlen to calculate the number of characters
 				$dsn = static::getDbDriver()->dsn;
 				if($attr->type === 'string' && get_class($dsn) == MySQL::class){
 					$str_len = mb_strlen($value, 'utf-8');
 				}else{
 					$str_len = strlen($value);
 				}
-				$err = $str_len > $attr->length ? "{$name}长度超出：$value {$str_len} > {$attr->length}" : '';
+				$err = $str_len > $attr->length ? "{$name} length exceeds: $value {$str_len} > {$attr->length}" : '';
 			}
 		}
 		return $err;
 	}
 
 	/**
-	 * 批量插入数据
-	 * 由于这里插入会涉及到数据检查，最终效果还是一条一条的插入
+	 * Batch insert data
+	 * Since the insertion here involves data checking, the final effect is still to insert one by one
 	 * @param $data_list
 	 * @param bool $break_on_fail
 	 * @return array
@@ -1225,7 +1249,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 					$pk_val = $tmp->getDbDriver()->getLastInsertId();
 					$return_list[] = $pk_val;
 				}
-			} catch(Exception $e){
+			}catch(Exception $e){
 				if($break_on_fail){
 					throw $e;
 				}
@@ -1235,7 +1259,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 快速批量插入数据，不进行ORM检查
+	 * Fast batch insert of data without ORM check
 	 * @param $data_list
 	 * @return false|\PDOStatement
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
@@ -1248,7 +1272,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 从数据库从删除当前对象对应的记录
+	 * Delete the record corresponding to the current object from the database
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -1263,8 +1287,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 解析SQL查询中的条件表达式
-	 * @param array $args 参数形式可为 [""],但不可为 ["", "aa"] 这种传参
+	 * Parse conditional expressions in SQL queries
+	 * @param array $args The parameter format can be [""], but not ["", "aa"]
 	 * @param Model|string $model_class
 	 * @return string
 	 */
@@ -1282,10 +1306,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 					if(!empty($val)){
 						$rst .= $arr[$key].'('.join(',', $val).')';
-					} else{
+					}else{
 						$rst .= $arr[$key].'(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
 					}
-				} else{
+				}else{
 					$rst .= $arr[$key].$model_class::getDbDriver(self::OP_READ)->quote($val);
 				}
 			}
@@ -1296,7 +1320,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 调整数据长度，自动截取字符串
+	 * Adjust data length and automatically intercept character strings
 	 */
 	public function fixedData(){
 		$data = $this->getProperties();
@@ -1310,8 +1334,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 保存当前对象变更之后的数值
-	 * @param bool $validate_all 是否校验全部数据，包含readonly数据
+	 * Save the value of the current object after it is changed
+	 * @param bool $validate_all whether to validate all data, including readonly data
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -1329,14 +1353,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$has_pk = !empty($data[static::getPrimaryKey()]);
 		if($has_pk){
 			return $this->update($validate_all);
-		} else if(!empty($data)){
+		}else if(!empty($data)){
 			return $this->insert($validate_all);
 		}
 		return false;
 	}
 
 	/**
-	 * 获取影响条数
+	 * Get the number of impact items
 	 * @return int
 	 */
 	public function getAffectNum(){
@@ -1361,7 +1385,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 调用查询对象其他方法
+	 * Call other methods of the query object
 	 * @param string $method_name
 	 * @param array $params
 	 * @return static|DBQuery
@@ -1369,20 +1393,20 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	final public function __call($method_name, $params){
 		if(method_exists($this->query, $method_name)){
-			call_user_func_array(array($this->query, $method_name), $params);
+			call_user_func_array([$this->query, $method_name], $params);
 			return $this;
 		}
 		throw new DBException("Method no exist:".$method_name);
 	}
 
 	/**
-	 * 设置属性
+	 * Set properties
 	 * @param $key
 	 * @param $val
 	 * @throws \Exception
 	 */
 	public function __set($key, $val){
-		//数值没有改变
+		//The value has not changed
 		if($this->properties[$key] === $val){
 			return;
 		}
@@ -1397,13 +1421,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 配置getter
+	 * Configuration getter
 	 * <p>
-	 * 支持：'name' => array(
-	 *     'getter' => function($k){}
+	 * Support: 'name' => array(
+	 * 'getter' => function($k){}
 	 * )
-	 * 支持：'name' => array(
-	 *    'setter' => function($k, $v){}
+	 * Support: 'name' => array(
+	 * 'setter' => function($k, $v){}
 	 * )
 	 * </p>
 	 * @param $key
@@ -1419,7 +1443,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 转换当前查询对象为字符串
+	 * Convert the current query object to a string
 	 * @return string
 	 */
 	public function __toString(){
@@ -1427,7 +1451,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 打印Model调试信息
+	 * Print Model debugging information
 	 * @return array
 	 * @throws \Exception
 	 */
@@ -1456,7 +1480,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * alias for getProperties
-	 * @param bool $strict_format 返回数据是否使用严格数据类型
+	 * @param bool $strict_format Returns whether the data uses strict data types
 	 * @return array
 	 * @throws \Exception
 	 */
@@ -1465,8 +1489,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取属性
-	 * @param bool $strict_format 返回数据是否使用严格数据类型
+	 * Get attributes
+	 * @param bool $strict_format Returns whether the data uses strict data types
 	 * @return array
 	 * @throws \Exception
 	 */
@@ -1494,13 +1518,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws \Exception
 	 */
 	public function setProperties(array $properties){
-		foreach($properties as $k=>$val){
+		foreach($properties as $k => $val){
 			$this->__set($k, $val);
 		}
 	}
 
 	/**
-	 * 设置属性
+	 * Set properties
 	 * @param string $key
 	 * @param mixed $value
 	 * @throws \Exception
@@ -1510,9 +1534,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 显示字段值（适配某些不能直接用于显示的字段）
-	 * @param string $attr_name 属性名称
-	 * @return string 用于显示的字符串
+	 * Display field values (for fields that cannot be directly displayed)
+	 * @param string $attr_name attribute name
+	 * @return string The string to be displayed
 	 * @throws \Exception
 	 */
 	public function display($attr_name){
@@ -1525,23 +1549,23 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 克隆所有结果
-	 * @param array $override_data 覆盖数据
+	 * Clone all results
+	 * @param array $override_data overwrite data
 	 * @return static[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function cloneAll($override_data = []){
 		$list = $this->all();
-		foreach($list as $k=>$item){
+		foreach($list as $k => $item){
 			$list[$k] = $item->clone($override_data);
 		}
 		return $list;
 	}
 
 	/**
-	 * 克隆当前对象并保存
-	 * @param array $override_data 覆盖数据
+	 * Clone the current object and save it
+	 * @param array $override_data overwrite data
 	 * @return $this
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
@@ -1551,7 +1575,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if($pk){
 			$this->{$pk} = null;
 		}
-		foreach($override_data as $k=> $v){
+		foreach($override_data as $k => $v){
 			$this->{$k} = $v;
 		}
 		$this->save();
@@ -1559,7 +1583,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
-	 * 获取属性变化清单
+	 * Get a list of property changes
 	 * @return array [key=>new_data, ...]
 	 */
 	public function getPropertyChanges(){
