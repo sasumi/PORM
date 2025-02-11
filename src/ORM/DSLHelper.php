@@ -74,7 +74,7 @@ abstract class DSLHelper {
 		if(!in_array(Model::class, class_parents($model_class)) || $model_class === Model::class){
 			throw new Exception('Class should inherit from '.Model::class);
 		}
-		$dsn = $model_class::getDbDsn();
+		$dsn = $model_class::getDSN();
 		$table = $model_class::getTableName();
 		return self::getTableInfoByDSN($dsn, $table);
 	}
