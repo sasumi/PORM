@@ -279,13 +279,21 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		return $this;
 	}
 
-	public function allFieldsExclude(...$fields){
+	/**
+	 * query with exclude specified fields
+	 * @param string ...$exclude_fields
+	 * @return mixed
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 */
+	public function allFieldsExclude(...$exclude_fields){
 		$attrs = static::getAttributes();
 		$all_fields = array_keys($attrs);
 		if(!$all_fields){
 			throw new Exception('no fields found in define');
 		}
-		$all_fields = array_filter_fields($all_fields, [], $fields);
+		$all_fields = array_filter($all_fields, function($val) use ($exclude_fields){
+			return !in_array($val, $exclude_fields);
+		});
 		return $this->fields($all_fields);
 	}
 
