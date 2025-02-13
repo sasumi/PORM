@@ -299,7 +299,7 @@ class DBQuery {
 	private function getJoinStr($joins = []){
 		$str = [];
 		foreach($joins ?: $this->joins as $j){
-			list($table, $on, $type) = $j;
+			[$table, $on, $type] = $j;
 			switch($type){
 				case self::LEFT_JOIN:
 					$str[] = 'LEFT JOIN';
@@ -433,11 +433,11 @@ class DBQuery {
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	private static function calcLimitInfo($org_limit_info, $paginate_info){
-		list($start, $size) = $org_limit_info;
+		[$start, $size] = $org_limit_info;
 		if(is_numeric($paginate_info)){
 			return [$start, min($size, $paginate_info)];
 		}
-		list($page_start, $page_size) = $paginate_info;
+		[$page_start, $page_size] = $paginate_info;
 		if($page_start > ($start + $size)){
 			throw new Exception('paginate setting error,new:'.json_encode($paginate_info).',org:'.json_encode($org_limit_info));
 		}

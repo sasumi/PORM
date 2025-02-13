@@ -20,7 +20,21 @@ use function LFPhp\Func\is_json;
 use function LFPhp\Func\time_range_v;
 
 /**
- * ORM data model
+ * ORM Data Model
+ * @method Model from(string $table)
+ * @method Model setSql(string $sql)
+ * @method Model select(...$fields)
+ * @method Model field(...$fields)
+ * @method Model fields(string[] $fields)
+ * @method Model join(string $table, string $on, string $type)
+ * @method Model leftJoin(string $table, string $on)
+ * @method Model rightJoin(string $table, string $on)
+ * @method Model innerJoin(string $table, string $on)
+ * @method Model addWhere(string $arg1, string $field, $operate=null, $compare=null)
+ * @method Model orWhere(string $arg1, string $field, $operate=null, $compare=null)
+ * @method Model order(string $order_str)
+ * @method Model group(string $group_str)
+ * @method Model limit()
  */
 abstract class Model implements JsonSerializable, ArrayAccess {
 	const OP_READ = 1;
@@ -28,7 +42,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	use LoggerTrait;
 
-	/** @var Attribute[] model define */
+	/** @var Attribute[] model attribute define list */
 	protected $attributes = [];
 
 	/**
@@ -127,17 +141,20 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * Get the database table primary key
+	 * @param bool $force_exists force primary key exists in current model
 	 * @return string
-	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function getPrimaryKey(){
+	public static function getPrimaryKey($force_exists = false){
 		$attrs = static::getAttributes();
 		foreach($attrs as $attr){
 			if($attr->is_primary_key){
 				return $attr->name;
 			}
 		}
-		throw new DBException('No primary key found in table defines');
+		if($force_exists){
+			throw new Exception('No primary key found');
+		}
+		return '';
 	}
 
 	/**
@@ -146,7 +163,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function getPrimaryKeyValue(){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		return $this->$pk;
 	}
 
@@ -173,7 +190,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * Set the query SQL statement
 	 * @param string|DBQuery $query
-	 * @return static|DBQuery
+	 * @return static
 	 * @throws \Exception
 	 */
 	public static function setQuery($query){
@@ -236,7 +253,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Search
 	 * @param string $statement conditional expression
 	 * @param string $var,... Conditional expression expansion
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public static function find($statement = '', $var = null){
 		$obj = new static;
@@ -251,7 +268,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * Add more query conditions
 	 * @param array $args query conditions
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function where(...$args){
 		$statement = self::parseConditionStatement($args, static::class);
@@ -263,7 +280,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Quickly query the information requested by the user. The query will be performed only when the second parameter is not empty. The query will still be performed if the array is empty.
 	 * @param string $st
 	 * @param string|int|array|null $val
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function whereOnSet($st, $val){
 		$args = func_get_args();
@@ -282,7 +299,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * query with exclude specified fields
 	 * @param string ...$exclude_fields
-	 * @return mixed
+	 * @return static
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
 	public function allFieldsExclude(...$exclude_fields){
@@ -302,7 +319,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * The current operation only performs "equal to" and "contains" comparisons, and does not perform other comparisons
 	 * @param string[] $fields
 	 * @param string[]|number[] $param
-	 * @return $this
+	 * @return static
 	 */
 	public function whereEqualOnSetViaFields(array $fields, array $param = []){
 		foreach($fields as $field){
@@ -319,7 +336,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Quickly LIKE to query the information requested by the user. When the LIKE content is empty, the query is not executed, such as %%.
 	 * @param string $st
 	 * @param string|number $val
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function whereLikeOnSet($st, $val){
 		$args = func_get_args();
@@ -333,7 +350,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Batch LIKE query (whereLikeOnSet method shortcut usage)
 	 * @param array $fields
 	 * @param $val
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function whereLikeOnSetBatch(array $fields, $val){
 		$st = join(' LIKE ? OR ', $fields).' LIKE ?';
@@ -348,7 +365,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param number|null $min minimum end
 	 * @param number|null $max maximum end
 	 * @param bool $equal_cmp whether it contains equals
-	 * @return static|DBQuery
+	 * @return static
 	 */
 	public function between($field, $min = null, $max = null, $equal_cmp = true){
 		$cmp = $equal_cmp ? '=' : '';
@@ -391,21 +408,21 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function findOneByPk($val, $as_array = false){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		return static::find($pk.'=?', $val)->one($as_array);
 	}
 
 	/**
 	 * @param $val
 	 * @param bool $as_array
-	 * @return static|DBQuery
+	 * @return static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function findOneByPkOrFail($val, $as_array = false){
 		$data = static::findOneByPk($val, $as_array);
 		if(!$data){
 			$table_desc = static::getModelDesc() ?: static::getTableName();
-			$pk_field_name = static::getPrimaryKey() ?: 'PK';
+			$pk_field_name = static::getPrimaryKey(true);
 			throw new NotFoundException("Cannot find relevant data in {$table_desc} ({$pk_field_name}: {$val})");
 		}
 		return $data;
@@ -423,7 +440,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if(!$pk_values){
 			return [];
 		}
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		return static::find("`$pk` IN ?", $pk_values)->all($as_array);
 	}
 
@@ -434,7 +451,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function delByPk($val){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		static::deleteWhere(0, "`$pk`=?", $val);
 		return (new static)->getAffectNum();
 	}
@@ -463,7 +480,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function updateByPk($val, array $data){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		return static::updateWhere($data, 1, "`$pk` = ?", $val);
 	}
 
@@ -475,7 +492,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public static function updateByPks($pks, array $data){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		return static::updateWhere($data, count($pks), "`$pk` IN ?", $pks);
 	}
 
@@ -601,7 +618,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * Get a record, throw an exception if it is empty
 	 * @param bool $as_array whether to return as an array, the default is the Model object
-	 * @return static|DBQuery
+	 * @return static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
@@ -729,7 +746,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 		$pk_v = $this->{$pk};
 		$query = static::find()->field($pk, $sort_key);
 
@@ -925,7 +942,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		$data = $this->getProperties();
-		$pk = static::getPrimaryKey();
+		$pk = static::getPrimaryKey(true);
 
 		// Update only changed values
 		$data = array_filter_fields($data, $this->property_changes);
@@ -933,7 +950,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		static::getDBDriver()->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
 		$this->onAfterUpdate();
 		$this->property_changes = [];
-		return $this->{static::getPrimaryKey()};
+		return $this->{$pk};
 	}
 
 	/**
@@ -950,9 +967,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$data = $this->validate($data, DBQuery::INSERT, $validate_all);
 		$result = static::getDBDriver()->insert(static::getTableName(), $data);
 		if($result){
+			$this->property_changes = [];
 			$pk_val = static::getDBDriver()->getLastInsertId();
 			$pk = static::getPrimaryKey();
-			$this->{$pk} = $pk_val;
+			if($pk){
+				$this->{$pk} = $pk_val;
+			}
 			$this->onAfterInsert();
 			return $pk_val;
 		}
@@ -1002,7 +1022,6 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		foreach($attrs as $attr){
 			$attr_maps[$attr->name] = $attr;
 		}
-		$pk = static::getPrimaryKey();
 
 		//Convert set data
 		foreach($src_data as $k => $d){
@@ -1017,19 +1036,23 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		});
 
 		//unique check
-		foreach($src_data as $field => $_){
-			$attr = $attr_maps[$field];
-			if($attr->is_unique){
-				if($query_type == DBQuery::INSERT){
-					$count = $this::find("`$field`=?", $data[$field])->count();
-				}else{
-					$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
-				}
-				if($count){
-					throw new DBException("{$attr->alias}: \"{$data[$field]}\" already exists, please do not add it again.");
+		$pk = static::getPrimaryKey();
+		if($pk){
+			foreach($src_data as $field => $_){
+				$attr = $attr_maps[$field];
+				if($attr->is_unique){
+					if($query_type == DBQuery::INSERT){
+						$count = $this::find("`$field`=?", $data[$field])->count();
+					}else{
+						$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
+					}
+					if($count){
+						throw new DBException("{$attr->alias}: \"{$data[$field]}\" already exists, please do not add it again.");
+					}
 				}
 			}
 		}
+
 
 		//Remove the readonly attribute
 		if(!$validate_all){
@@ -1211,7 +1234,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		if($this->onBeforeDelete() === false){
 			return false;
 		}
-		$pk_val = $this[static::getPrimaryKey()];
+		$pk = static::getPrimaryKey();
+		$pk_val = $pk ? $this[$pk] : '';
+		if(!$pk_val){
+			throw new Exception('No primary key found');
+		}
 		$result = static::delByPk($pk_val);
 		$this->onAfterDelete();
 		return $result;
@@ -1281,8 +1308,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		$data = $this->getProperties();
-		$has_pk = !empty($data[static::getPrimaryKey()]);
-		if($has_pk){
+		$pk = static::getPrimaryKey();
+		$has_pk_val = $pk && !empty($data[$pk]);
+		if($has_pk_val){
 			return $this->update($validate_all);
 		}else if(!empty($data)){
 			return $this->insert($validate_all);
@@ -1303,7 +1331,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Call other methods of the query object
 	 * @param string $method_name
 	 * @param array $params
-	 * @return static|DBQuery
+	 * @return static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
 	final public function __call($method_name, $params){
@@ -1438,36 +1466,39 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 	/**
 	 * Clone all results
-	 * @param array $override_data overwrite data
+	 * @param string $include_fields overwrite fields, empty for all fields
+	 * @param string $exclude_fields exclude fields, empty for no-excludes
 	 * @return static[]
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public function cloneAll($override_data = []){
+	public function cloneAll($include_fields = [], $exclude_fields = []){
 		$list = $this->all();
 		foreach($list as $k => $item){
-			$list[$k] = $item->clone($override_data);
+			$list[$k] = $item->clone($include_fields, $exclude_fields);
 		}
 		return $list;
 	}
 
 	/**
 	 * Clone the current object and save it
-	 * @param array $override_data overwrite data
-	 * @return $this
+	 * @param string $include_fields overwrite fields, empty for all fields
+	 * @param string $exclude_fields exclude fields, empty for no-excludes
+	 * @return self
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public function clone($override_data = []){
+	public function clone($include_fields = [], $exclude_fields = []){
 		$pk = static::getPrimaryKey();
 		if($pk){
-			$this->{$pk} = null;
+			$exclude_fields[] = $pk;
 		}
-		foreach($override_data as $k => $v){
-			$this->{$k} = $v;
+		$properties = $this->getProperties();
+		$properties = array_filter_fields($properties, $include_fields, $exclude_fields);
+		if(!$properties){
+			throw new Exception('no properties to keep in clone action');
 		}
-		$this->save();
-		return $this;
+		return static::create($properties);
 	}
 
 	/**
