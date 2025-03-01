@@ -42,7 +42,7 @@ class Paginate implements PaginateInterface, JsonSerializable {
 		$this->page_size = $config['page_size'] ?: self::$default_page_size;
 		$this->page_key = $config['page_key'] ?: $this->page_key;
 		$this->page_size_key = $config['page_size_key'] ?: $this->page_size_key;
-		$this->page_size_option = $config['page_size_option'] ?: self::$default_page_size_option;
+		$this->page_size_option = $config['page_size_option'] ?? self::$default_page_size_option;
 		$this->number_offset = $config['number_offset'] ?: $this->number_offset;
 		$this->item_limit = $config['item_limit'] ?: $this->item_limit;
 
