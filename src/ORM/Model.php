@@ -33,7 +33,7 @@ use function LFPhp\Func\time_range_v;
  * @method Model addWhere(string $arg1, string $field, $operate=null, $compare=null)
  * @method Model orWhere(string $arg1, string $field, $operate=null, $compare=null)
  * @method Model order(string $order_str)
- * @method Model orderByValues(string $field, array $values, string $dir)
+ * @method Model orderByValues(string $field, array $values)
  * @method Model group(string $group_str)
  * @method Model limit()
  */
