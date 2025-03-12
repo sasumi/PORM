@@ -366,6 +366,20 @@ class DBQuery {
 	}
 
 	/**
+	 * order by values
+	 * @param string $field
+	 * @param array $values
+	 * @param string $dir
+	 * @return $this|\LFPhp\PORM\DB\DBQuery
+	 */
+	public function orderByValues($field, array $values, $dir){
+		if(!$values){
+			return $this;
+		}
+		return $this->order("$field=".join(" $dir, $field=", $values)." $dir");
+	}
+
+	/**
 	 * Grouping
 	 * @param string $str
 	 * @return DBQuery

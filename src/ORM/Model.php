@@ -33,6 +33,7 @@ use function LFPhp\Func\time_range_v;
  * @method Model addWhere(string $arg1, string $field, $operate=null, $compare=null)
  * @method Model orWhere(string $arg1, string $field, $operate=null, $compare=null)
  * @method Model order(string $order_str)
+ * @method Model orderByValues(string $field, array $values, string $dir)
  * @method Model group(string $group_str)
  * @method Model limit()
  */
@@ -1006,6 +1007,25 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$statement = self::parseConditionStatement($args, static::class);
 		$table = static::getTableName();
 		return static::getDBDriver()->increase($table, $field, $offset, $statement, $limit);
+	}
+
+	/**
+	 * @todo
+	 * @param $updates
+	 * @return void
+	 */
+	public static function updateMultiple($updates){
+		$table = static::getTableName();
+		$sets = [];
+		foreach($updates as [$value_map, $cond]){
+			//			$sets[] = "WHEN $cond THEN "
+		}
+		$sql = "
+			UPDATE `$table` SET sort_val = (
+			    CASE 
+			        WHEN id = 1 THEN 323
+			    END)
+			";
 	}
 
 	/**
