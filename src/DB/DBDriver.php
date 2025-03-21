@@ -772,18 +772,22 @@ class DBDriver {
 		//In order to avoid the field appearing in order, it is defined in select, but deleted in select, resulting in undefined field in order.
 		//At the same time improve Count performance
 		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
+		
+		//If the query is a complex query, it is directly encapsulated into a subquery for counting
+		$is_complex_query = 
+				preg_match('/\sGROUP\s+by\s/im', $query) ||  // include [group by] statement
+				preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) ||  // include [distinct] statement
+				preg_match('/\s*CASE\s/im', $query) ||  // include [case] statement
+				preg_match('/\sLIMIT\s/im', $query); // include [limit] statement
 
-		if(preg_match('/^\s*SELECT.*?\s+FROM\s+/is', $query)){
-			if(preg_match('/\sGROUP\s+by\s/im', $query) || preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) || preg_match('/\sLIMIT\s/im', $query)){
-				$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
-			}else{
-				$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
-			}
-			$result = $this->getPage($query);
-			if($result){
-				return (int)$result[0]['__NUM_COUNT__'];
-			}
-			throw new PORMException("Query get counter fail: $query");
+		if($is_complex_query){
+			$query = "SELECT COUNT(*) AS __NUM_COUNT__ FROM ($query) AS cnt_";
+		}else{
+			$query = preg_replace('/^\s*select.*?\s+from/is', 'SELECT COUNT(*) AS __NUM_COUNT__ FROM', $query);
+		}
+		$result = $this->getPage($query);
+		if($result){
+			return (int)$result[0]['__NUM_COUNT__'];
 		}
 		throw new PORMException("Query resolve select seg fail: $query");
 	}
