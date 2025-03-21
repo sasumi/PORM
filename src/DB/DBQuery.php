@@ -104,6 +104,8 @@ class DBQuery {
 		$this->operation = self::SELECT;
 		if($fields){
 			$this->fields($fields);
+		} else {
+			$this->field('*'); //default select all fields to avoid empty query
 		}
 		return $this;
 	}
@@ -375,7 +377,16 @@ class DBQuery {
 		if(!$values){
 			return $this;
 		}
-		return $this->order("FIELD(".self::escapeKey($field).", '".join("','", $values)."')");
+		$random_rank_field_name = 'rank_'.time().'_'.rand(1000, 9999);
+		$field_escaped = self::escapeKey($field);
+		$total = count($values);
+		$rank_field_str = [];;
+		foreach($values as $val){
+			$val_escaped = is_numeric($val) ? $val : "'".addslashes($val)."'";
+			$rank_field_str[] = "WHEN $field_escaped = $val_escaped THEN ".($total--);
+		}
+		$this->fields[] = '(CASE '.join("\n", $rank_field_str)."\nEND) AS $random_rank_field_name";
+		return $this->order("$random_rank_field_name DESC");
 	}
 
 	/**
