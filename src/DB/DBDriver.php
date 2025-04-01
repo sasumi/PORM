@@ -655,18 +655,23 @@ class DBDriver {
 	 * @param $table
 	 * @param array $data
 	 * @param string $condition
-	 * @param int $limit
-	 * @return int
-	 * @throws DBException
-	 * @throws NullOperation|\LFPhp\PORM\Exception\Exception
+	 * @param int $update_limit
+	 * @param bool $insert_only do insert only, no updates
+	 * @return int affect number
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\NullOperation
 	 */
-	public function replace($table, array $data, $condition = '', $limit = 0){
+	public function replace($table, array $data, $condition = '', $update_limit = 0, $insert_only = false){
 		if(empty($data)){
 			throw new NullOperation('NO REPLACE DATA FOUND', 0, null, $table, $this->dsn);
 		}
 		$count = $this->getCount($this->genQuery()->select()->from($table)->where($condition)->limit(1));
+		if($count && $insert_only){
+			return 0;
+		}
 		if($count){
-			$query = $this->genQuery()->update()->from($table)->setData($data)->where($condition)->limit($limit);
+			$query = $this->genQuery()->update()->from($table)->setData($data)->where($condition)->limit($update_limit);
 			$this->query($query);
 			return $count;
 		}else{
@@ -683,7 +688,7 @@ class DBDriver {
 	 * @param int $offset
 	 * @param string $statement
 	 * @param int $limit
-	 * @return int
+	 * @return int affect number
 	 * @throws DBException
 	 */
 	public function increase($table, $field, $offset = 1, $statement = '', $limit = 0){
@@ -700,7 +705,7 @@ class DBDriver {
 	 * @param $table
 	 * @param $condition
 	 * @param int $limit parameter is 0, which means no limit
-	 * @return bool
+	 * @return bool delete success
 	 * @throws DBException
 	 */
 	public function delete($table, $condition, $limit = 0){
@@ -716,17 +721,31 @@ class DBDriver {
 	 * Data insertion
 	 * @param $table
 	 * @param array $data
-	 * @param null $condition
+	 * @param string $condition
 	 * @return PDOStatement
 	 * @throws DBException
 	 * @throws NullOperation
 	 */
-	public function insert($table, array $data, $condition = null){
+	public function insert($table, array $data, $condition = ''){
 		if(empty($data)){
 			throw new NullOperation('NO INSERT DATA FOUND', 0, null, $table, $this->dsn);
 		}
 		$query = $this->genQuery()->insert()->from($table)->setData($data)->where($condition);
 		return $this->query($query);
+	}
+
+	/**
+	 * insert data while no exists records
+	 * @param string $table
+	 * @param array $data
+	 * @param string $condition
+	 * @return int affect number
+	 * @throws \LFPhp\PORM\Exception\DBException
+	 * @throws \LFPhp\PORM\Exception\Exception
+	 * @throws \LFPhp\PORM\Exception\NullOperation
+	 */
+	public function insertWhileNoExists($table, array $data, $condition = ''){
+		return $this->replace($table, $data, $condition, 0, true);
 	}
 
 	/**
@@ -772,9 +791,9 @@ class DBDriver {
 		//In order to avoid the field appearing in order, it is defined in select, but deleted in select, resulting in undefined field in order.
 		//At the same time improve Count performance
 		//$query = preg_replace('/\sORDER\s+BY\s.*$/i', '', $query);
-		
+
 		//If the query is a complex query, it is directly encapsulated into a subquery for counting
-		$is_complex_query = 
+		$is_complex_query =
 				preg_match('/\sGROUP\s+by\s/im', $query) ||  // include [group by] statement
 				preg_match('/^\s*SELECT\s+DISTINCT\s/im', $query) ||  // include [distinct] statement
 				preg_match('/\s*CASE\s/im', $query) ||  // include [case] statement
