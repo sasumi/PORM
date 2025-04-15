@@ -4,6 +4,7 @@ namespace LFPhp\PORM\DB;
 use LFPhp\Logger\LoggerTrait;
 use LFPhp\PORM\Exception\DBException;
 use LFPhp\PORM\Exception\Exception;
+use function LFPhp\Func\array_clean_empty;
 
 class DBQuery {
 	use LoggerTrait;
@@ -201,6 +202,12 @@ class DBQuery {
 	 */
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
+		$this->fields = array_clean_empty(array_unique($this->fields));
+		if(count($this->fields) > 2 && in_array('*', $this->fields)){
+			$this->fields = array_filter($this->fields, function($item){
+				return $item !== '*';
+			});
+		}
 		return $this;
 	}
 
