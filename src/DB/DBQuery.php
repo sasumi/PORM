@@ -203,7 +203,7 @@ class DBQuery {
 	public function fields($fields){
 		$this->fields = array_merge($this->fields, $fields);
 		$this->fields = array_clean_empty(array_unique($this->fields));
-		if(count($this->fields) > 2 && in_array('*', $this->fields)){
+		if(count($this->fields) > 1 && in_array('*', $this->fields)){
 			$this->fields = array_filter($this->fields, function($item){
 				return $item !== '*';
 			});
