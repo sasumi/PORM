@@ -1,4 +1,5 @@
 <?php
+
 namespace LFPhp\PORM\ORM;
 
 use ArrayAccess;
@@ -71,7 +72,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get features
 	 * @return Attribute[]
 	 */
-	static public function getAttributes(){
+	static public function getAttributes() {
 		return [];
 	}
 
@@ -83,26 +84,26 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param mixed $val definition value
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	static public function updateAttribute($attributes, $attr_name, $sets, $val = null){
+	static public function updateAttribute($attributes, $attr_name, $sets, $val = null) {
 		$attr = null;
-		foreach($attributes as $at){
-			if($at->name === $attr_name){
+		foreach ($attributes as $at) {
+			if ($at->name === $attr_name) {
 				$attr = $at;
 				break;
 			}
 		}
-		if(!$attr){
-			throw new Exception('attribute no found:'.$attr_name);
+		if (!$attr) {
+			throw new Exception('attribute no found:' . $attr_name);
 		}
 		$pairs = [];
-		if(is_string($sets)){
+		if (is_string($sets)) {
 			$pairs[$sets] = $val;
-		}else if(is_array($sets)){
+		} else if (is_array($sets)) {
 			$pairs = $sets;
-		}else{
+		} else {
 			throw new Exception('updateAttribute parameter invalid');
 		}
-		foreach($pairs as $field => $define){
+		foreach ($pairs as $field => $define) {
 			$attr->{$field} = $define;
 		}
 	}
@@ -111,8 +112,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * DBModel constructor.
 	 * @param array $data
 	 */
-	public function __construct($data = []){
-		foreach($data as $k => $val){
+	public function __construct($data = []) {
+		foreach ($data as $k => $val) {
 			$this->{$k} = $val;
 		}
 	}
@@ -121,7 +122,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get the database table description name
 	 * @return string
 	 */
-	public static function getModelDesc(){
+	public static function getModelDesc() {
 		return static::getTableName();
 	}
 
@@ -130,10 +131,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $name attribute name
 	 * @return Attribute
 	 */
-	public static function getAttributeByName($name){
+	public static function getAttributeByName($name) {
 		$attrs = static::getAttributes();
-		foreach($attrs as $attr){
-			if($attr->name === $name){
+		foreach ($attrs as $attr) {
+			if ($attr->name === $name) {
 				return $attr;
 			}
 		}
@@ -145,14 +146,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param bool $force_exists force primary key exists in current model
 	 * @return string
 	 */
-	public static function getPrimaryKey($force_exists = false){
+	public static function getPrimaryKey($force_exists = false) {
 		$attrs = static::getAttributes();
-		foreach($attrs as $attr){
-			if($attr->is_primary_key){
+		foreach ($attrs as $attr) {
+			if ($attr->is_primary_key) {
 				return $attr->name;
 			}
 		}
-		if($force_exists){
+		if ($force_exists) {
 			throw new Exception('No primary key found');
 		}
 		return '';
@@ -163,7 +164,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return mixed
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function getPrimaryKeyValue(){
+	public function getPrimaryKeyValue() {
 		$pk = static::getPrimaryKey(true);
 		return $this->$pk;
 	}
@@ -173,7 +174,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param int $operate_type
 	 * @return DBDriver
 	 */
-	protected static function getDBDriver($operate_type = self::OP_WRITE){
+	protected static function getDBDriver($operate_type = self::OP_WRITE) {
 		$dsn = static::getDSN($operate_type);
 		return DBDriver::instance($dsn);
 	}
@@ -184,7 +185,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function explainQuery($query){
+	public static function explainQuery($query) {
 		return static::getDBDriver(self::OP_READ)->explain($query);
 	}
 
@@ -194,11 +195,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static
 	 * @throws \Exception
 	 */
-	public static function setQuery($query){
-		if(is_string($query)){
+	public static function setQuery($query) {
+		if (is_string($query)) {
 			$query = new DBQuery($query);
 		}
-		if($query){
+		if ($query) {
 			$obj = new static;
 			$obj->query = $query;
 			return $obj;
@@ -210,7 +211,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get the current query object
 	 * @return \LFPhp\PORM\DB\DBQuery|null
 	 */
-	public function getQuery(){
+	public function getQuery() {
 		return $this->query;
 	}
 
@@ -220,22 +221,22 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return mixed closure function return value transparent transmission
 	 * @throws \Exception
 	 */
-	public static function transaction($handler){
+	public static function transaction($handler) {
 		$driver = static::getDBDriver(Model::OP_WRITE);
-		try{
+		try {
 			$driver->beginTransaction();
 			$ret = call_user_func($handler);
-			if($ret === false){
+			if ($ret === false) {
 				throw new DBException('Database transaction interrupted');
 			}
-			if(!$driver->commit()){
+			if (!$driver->commit()) {
 				throw new DBException('Database commit fail');
 			}
 			return $ret;
-		}catch(Exception $exception){
+		} catch (Exception $exception) {
 			$driver->rollback();
 			throw $exception;
-		}finally{
+		} finally {
 			$driver->cancelTransactionState();
 		}
 	}
@@ -245,7 +246,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return \PDOStatement
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function execute(){
+	public function execute() {
 		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
 		return static::getDBDriver($type)->query($this->query);
 	}
@@ -256,7 +257,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $var,... Conditional expression expansion
 	 * @return static
 	 */
-	public static function find($statement = '', $var = null){
+	public static function find($statement = '', $var = null) {
 		$obj = new static;
 		$query = new DBQuery();
 		$args = func_get_args();
@@ -271,7 +272,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param array $args query conditions
 	 * @return static
 	 */
-	public function where(...$args){
+	public function where(...$args) {
 		$statement = self::parseConditionStatement($args, static::class);
 		$this->query->where($statement);
 		return $this;
@@ -283,14 +284,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string|int|array|null $val
 	 * @return static
 	 */
-	public function whereOnSet($st, $val){
+	public function whereOnSet($st, $val) {
 		$args = func_get_args();
-		foreach($args as $k => $arg){
-			if(is_string($arg)){
+		foreach ($args as $k => $arg) {
+			if (is_string($arg)) {
 				$args[$k] = trim($arg);
 			}
 		}
-		if(is_array($val) || strlen($val)){
+		if (is_array($val) || strlen($val)) {
 			$statement = self::parseConditionStatement($args, static::class);
 			$this->query->where($statement);
 		}
@@ -303,13 +304,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public function allFieldsExclude(...$exclude_fields){
+	public function allFieldsExclude(...$exclude_fields) {
 		$attrs = static::getAttributes();
 		$all_fields = array_keys($attrs);
-		if(!$all_fields){
+		if (!$all_fields) {
 			throw new Exception('no fields found in define');
 		}
-		$all_fields = array_filter($all_fields, function($val) use ($exclude_fields){
+		$all_fields = array_filter($all_fields, function ($val) use ($exclude_fields) {
 			return !in_array($val, $exclude_fields);
 		});
 		return $this->fields($all_fields);
@@ -322,10 +323,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string[]|number[] $param
 	 * @return static
 	 */
-	public function whereEqualOnSetViaFields(array $fields, array $param = []){
-		foreach($fields as $field){
+	public function whereEqualOnSetViaFields(array $fields, array $param = []) {
+		foreach ($fields as $field) {
 			$val = $param[$field];
-			if(is_array($val) || strlen($val)){
+			if (is_array($val) || strlen($val)) {
 				$comparison = is_array($val) ? 'IN' : '=';
 				$this->whereOnSet("$field $comparison ?", $val);
 			}
@@ -339,9 +340,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string|number $val
 	 * @return static
 	 */
-	public function whereLikeOnSet($st, $val){
+	public function whereLikeOnSet($st, $val) {
 		$args = func_get_args();
-		if(strlen(trim(str_replace(DBDriver::LIKE_RESERVED_CHARS, '', $val)))){
+		if (strlen(trim(str_replace(DBDriver::LIKE_RESERVED_CHARS, '', $val)))) {
 			return call_user_func_array([$this, 'whereOnSet'], $args);
 		}
 		return $this;
@@ -353,8 +354,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param $val
 	 * @return static
 	 */
-	public function whereLikeOnSetBatch(array $fields, $val){
-		$st = join(' LIKE ? OR ', $fields).' LIKE ?';
+	public function whereLikeOnSetBatch(array $fields, $val) {
+		$st = join(' LIKE ? OR ', $fields) . ' LIKE ?';
 		$values = array_fill(0, count($fields), $val);
 		array_unshift($values, $st);
 		return call_user_func_array([$this, 'whereLikeOnSet'], $values);
@@ -363,25 +364,25 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * Check if the field is within the specified range
 	 * @param string $field
-	 * @param number|null $min minimum end
-	 * @param number|null $max maximum end
+	 * @param string|number|null $min minimum end
+	 * @param string|number|null $max maximum end
 	 * @param bool $equal_cmp whether it contains equals
 	 * @return static
 	 */
-	public function between($field, $min = null, $max = null, $equal_cmp = true){
+	public function between($field, $min = null, $max = null, $equal_cmp = true) {
 		$cmp = $equal_cmp ? '=' : '';
 		$hit = false;
-		if(strlen($min)){
+		if (strlen($min)) {
 			$min = addslashes($min);
 			$this->query->where($field, ">$cmp", $min);
 			$hit = true;
 		}
-		if(strlen($max)){
+		if (strlen($max)) {
 			$max = addslashes($max);
 			$this->query->where($field, "<$cmp", $max);
 			$hit = true;
 		}
-		if($hit){
+		if ($hit) {
 			$this->query->where("`$field` IS NOT NULL");
 		}
 		return $this;
@@ -393,9 +394,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool|static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function create($data){
+	public static function create($data) {
 		$obj = new static();
-		foreach($data as $k => $v){
+		foreach ($data as $k => $v) {
 			$obj->{$k} = $v;
 		}
 		return $obj->save() ? $obj : false;
@@ -408,9 +409,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array|static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function findOneByPk($val, $as_array = false){
+	public static function findOneByPk($val, $as_array = false) {
 		$pk = static::getPrimaryKey(true);
-		return static::find($pk.'=?', $val)->one($as_array);
+		return static::find($pk . '=?', $val)->one($as_array);
 	}
 
 	/**
@@ -419,9 +420,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function findOneByPkOrFail($val, $as_array = false){
+	public static function findOneByPkOrFail($val, $as_array = false) {
 		$data = static::findOneByPk($val, $as_array);
-		if(!$data){
+		if (!$data) {
 			$table_desc = static::getModelDesc() ?: static::getTableName();
 			$pk_field_name = static::getPrimaryKey(true);
 			throw new NotFoundException("Cannot find relevant data in {$table_desc} ({$pk_field_name}: {$val})");
@@ -437,8 +438,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static[]
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function findByPks(array $pk_values, $as_array = false){
-		if(!$pk_values){
+	public static function findByPks(array $pk_values, $as_array = false) {
+		if (!$pk_values) {
 			return [];
 		}
 		$pk = static::getPrimaryKey(true);
@@ -451,7 +452,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function delByPk($val){
+	public static function delByPk($val) {
 		$pk = static::getPrimaryKey(true);
 		static::deleteWhere(0, "`$pk`=?", $val);
 		return (new static)->getAffectNum();
@@ -464,10 +465,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
-	public static function delByPkOrFail($val){
+	public static function delByPkOrFail($val) {
 		static::delByPk($val);
 		$count = (new static)->getAffectNum();
-		if(!$count){
+		if (!$count) {
 			throw new NotFoundException('The record has been deleted');
 		}
 		return $count;
@@ -480,7 +481,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function updateByPk($val, array $data){
+	public static function updateByPk($val, array $data) {
 		$pk = static::getPrimaryKey(true);
 		return static::updateWhere($data, 1, "`$pk` = ?", $val);
 	}
@@ -492,7 +493,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function updateByPks($pks, array $data){
+	public static function updateByPks($pks, array $data) {
 		$pk = static::getPrimaryKey(true);
 		return static::updateWhere($data, count($pks), "`$pk` IN ?", $pks);
 	}
@@ -505,8 +506,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool;
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function updateWhere(array $data, $limit, $statement){
-		if(self::onBeforeChangedGlobal() === false){
+	public static function updateWhere(array $data, $limit, $statement) {
+		if (self::onBeforeChangedGlobal() === false) {
 			return false;
 		}
 
@@ -524,7 +525,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function deleteWhere($limit, $statement){
+	public static function deleteWhere($limit, $statement) {
 		$args = func_get_args();
 		$args = array_slice($args, 1);
 
@@ -537,7 +538,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function truncate(){
+	public static function truncate() {
 		$table = static::getTableName();
 		return static::getDBDriver()->delete($table, '', 0);
 	}
@@ -549,9 +550,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static[]
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function all($as_array = false, $unique_key = ''){
+	public function all($as_array = false, $unique_key = '') {
 		$list = static::getDBDriver(self::OP_READ)->getAll($this->query);
-		if(!$list){
+		if (!$list) {
 			return [];
 		}
 		return $this->handleListResult($list, $as_array, $unique_key);
@@ -565,7 +566,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static[]
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function paginate($page = null, $as_array = false, $unique_key = ''){
+	public function paginate($page = null, $as_array = false, $unique_key = '') {
 		$list = static::getDBDriver(self::OP_READ)->getPage($this->query, $page);
 		return $this->handleListResult($list, $as_array, $unique_key);
 	}
@@ -577,20 +578,20 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param string $unique_key array index key
 	 * @return array
 	 */
-	private function handleListResult(array $list, $as_array = false, $unique_key = ''){
-		if($as_array){
-			if($unique_key){
+	private function handleListResult(array $list, $as_array = false, $unique_key = '') {
+		if ($as_array) {
+			if ($unique_key) {
 				$list = array_group($list, $unique_key, true);
 			}
 			return $list;
 		}
 		$result = [];
-		foreach($list as $item){
+		foreach ($list as $item) {
 			$tmp = new static($item);
 			$tmp->property_changes = [];
-			if($unique_key){
+			if ($unique_key) {
 				$result[$item[$unique_key]] = $tmp;
-			}else{
+			} else {
 				$result[] = $tmp;
 			}
 		}
@@ -603,12 +604,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static|array|null
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function one($as_array = false){
+	public function one($as_array = false) {
 		$data = static::getDBDriver(self::OP_READ)->getOne($this->query);
-		if($as_array){
+		if ($as_array) {
 			return $data;
 		}
-		if(!empty($data)){
+		if (!empty($data)) {
 			$this->__construct($data);
 			$this->property_changes = [];
 			return $this;
@@ -623,10 +624,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \LFPhp\PORM\Exception\NotFoundException
 	 */
-	public function oneOrFail($as_array = false){
+	public function oneOrFail($as_array = false) {
 		$data = $this->one($as_array);
-		if(!$data){
-			throw new NotFoundException('No relevant data found.'.$this->query, null, null, $this->query);
+		if (!$data) {
+			throw new NotFoundException('No relevant data found.', null, null, $this->query);
 		}
 		return $data;
 	}
@@ -637,13 +638,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return mixed|null
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function ceil($key = ''){
+	public function ceil($key = '') {
 		$attr_names = static::getEntityAttributeNames();
-		if($key && in_array($key, $attr_names)){
+		if ($key && in_array($key, $attr_names)) {
 			$this->query->field($key);
 		}
 		$data = static::getDBDriver(self::OP_READ)->getOne($this->query);
-		if(!$data){
+		if (!$data) {
 			return null;
 		}
 		return $key ? $data[$key] : array_pop($data);
@@ -653,10 +654,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get a list of entity attribute names
 	 * @return array
 	 */
-	protected static function getEntityAttributeNames(){
+	protected static function getEntityAttributeNames() {
 		$names = [];
 		$attrs = static::getEntityAttributes();
-		foreach($attrs as $attribute){
+		foreach ($attrs as $attribute) {
 			$names[] = $attribute->name;
 		}
 		return $names;
@@ -666,11 +667,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get entity attribute list
 	 * @return Attribute[]
 	 */
-	protected static function getEntityAttributes(){
+	protected static function getEntityAttributes() {
 		$attrs = static::getAttributes();
 		$ret = [];
-		foreach($attrs as $attribute){
-			if(!$attribute->is_virtual){
+		foreach ($attrs as $attribute) {
+			if (!$attribute->is_virtual) {
 				$ret[] = $attribute;
 			}
 		}
@@ -682,9 +683,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param static[] $model_list
 	 * @return array
 	 */
-	public static function convertModelListToArray($model_list){
+	public static function convertModelListToArray($model_list) {
 		$tmp = [];
-		foreach($model_list as $m){
+		foreach ($model_list as $m) {
 			$tmp[] = $m->getData();
 		}
 		return $tmp;
@@ -710,26 +711,26 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * sum(['price', 'count'], ['platform', 'order_type']);
 	 * </pre>
 	 */
-	public function sum($fields, $group_by = []){
+	public function sum($fields, $group_by = []) {
 		$fields = is_array($fields) ? $fields : [$fields];
 		$str = [];
-		foreach($fields as $field){
+		foreach ($fields as $field) {
 			$str[] = "SUM(`$field`) as $field";
 		}
 
-		if($group_by){
+		if ($group_by) {
 			$str = array_merge($str, $group_by);
 			$this->query->group(implode(',', $group_by));
 		}
 		$this->query->fields($str);
 
 		$data = static::getDBDriver(self::OP_READ)->getAll($this->query);
-		if($group_by){
+		if ($group_by) {
 			return $data;
 		}
-		if(count($fields) == 1){
+		if (count($fields) == 1) {
 			return array_first(array_first($data));
-		}else{
+		} else {
 			return array_values(array_first($data));
 		}
 	}
@@ -746,16 +747,16 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function reorder($move_up, $sort_key = 'sort', $statement = ''){
+	public function reorder($move_up, $sort_key = 'sort', $statement = '') {
 		$pk = static::getPrimaryKey(true);
 		$pk_v = $this->{$pk};
 		$query = static::find()->field($pk, $sort_key);
 
 		//query statement
-		if($statement){
+		if ($statement) {
 			$statement_list = func_get_args();
 			$statement_list = array_slice($statement_list, 3);
-			if($statement_list){
+			if ($statement_list) {
 				call_user_func_array([$query, 'where'], $statement_list);
 			}
 		}
@@ -763,30 +764,30 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$sort_list = $query->all(true);
 		$count = count($sort_list);
 		$sort_list = array_orderby($sort_list, $sort_key, SORT_DESC);
-		$current_idx = array_index($sort_list, function($item) use ($pk, $pk_v){
+		$current_idx = array_index($sort_list, function ($item) use ($pk, $pk_v) {
 			return $item[$pk] == $pk_v;
 		});
-		if($current_idx === false){
+		if ($current_idx === false) {
 			return false;
 		}
 
 		//Already pinned to the top or bottom
-		if($move_up && $current_idx == 0 || (!$move_up && $current_idx == $count - 1)){
+		if ($move_up && $current_idx == 0 || (!$move_up && $current_idx == $count - 1)) {
 			return true;
 		}
 
-		if($move_up){
+		if ($move_up) {
 			$tmp = $sort_list[$current_idx - 1];
 			$sort_list[$current_idx - 1] = $sort_list[$current_idx];
 			$sort_list[$current_idx] = $tmp;
-		}else{
+		} else {
 			$tmp = $sort_list[$current_idx + 1];
 			$sort_list[$current_idx + 1] = $sort_list[$current_idx];
 			$sort_list[$current_idx] = $tmp;
 		}
 
 		//force reordering
-		foreach($sort_list as $k => $v){
+		foreach ($sort_list as $k => $v) {
 			static::updateWhere([$sort_key => $count - $k - 1], 1, "`$pk` = ?", $v[$pk]);
 		}
 		return true;
@@ -798,7 +799,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function column($key){
+	public function column($key) {
 		$this->query->field($key);
 		$data = static::getDBDriver(self::OP_READ)->getAll($this->query);
 		return $data ? array_column($data, $key) : [];
@@ -817,17 +818,17 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function map($key, $val){
-		if(is_string($val)){
+	public function map($key, $val) {
+		if (is_string($val)) {
 			$tmp = static::getDBDriver(self::OP_READ)->getAll($this->query);
 			return array_combine(array_column($tmp, $key), array_column($tmp, $val));
-		}else if(is_array($val)){
+		} else if (is_array($val)) {
 			$tmp[] = $key;
 			$tmp = static::getDBDriver(self::OP_READ)->getAll($this->query);
 			$ret = [];
-			foreach($tmp as $item){
+			foreach ($tmp as $item) {
 				$ret[$item[$key]] = [];
-				foreach($val as $field){
+				foreach ($val as $field) {
 					$ret[$item[$key]][$field] = $item[$field];
 				}
 			}
@@ -844,18 +845,18 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool whether the block action is executed
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function chunk($size, $handler, $as_array = false){
+	public function chunk($size, $handler, $as_array = false) {
 		$total = $this->count();
 		$start = 0;
-		if(!$total){
+		if (!$total) {
 			return false;
 		}
 
 		$page_index = 0;
-		$page_total = ceil($total/$size);
-		while($start < $total){
+		$page_total = ceil($total / $size);
+		while ($start < $total) {
 			$list = $this->paginate([$start, $size], $as_array);
-			if(call_user_func($handler, $list, $page_index++, $page_total, $total) === false){
+			if (call_user_func($handler, $list, $page_index++, $page_total, $total) === false) {
 				break;
 			}
 			$start += $size;
@@ -872,32 +873,32 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool Whether the execution is normal
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true){
-		if($debugger === true){
-			$debugger = function(...$args){
-				echo date('Ymd H:i:s')."\t".join("\t", func_get_args()), PHP_EOL;
+	public function watch(callable $handler, $chunk_size = 50, $sleep_interval_sec = 3, $debugger = true) {
+		if ($debugger === true) {
+			$debugger = function (...$args) {
+				echo date('Ymd H:i:s') . "\t" . join("\t", func_get_args()), PHP_EOL;
 			};
-		}else if(!$debugger || !is_callable($debugger)){
-			$debugger = function(){
+		} else if (!$debugger || !is_callable($debugger)) {
+			$debugger = function () {
 			};
 		}
 
 		$cache_on = DBDriver::getQueryCacheState();
 		DBDriver::setQueryCacheOff();
-		while(true){
-			$obj = clone($this);
+		while (true) {
+			$obj = clone ($this);
 			$break = false;
 			$start = microtime(true);
-			$exists = $obj->chunk($chunk_size, function($data_list, $page_index, $page_total, $item_total) use ($handler, $chunk_size, $debugger, $start, &$break){
+			$exists = $obj->chunk($chunk_size, function ($data_list, $page_index, $page_total, $item_total) use ($handler, $chunk_size, $debugger, $start, &$break) {
 				/** @var Model $item */
-				foreach($data_list as $k => $item){
-					$cur = $page_index*$chunk_size + $k + 1;
+				foreach ($data_list as $k => $item) {
+					$cur = $page_index * $chunk_size + $k + 1;
 					$now = microtime(true);
-					$left = ($now - $start)*($item_total - $cur)/$cur;
+					$left = ($now - $start) * ($item_total - $cur) / $cur;
 					$left_time = time_range_v($left);
-					$debugger('Handling item: ['.$cur.'/'.$item_total." - $left_time]", substr(json_encode($item), 0, 200));
+					$debugger('Handling item: [' . $cur . '/' . $item_total . " - $left_time]", substr(json_encode($item), 0, 200));
 					$ret = call_user_func($handler, $item, $page_index, $page_total, $item_total);
-					if($ret === false){
+					if ($ret === false) {
 						$debugger('Handler Break!');
 						$break = true;
 						return false;
@@ -906,16 +907,16 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 				return true;
 			});
 			unset($obj);
-			if($break){
+			if ($break) {
 				$debugger('Handler Break!');
 				break;
 			}
-			if(!$exists){
-				$debugger('no data found, sleep for '.$sleep_interval_sec.' sec, mem:'.format_size(memory_get_usage(true)));
+			if (!$exists) {
+				$debugger('no data found, sleep for ' . $sleep_interval_sec . ' sec, mem:' . format_size(memory_get_usage(true)));
 				sleep($sleep_interval_sec);
 			}
 		}
-		if($cache_on){
+		if ($cache_on) {
 			DBDriver::setQueryCacheOn();
 		}
 		return true;
@@ -926,7 +927,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function count(){
+	public function count() {
 		$driver = static::getDBDriver(self::OP_READ);
 		return $driver->getCount($this->query);
 	}
@@ -937,8 +938,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool|number
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function update($validate_all = false){
-		if($this->onBeforeUpdate() === false || $this->onBeforeChanged() === false){
+	public function update($validate_all = false) {
+		if ($this->onBeforeUpdate() === false || $this->onBeforeChanged() === false) {
 			return false;
 		}
 
@@ -948,7 +949,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		// Update only changed values
 		$data = array_filter_fields($data, $this->property_changes);
 		$data = $this->validate($data, DBQuery::UPDATE, $validate_all);
-		static::getDBDriver()->update(static::getTableName(), $data, static::getPrimaryKey().'='.$this->$pk);
+		static::getDBDriver()->update(static::getTableName(), $data, static::getPrimaryKey() . '=' . $this->$pk);
 		$this->onAfterUpdate();
 		$this->property_changes = [];
 		return $this->{$pk};
@@ -960,18 +961,18 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return string|bool Returns the inserted id, or fails (false)
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function insert($validate_all = false){
-		if($this->onBeforeInsert() === false || $this->onBeforeChanged() === false){
+	public function insert($validate_all = false) {
+		if ($this->onBeforeInsert() === false || $this->onBeforeChanged() === false) {
 			return false;
 		}
 		$data = $this->getProperties();
 		$data = $this->validate($data, DBQuery::INSERT, $validate_all);
 		$result = static::getDBDriver()->insert(static::getTableName(), $data);
-		if($result){
+		if ($result) {
 			$this->property_changes = [];
 			$pk_val = static::getDBDriver()->getLastInsertId();
 			$pk = static::getPrimaryKey();
-			if($pk){
+			if ($pk) {
 				$this->{$pk} = $pk_val;
 			}
 			$this->onAfterInsert();
@@ -988,7 +989,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function replace(array $data, $limit = 0, ...$args){
+	public static function replace(array $data, $limit = 0, ...$args) {
 		$statement = self::parseConditionStatement($args, static::class);
 		$table = static::getTableName();
 		return static::getDBDriver()->replace($table, $data, $statement, $limit);
@@ -1003,7 +1004,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return int
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function increase($field, $offset, $limit = 0, ...$args){
+	public static function increase($field, $offset, $limit = 0, ...$args) {
 		$statement = self::parseConditionStatement($args, static::class);
 		$table = static::getTableName();
 		return static::getDBDriver()->increase($table, $field, $offset, $statement, $limit);
@@ -1014,10 +1015,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param $updates
 	 * @return void
 	 */
-	public static function updateMultiple($updates){
+	public static function updateMultiple($updates) {
 		$table = static::getTableName();
 		$sets = [];
-		foreach($updates as [$value_map, $cond]){
+		foreach ($updates as [$value_map, $cond]) {
 			//			$sets[] = "WHEN $cond THEN "
 		}
 		$sql = "
@@ -1036,37 +1037,37 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array $data
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	private function validate($src_data = [], $query_type = DBQuery::INSERT, $validate_all = false){
+	private function validate($src_data = [], $query_type = DBQuery::INSERT, $validate_all = false) {
 		$attrs = self::getEntityAttributes();
 		$attr_maps = [];
-		foreach($attrs as $attr){
+		foreach ($attrs as $attr) {
 			$attr_maps[$attr->name] = $attr;
 		}
 
 		//Convert set data
-		foreach($src_data as $k => $d){
-			if($attr_maps[$k]->type == Attribute::TYPE_SET && is_array($d)){
+		foreach ($src_data as $k => $d) {
+			if ($attr_maps[$k]->type == Attribute::TYPE_SET && is_array($d)) {
 				$src_data[$k] = join(',', $d);
 			}
 		}
 
 		//Remove vector values
-		$data = array_filter($src_data, function($item){
+		$data = array_filter($src_data, function ($item) {
 			return is_scalar($item) || is_null($item);
 		});
 
 		//unique check
 		$pk = static::getPrimaryKey();
-		if($pk){
-			foreach($src_data as $field => $_){
+		if ($pk) {
+			foreach ($src_data as $field => $_) {
 				$attr = $attr_maps[$field];
-				if($attr->is_unique){
-					if($query_type == DBQuery::INSERT){
+				if ($attr->is_unique) {
+					if ($query_type == DBQuery::INSERT) {
 						$count = $this::find("`$field`=?", $data[$field])->count();
-					}else{
+					} else {
 						$count = $this::find("`$field`=? AND `$pk` <> ?", $data[$field], $this->$pk)->count();
 					}
-					if($count){
+					if ($count) {
 						throw new DBException("{$attr->alias}: \"{$data[$field]}\" already exists, please do not add it again.");
 					}
 				}
@@ -1075,8 +1076,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 
 
 		//Remove the readonly attribute
-		if(!$validate_all){
-			$attr_maps = array_filter($attr_maps, function($attr){
+		if (!$validate_all) {
+			$attr_maps = array_filter($attr_maps, function ($attr) {
 				return !$attr->is_readonly;
 			});
 		}
@@ -1085,35 +1086,35 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$data = array_filter_fields($data, array_keys($attr_maps));
 
 		//Fill in the default value when inserting
-		array_walk($attr_maps, function($attr, $k) use (&$data, $query_type){
+		array_walk($attr_maps, function ($attr, $k) use (&$data, $query_type) {
 			/**
 			 * No data is set, and the attribute definition has no default value. You need to fill in the default value
 			 * @var Attribute $attr
 			 */
-			if(!isset($data[$k]) && $attr->hasUserDefinedDefaultValue()){
-				if($query_type == DBQuery::INSERT){
-					if(!isset($data[$k])){ //Allow submission of empty string
+			if (!isset($data[$k]) && $attr->hasUserDefinedDefaultValue()) {
+				if ($query_type == DBQuery::INSERT) {
+					if (!isset($data[$k])) { //Allow submission of empty string
 						$data[$k] = $attr->default;
 					}
-				}else if(isset($data[$k]) && !strlen($data[$k])){
+				} else if (isset($data[$k]) && !strlen($data[$k])) {
 					$data[$k] = $attr->default;
 				}
 			}
 		});
 
 		//When updating, you only need to process the properties of the updated data
-		if($query_type == DBQuery::UPDATE || $query_type == DBQuery::REPLACE){
-			foreach($attr_maps as $k => $attr){
-				if(!isset($data[$k])){
+		if ($query_type == DBQuery::UPDATE || $query_type == DBQuery::REPLACE) {
+			foreach ($attr_maps as $k => $attr) {
+				if (!isset($data[$k])) {
 					unset($attr_maps[$k]);
 				}
 			}
 		}
 
 		//Attribute verification
-		foreach($attr_maps as $k => $attr){
-			if(!$attr->is_readonly || $validate_all){
-				if($msg = $this->validateField($attr, $data[$k])){
+		foreach ($attr_maps as $k => $attr) {
+			if (!$attr->is_readonly || $validate_all) {
+				if ($msg = $this->validateField($attr, $data[$k])) {
 					throw new DBException($msg, null, null, ['field' => $k, 'value' => $data[$k], 'row' => $data]);
 				}
 			}
@@ -1128,39 +1129,39 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return string
 	 * @throws \Exception
 	 */
-	private function validateField($attr, $value){
+	private function validateField($attr, $value) {
 		$err = '';
 		$name = $attr->alias ?: $attr->name;
 		$options = $attr->options;
-		if(is_callable($options)){
+		if (is_callable($options)) {
 			$options = call_user_func($options, $this);
 		}
 
 		$required = !$attr->is_null_allow && !$attr->hasSysDefinedDefaultValue();
 
 		//Data type check
-		switch($attr->type){
+		switch ($attr->type) {
 			case Attribute::TYPE_INT:
-				if(strlen($value) && !is_numeric($value)){
-					$err = $name.'Incorrect format';
+				if (strlen($value) && !is_numeric($value)) {
+					$err = $name . 'Incorrect format';
 				}
 				break;
 
 			case Attribute::TYPE_FLOAT:
 			case Attribute::TYPE_DOUBLE:
 			case Attribute::TYPE_DECIMAL:
-				if(!(!$required && !strlen($value.'')) && isset($value) && !is_numeric($value)){
-					$err = $name.'Incorrect format';
+				if (!(!$required && !strlen($value . '')) && isset($value) && !is_numeric($value)) {
+					$err = $name . 'Incorrect format';
 				}
 				break;
 
 			case Attribute::TYPE_ENUM:
-				$err = !(!$required && !strlen($value.'')) && !isset($options[$value]) ? 'Please select'.$name : '';
+				$err = !(!$required && !strlen($value . '')) && !isset($options[$value]) ? 'Please select' . $name : '';
 				break;
 
 			case Attribute::TYPE_JSON:
-				if(strlen($value) && !is_json($value)){
-					$err = $name.'Must be in JSON format';
+				if (strlen($value) && !is_json($value)) {
+					$err = $name . 'Must be in JSON format';
 				}
 				break;
 
@@ -1170,29 +1171,29 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		}
 
 		//Required item check
-		if(!$err && $required && !isset($value)){
+		if (!$err && $required && !isset($value)) {
 			$err = "Please enter {$name}";
 		}
 
 		//Data length check
-		if(!$err && $attr->length && $attr->type && !in_array($attr->type, [
-				Attribute::TYPE_DATETIME,
-				Attribute::TYPE_DATE,
-				Attribute::TYPE_TIME,
-				Attribute::TYPE_TIMESTAMP,
-			])){
-			if($attr->precision){
+		if (!$err && $attr->length && $attr->type && !in_array($attr->type, [
+			Attribute::TYPE_DATETIME,
+			Attribute::TYPE_DATE,
+			Attribute::TYPE_TIME,
+			Attribute::TYPE_TIMESTAMP,
+		])) {
+			if ($attr->precision) {
 				$int_len = strlen(substr($value, 0, strpos($value, '.')));
 				$precision_len = strpos($value, '.') !== false ? strlen(substr($value, strpos($value, '.') + 1)) : 0;
-				if($int_len > $attr->length || $precision_len > $attr->precision){
+				if ($int_len > $attr->length || $precision_len > $attr->precision) {
 					$err = "{$name} length exceeds: $value";
 				}
-			}else{
+			} else {
 				//MySQL character calculation uses mb_strlen to calculate the number of characters
 				$dsn = static::getDBDriver()->dsn;
-				if($attr->type === 'string' && get_class($dsn) == MySQL::class){
+				if ($attr->type === 'string' && get_class($dsn) == MySQL::class) {
 					$str_len = mb_strlen($value, 'utf-8');
-				}else{
+				} else {
 					$str_len = strlen($value);
 				}
 				$err = $str_len > $attr->length ? "{$name} length exceeds: $value {$str_len} > {$attr->length}" : '';
@@ -1210,21 +1211,21 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 * @throws \Exception
 	 */
-	public static function insertMany($data_list, $break_on_fail = true){
-		if(count($data_list, COUNT_RECURSIVE) == count($data_list)){
+	public static function insertMany($data_list, $break_on_fail = true) {
+		if (count($data_list, COUNT_RECURSIVE) == count($data_list)) {
 			throw new DBException('Two dimension array needed');
 		}
 		$return_list = [];
-		foreach($data_list as $data){
-			try{
+		foreach ($data_list as $data) {
+			try {
 				$tmp = new static($data);
 				$result = $tmp->insert();
-				if($result){
+				if ($result) {
 					$pk_val = $tmp->getDBDriver()->getLastInsertId();
 					$return_list[] = $pk_val;
 				}
-			}catch(Exception $e){
-				if($break_on_fail){
+			} catch (Exception $e) {
+				if ($break_on_fail) {
 					throw $e;
 				}
 			}
@@ -1238,8 +1239,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return false|\PDOStatement
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public static function insertManyQuick($data_list){
-		if(self::onBeforeChangedGlobal() === false){
+	public static function insertManyQuick($data_list) {
+		if (self::onBeforeChangedGlobal() === false) {
 			return false;
 		}
 		return static::getDBDriver()->insert(static::getTableName(), $data_list);
@@ -1250,13 +1251,13 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function delete(){
-		if($this->onBeforeDelete() === false){
+	public function delete() {
+		if ($this->onBeforeDelete() === false) {
 			return false;
 		}
 		$pk = static::getPrimaryKey();
 		$pk_val = $pk ? $this[$pk] : '';
-		if(!$pk_val){
+		if (!$pk_val) {
 			throw new Exception('No primary key found');
 		}
 		$result = static::delByPk($pk_val);
@@ -1270,25 +1271,25 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param Model|string $model_class
 	 * @return string
 	 */
-	private static function parseConditionStatement($args, $model_class){
+	private static function parseConditionStatement($args, $model_class) {
 		$statement = $args[0] ?? null;
 		$args = array_slice($args, 1);
-		if(!empty($args) && $statement){
+		if (!empty($args) && $statement) {
 			$arr = explode('?', $statement);
 			$rst = '';
-			foreach($args as $key => $val){
-				if(is_array($val)){
-					array_walk($val, function(&$item) use ($model_class){
+			foreach ($args as $key => $val) {
+				if (is_array($val)) {
+					array_walk($val, function (&$item) use ($model_class) {
 						$item = $model_class::getDBDriver(self::OP_READ)->quote($item);
 					});
 
-					if(!empty($val)){
-						$rst .= $arr[$key].'('.join(',', $val).')';
-					}else{
-						$rst .= $arr[$key].'(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
+					if (!empty($val)) {
+						$rst .= $arr[$key] . '(' . join(',', $val) . ')';
+					} else {
+						$rst .= $arr[$key] . '(NULL)'; //This will never match, since nothing is equal to null (not even null itself.)
 					}
-				}else{
-					$rst .= $arr[$key].$model_class::getDBDriver(self::OP_READ)->quote($val);
+				} else {
+					$rst .= $arr[$key] . $model_class::getDBDriver(self::OP_READ)->quote($val);
 				}
 			}
 			$rst .= array_pop($arr);
@@ -1300,11 +1301,11 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	/**
 	 * Adjust data length and automatically intercept character strings
 	 */
-	public function fixedData(){
+	public function fixedData() {
 		$data = $this->getProperties();
 		$attributes = static::getAttributes();
-		foreach($attributes as $attr){
-			if($attr->type === Attribute::TYPE_STRING && isset($data[$attr->name]) && $attr->length){
+		foreach ($attributes as $attr) {
+			if ($attr->type === Attribute::TYPE_STRING && isset($data[$attr->name]) && $attr->length) {
 				$val = mb_substr($data[$attr->name], 0, $attr->length);
 				$this->setProperty($attr->name, $val);
 			}
@@ -1317,12 +1318,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return bool
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	public function save($validate_all = false){
-		if($this->onBeforeSave() === false){
+	public function save($validate_all = false) {
+		if ($this->onBeforeSave() === false) {
 			return false;
 		}
 
-		if(!$this->property_changes){
+		if (!$this->property_changes) {
 			self::getLogger()->warning('no property changes');
 			return false;
 		}
@@ -1330,9 +1331,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		$data = $this->getProperties();
 		$pk = static::getPrimaryKey();
 		$has_pk_val = $pk && !empty($data[$pk]);
-		if($has_pk_val){
+		if ($has_pk_val) {
 			return $this->update($validate_all);
-		}else if(!empty($data)){
+		} else if (!empty($data)) {
 			return $this->insert($validate_all);
 		}
 		return false;
@@ -1342,7 +1343,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get the number of impact items
 	 * @return int
 	 */
-	public function getAffectNum(){
+	public function getAffectNum() {
 		$type = DBQuery::isWriteOperation($this->query) ? self::OP_WRITE : self::OP_READ;
 		return static::getDBDriver($type)->getAffectNum();
 	}
@@ -1354,28 +1355,28 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return static
 	 * @throws DBException|\LFPhp\PORM\Exception\Exception
 	 */
-	final public function __call($method_name, $params){
-		if(method_exists($this->query, $method_name)){
+	final public function __call($method_name, $params) {
+		if (method_exists($this->query, $method_name)) {
 			call_user_func_array([$this->query, $method_name], $params);
 			return $this;
 		}
-		throw new DBException("Method no exist:".$method_name);
+		throw new DBException("Method no exist:" . $method_name);
 	}
 
 	/**
 	 * Set properties
-	 * @param $key
-	 * @param $val
+	 * @param string $key
+	 * @param mixed $val
 	 * @throws \Exception
 	 */
-	public function __set($key, $val){
+	public function __set($key, $val) {
 		//The value has not changed
-		if($this->properties[$key] === $val){
+		if ($this->properties[$key] === $val) {
 			return;
 		}
 		$attr = static::getAttributeByName($key);
-		if($attr && $attr->setter){
-			if(call_user_func($attr->setter, $val, $this) === false){
+		if ($attr && $attr->setter) {
+			if (call_user_func($attr->setter, $val, $this) === false) {
 				return;
 			}
 		}
@@ -1397,9 +1398,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return mixed
 	 * @throws \Exception
 	 */
-	public function __get($key){
+	public function __get($key) {
 		$attr = static::getAttributeByName($key);
-		if($attr && $attr->getter){
+		if ($attr && $attr->getter) {
 			return call_user_func($attr->getter, $this);
 		}
 		return $this->properties[$key];
@@ -1410,7 +1411,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param $data
 	 * @throws \Exception
 	 */
-	public function setData($data){
+	public function setData($data) {
 		$this->setProperties($data);
 	}
 
@@ -1420,7 +1421,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws \Exception
 	 */
-	public function getData($strict_format = false){
+	public function getData($strict_format = false) {
 		return $this->getProperties($strict_format);
 	}
 
@@ -1430,31 +1431,38 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws \Exception
 	 */
-	public function getProperties($strict_format = false){
-		$ps = [];
-		$attr_map = [];
-		if($strict_format){
-			$tmp = static::getAttributes();
-			foreach($tmp as $at){
-				$attr_map[$at->name] = $at;
-			}
+	public function getProperties($strict_format = false) {
+		$data = [];
+		//trigger getter
+		foreach ($this->properties as $key => $val) {
+			$data[$key] = $this->__get($key);
 		}
-		foreach($this->properties as $name => $p){
-			$val = $this->__get($name);
-			if($strict_format && isset($attr_map[$name])){
-				$val = Attribute::strictTypeConvert($val, $attr_map[$name]->type);
-			}
-			$ps[$name] = $val;
+		if ($strict_format) {
+			$data = static::convertStrictType($data);
 		}
-		return $ps;
+		return $data;
+	}
+
+	/**
+	 * convert data to strict type
+	 */
+	public static function convertStrictType(array $data) {
+		$type_map = [];
+		foreach (static::getAttributes() as $attr) {
+			$type_map[$attr->name] = $attr->type;
+		}
+		foreach ($data as $key => $val) {
+			$data[$key] = Attribute::strictTypeConvert($val, $type_map[$key]);
+		}
+		return $data;
 	}
 
 	/**
 	 * @param array $properties [key=>value]
 	 * @throws \Exception
 	 */
-	public function setProperties(array $properties){
-		foreach($properties as $k => $val){
+	public function setProperties(array $properties) {
+		foreach ($properties as $k => $val) {
 			$this->__set($k, $val);
 		}
 	}
@@ -1465,7 +1473,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @param mixed $value
 	 * @throws \Exception
 	 */
-	public function setProperty($key, $value){
+	public function setProperty($key, $value) {
 		$this->__set($key, $value);
 	}
 
@@ -1475,10 +1483,10 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return string The string to be displayed
 	 * @throws \Exception
 	 */
-	public function display($attr_name){
+	public function display($attr_name) {
 		$attr = self::getAttributeByName($attr_name);
-		if(!$attr){
-			throw new Exception('No attribute '.$attr_name.' found.');
+		if (!$attr) {
+			throw new Exception('No attribute ' . $attr_name . ' found.');
 		}
 		$value = $this->{$attr_name};
 		return $attr->display($value);
@@ -1492,9 +1500,9 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public function cloneAll($include_fields = [], $exclude_fields = []){
+	public function cloneAll($include_fields = [], $exclude_fields = []) {
 		$list = $this->all();
-		foreach($list as $k => $item){
+		foreach ($list as $k => $item) {
 			$list[$k] = $item->clone($include_fields, $exclude_fields);
 		}
 		return $list;
@@ -1508,14 +1516,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	public function clone($include_fields = [], $exclude_fields = []){
+	public function clone($include_fields = [], $exclude_fields = []) {
 		$pk = static::getPrimaryKey();
-		if($pk){
+		if ($pk) {
 			$exclude_fields[] = $pk;
 		}
 		$properties = $this->getProperties();
 		$properties = array_filter_fields($properties, $include_fields, $exclude_fields);
-		if(!$properties){
+		if (!$properties) {
 			throw new Exception('no properties to keep in clone action');
 		}
 		return static::create($properties);
@@ -1525,67 +1533,67 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Get a list of property changes
 	 * @return array [key=>new_data, ...]
 	 */
-	public function getPropertyChanges(){
-		if(!$this->property_changes){
+	public function getPropertyChanges() {
+		if (!$this->property_changes) {
 			return [];
 		}
 		$changes = [];
-		foreach($this->property_changes as $attr_key){
+		foreach ($this->property_changes as $attr_key) {
 			$changes[$attr_key] = $this->properties[$attr_key];
 		}
 		return $changes;
 	}
 
-	public function onBeforeUpdate(){
+	public function onBeforeUpdate() {
 		return true;
 	}
 
-	public function onAfterUpdate(){
+	public function onAfterUpdate() {
 	}
 
-	public function onBeforeInsert(){
+	public function onBeforeInsert() {
 		return true;
 	}
 
-	public function onAfterInsert(){
+	public function onAfterInsert() {
 	}
 
-	public function onBeforeDelete(){
+	public function onBeforeDelete() {
 		return true;
 	}
 
-	public function onAfterDelete(){
+	public function onAfterDelete() {
 	}
 
-	public function onBeforeSave(){
+	public function onBeforeSave() {
 		return true;
 	}
 
-	protected function onBeforeChanged(){
+	protected function onBeforeChanged() {
 		return true;
 	}
 
-	protected static function onBeforeChangedGlobal(){
+	protected static function onBeforeChangedGlobal() {
 		return true;
 	}
 
-	public function jsonSerialize(){
+	public function jsonSerialize() {
 		return $this->getProperties();
 	}
 
-	public function offsetExists($offset){
+	public function offsetExists($offset) {
 		return isset($this->properties[$offset]);
 	}
 
-	public function offsetGet($offset){
+	public function offsetGet($offset) {
 		return $this->properties[$offset];
 	}
 
-	public function offsetSet($offset, $value){
+	public function offsetSet($offset, $value) {
 		$this->properties[$offset] = $value;
 	}
 
-	public function offsetUnset($offset){
+	public function offsetUnset($offset) {
 		unset($this->properties[$offset]);
 	}
 
@@ -1593,8 +1601,8 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * Convert the current query object to a string
 	 * @return string
 	 */
-	public function __toString(){
-		return $this->query.'';
+	public function __toString() {
+		return $this->query . '';
 	}
 
 	/**
@@ -1602,12 +1610,12 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 * @return array
 	 * @throws \Exception
 	 */
-	public function __debugInfo(){
+	public function __debugInfo() {
 		$dsn = static::getDSN();
 		return [
 			'data'              => $this->getProperties(),
 			'data_changed_keys' => $this->property_changes,
-			'query'             => $this->getQuery().'',
+			'query'             => $this->getQuery() . '',
 			'database'          => json_encode($dsn->toStringSafe()),
 		];
 	}
