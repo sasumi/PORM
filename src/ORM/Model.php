@@ -208,6 +208,14 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	}
 
 	/**
+	 * Prepare the query statement
+	 */
+	public static function prepareQuery(...$args) {
+		$query = self::parseConditionStatement($args, static::class);
+		return self::setQuery($query);
+	}
+
+	/**
 	 * Get the current query object
 	 * @return \LFPhp\PORM\DB\DBQuery|null
 	 */
