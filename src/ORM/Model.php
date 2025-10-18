@@ -1585,23 +1585,23 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		return true;
 	}
 
-	public function jsonSerialize() {
+	public function jsonSerialize(): array {
 		return $this->getProperties();
 	}
 
-	public function offsetExists($offset) {
+	public function offsetExists($offset): bool {
 		return isset($this->properties[$offset]);
 	}
 
-	public function offsetGet($offset) {
+	public function offsetGet($offset): mixed {
 		return $this->properties[$offset];
 	}
 
-	public function offsetSet($offset, $value) {
+	public function offsetSet($offset, $value): void {
 		$this->properties[$offset] = $value;
 	}
 
-	public function offsetUnset($offset) {
+	public function offsetUnset($offset): void {
 		unset($this->properties[$offset]);
 	}
 
