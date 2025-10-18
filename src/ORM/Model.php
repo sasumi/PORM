@@ -1379,7 +1379,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 	 */
 	public function __set($key, $val) {
 		//The value has not changed
-		if ($this->properties[$key] === $val) {
+		if (isset($this->properties[$key]) && $this->properties[$key] === $val) {
 			return;
 		}
 		$attr = static::getAttributeByName($key);
