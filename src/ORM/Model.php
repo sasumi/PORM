@@ -299,7 +299,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 				$args[$k] = trim($arg);
 			}
 		}
-		if (is_array($val) || strlen($val)) {
+		if (is_array($val) || (is_string($val) && strlen($val))) {
 			$statement = self::parseConditionStatement($args, static::class);
 			$this->query->where($statement);
 		}
