@@ -275,7 +275,7 @@ class Paginate implements PaginateInterface, JsonSerializable {
 		];
 	}
 
-	public function jsonSerialize(): mixed {
+	public function jsonSerialize(): array {
 		return [
 			'item_total' => $this->item_total,
 			'page_total' => $this->page_total,
