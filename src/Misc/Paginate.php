@@ -42,18 +42,20 @@ class Paginate implements PaginateInterface, JsonSerializable {
 	public $page_key = 'page';
 
 	private function __construct($config) {
-		$this->page_size = $config['page_size'] ?: self::$default_page_size;
-		$this->page_key = $config['page_key'] ?: $this->page_key;
-		$this->page_size_key = $config['page_size_key'] ?: $this->page_size_key;
+		$this->page_size = $config['page_size'] ?? self::$default_page_size;
+		$this->page_key = $config['page_key'] ?? $this->page_key;
+		$this->page_size_key = $config['page_size_key'] ?? $this->page_size_key;
 		$this->page_size_option = $config['page_size_option'] ?? self::$default_page_size_option;
-		$this->number_offset = $config['number_offset'] ?: $this->number_offset;
-		$this->item_limit = $config['item_limit'] ?: $this->item_limit;
+		$this->number_offset = $config['number_offset'] ?? $this->number_offset;
+		$this->item_limit = $config['item_limit'] ?? $this->item_limit;
 
 		$this->page = isset($_REQUEST[$this->page_key]) ? intval($_REQUEST[$this->page_key]) : 1;
 
+		$request_page_size = isset($_REQUEST[$this->page_size_key]) ? intval($_REQUEST[$this->page_size_key]) : 0;
+
 		//reset page size from $_REQUEST while page size option supplied
-		if ($this->page_size_option && $_REQUEST[$this->page_size_key] && in_array($_REQUEST[$this->page_size_key], $this->page_size_option)) {
-			$this->page_size = intval($_REQUEST[$this->page_size_key]);
+		if ($this->page_size_option && $request_page_size && in_array($request_page_size, $this->page_size_option)) {
+			$this->page_size = intval($request_page_size);
 		}
 
 		assert_via_exception($this->page_size > 1, 'page size value error(' . $this->page_size . ')', InvalidArgumentException::class);
