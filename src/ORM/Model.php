@@ -957,7 +957,7 @@ abstract class Model implements JsonSerializable, ArrayAccess {
 		// Update only changed values
 		$data = array_filter_fields($data, $this->property_changes);
 		$data = $this->validate($data, DBQuery::UPDATE, $validate_all);
-		static::getDBDriver()->update(static::getTableName(), $data, static::getPrimaryKey() . '=' . $this->$pk);
+		static::getDBDriver()->update(static::getTableName(), $data, static::getPrimaryKey() . '=' . static::getDBDriver(self::OP_READ)->quote($this->$pk));
 		$this->onAfterUpdate();
 		$this->property_changes = [];
 		return $this->{$pk};
