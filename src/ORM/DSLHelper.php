@@ -183,10 +183,11 @@ abstract class DSLHelper {
 				$table_description = $matches[1];
 				continue;
 			}
+			$org_type_str = null;
 			if(preg_match('/^`(\w+)`\s+(.*?)\s+(.*),?$/', $line, $matches)){
 				$name = $matches[1];
 				$left = $matches[3];
-				list($type, $length, $precision, $opts) = self::__resolveTypes($matches[2], $left);
+				list($type, $length, $precision, $opts) = self::__resolveTypes($matches[2], $left, $org_type_str);
 				$attr->name = $name;
 				$attr->type = $type;
 				$attr->length = $length;
@@ -199,6 +200,12 @@ abstract class DSLHelper {
 			if(self::_resolveDirective($line, 'COLLATE', $collate)){
 				$attr->collate = $collate;
 			}
+
+			//TEXT 默认值为 NULL
+			if($org_type_str === 'text' && strpos($line, 'DEFAULT') === false){
+				$attr->default = Attribute::DEFAULT_NULL;
+			}
+
 			if(self::_resolveDirective($line, 'DEFAULT', $default)){
 				$default = trim($default, "'");
 				if(stripos($default, 'current_timestamp') !== false){
@@ -287,13 +294,15 @@ abstract class DSLHelper {
 	 * Parse database definition type
 	 * @param string $type_def
 	 * @param string $tail_sql
+	 * @param string|null $org_type_str original type string (e.g. enum, set)
 	 * @return array [$type: type, $len: length, $precision: precision, $opts: other options]
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
-	private static function __resolveTypes($type_def, $tail_sql){
+	private static function __resolveTypes($type_def, $tail_sql, &$org_type_str = null){
 		if(preg_match('/(\w+)\(([^)]+)\)/', $type_def, $matches) || preg_match('/(\w+)\s*$/', $type_def, $matches)){
 			$type_str = $matches[1];
 			$val = $matches[2];
+			$org_type_str = $type_str;
 			if(isset(self::DB_FIELD_TYPE_MAP[$type_str])){
 				list($type, $is_scalar, $def_len) = self::DB_FIELD_TYPE_MAP[$type_str];
 				//scalar
