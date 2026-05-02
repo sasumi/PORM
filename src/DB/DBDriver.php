@@ -113,6 +113,11 @@ class DBDriver {
 		});
 	}
 
+	/**
+	 * Check if the string contains all substrings
+	 * @param string $haystack
+	 * @return bool
+	 */
 	private static function _str_contains_all($haystack){
 		$args = func_get_args();
 		array_shift($args);
@@ -302,8 +307,8 @@ class DBDriver {
 
 	/**
 	 * Set SQL query limit information
-	 * @param $sql
-	 * @param $limit
+	 * @param string $sql
+	 * @param int|array $limit
 	 * @return string
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 */
@@ -393,7 +398,7 @@ class DBDriver {
 
 	/**
 	 * Get the database table field list
-	 * @param $table
+	 * @param string $table
 	 * @return array
 	 */
 	public function getFields($table){
@@ -426,7 +431,7 @@ class DBDriver {
 
 	/**
 	 * Set the query character set
-	 * @param $charset
+	 * @param string $charset
 	 * @return \LFPhp\PORM\DB\DBDriver
 	 * @throws \LFPhp\PORM\Exception\DBException
 	 * @see https://stackoverflow.com/questions/3513773/change-mysql-default-character-set-to-utf-8-in-my-cnf
@@ -522,7 +527,7 @@ class DBDriver {
 	/**
 	 * Get a page of data
 	 * @param DBQuery|string $q
-	 * @param PaginateInterface|array|number $pager
+	 * @param PaginateInterface|array|int $pager
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\DBException|\LFPhp\PORM\Exception\Exception
 	 */
@@ -652,7 +657,7 @@ class DBDriver {
 
 	/**
 	 * replace data
-	 * @param $table
+	 * @param string $table
 	 * @param array $data
 	 * @param string $condition
 	 * @param int $update_limit
@@ -683,8 +688,8 @@ class DBDriver {
 
 	/**
 	 * Insert data
-	 * @param $table
-	 * @param $field
+	 * @param string $table
+	 * @param string $field
 	 * @param int $offset
 	 * @param string $statement
 	 * @param int $limit
@@ -702,8 +707,8 @@ class DBDriver {
 
 	/**
 	 * Delete database data
-	 * @param $table
-	 * @param $condition
+	 * @param string $table
+	 * @param string $condition
 	 * @param int $limit parameter is 0, which means no limit
 	 * @return bool delete success
 	 * @throws DBException
@@ -719,7 +724,7 @@ class DBDriver {
 
 	/**
 	 * Data insertion
-	 * @param $table
+	 * @param string $table
 	 * @param array $data
 	 * @param string $condition
 	 * @return PDOStatement
@@ -813,7 +818,7 @@ class DBDriver {
 
 	/**
 	 * Like operation statement escape
-	 * @param $statement
+	 * @param string $statement
 	 * @param string $escape_char
 	 * @return string
 	 */

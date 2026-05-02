@@ -23,6 +23,8 @@ class DBQuery {
 	const INNER_JOIN = 3;
 
 	public $sql = '';
+
+	/** @var string */
 	public $operation = self::SELECT;
 	public $fields = [];
 	public $tables = [];
@@ -30,7 +32,11 @@ class DBQuery {
 	public $where = [];
 	public $order = '';
 	public $group = '';
+
+	/** @var int|null|array */
 	public $limit;
+
+	/** @var array|null */
 	public $data;
 
 	/**
@@ -84,7 +90,7 @@ class DBQuery {
 
 	/**
 	 * Set the query statement
-	 * @param $sql
+	 * @param string $sql
 	 */
 	public function setSql($sql){
 		$this->__construct($sql);
@@ -113,7 +119,7 @@ class DBQuery {
 
 	/**
 	 * join table on condition
-	 * @param $table
+	 * @param string $table
 	 * @param null $on condition
 	 * @param mixed $type join type
 	 * @return $this
@@ -125,7 +131,7 @@ class DBQuery {
 
 	/**
 	 * left join
-	 * @param $table
+	 * @param string $table
 	 * @param null $on
 	 * @return static
 	 */
@@ -135,7 +141,7 @@ class DBQuery {
 
 	/**
 	 * right join
-	 * @param $table
+	 * @param string $table
 	 * @param null $on
 	 * @return static
 	 */
@@ -145,7 +151,7 @@ class DBQuery {
 
 	/**
 	 * inner join
-	 * @param $table
+	 * @param string $table
 	 * @param null $on
 	 * @return static
 	 */
@@ -200,7 +206,7 @@ class DBQuery {
 	 * @param array $fields string, or just use the first array parameter
 	 * @return \LFPhp\PORM\ORM\Model|\LFPhp\PORM\DB\DBQuery
 	 */
-	public function fields($fields){
+	public function fields(array $fields){
 		$this->fields = array_merge($this->fields, $fields);
 		$this->fields = array_clean_empty(array_unique($this->fields));
 		if(count($this->fields) > 1 && in_array('*', $this->fields)){
@@ -211,6 +217,11 @@ class DBQuery {
 		return $this;
 	}
 
+	/**
+	 * alias for fields
+	 * @param string ...$fields
+	 * @return \LFPhp\PORM\DB\DBQuery
+	 */
 	public function field(...$fields){
 		return $this->fields($fields);
 	}
@@ -235,7 +246,7 @@ class DBQuery {
 	 * $query->addWhere($conditions);
 	 * </p>
 	 * @param mixed $arg1 type is an array, which means submitting multiple queries. If it is a function, it means nested queries.
-	 * @param $field
+	 * @param string|callable $field
 	 * @param null $operator
 	 * @param null $compare
 	 */
@@ -267,7 +278,7 @@ class DBQuery {
 
 	/**
 	 * alias for and where
-	 * @param string $field
+	 * @param string|callable $field
 	 * @param null $operator
 	 * @param null $compare
 	 * @return $this
@@ -280,7 +291,7 @@ class DBQuery {
 	 * Set AND query condition<p>
 	 * Calling example: $query->where('age', '>', 18)->where('gender', '=', 'male')->where('name', 'like', '% moon%');
 	 * </p>
-	 * @param $field
+	 * @param string|callable $field
 	 * @param null $operator
 	 * @param null $compare
 	 * @return $this
@@ -292,7 +303,7 @@ class DBQuery {
 
 	/**
 	 * Set OR query condition
-	 * @param $field
+	 * @param string|callable $field
 	 * @param null $operator
 	 * @param null $compare
 	 */
@@ -441,7 +452,7 @@ class DBQuery {
 		$pattern = '/\s?LIMIT\s(.*?)$/i';
 		if(preg_match($pattern, $sql, $matches)){
 			$last_limit_seg = $matches[count($matches) - 1];
-			$last_limit_seg = preg_replace('/\s+OFFSET\s+/i', ',', $last_limit_seg, null, $offset_hit);
+			$last_limit_seg = preg_replace('/\s+OFFSET\s+/i', ',', $last_limit_seg, "", $offset_hit);
 			$ls = explode(',', str_replace(' ', '', $last_limit_seg));
 			if(count($ls) == 1){
 				$org_limit_info = [0, (int)$ls[0]];
@@ -459,7 +470,7 @@ class DBQuery {
 
 	/**
 	 * @param array $org_limit_info [start_position, size]
-	 * @param array|number $paginate_info [page_start, page_size] or [size] Pagination size. The pagination information is paginated based on the limit query condition.
+	 * @param array|int $paginate_info [page_start, page_size] or [size] Pagination size. The pagination information is paginated based on the limit query condition.
 	 * @return array
 	 * @throws \LFPhp\PORM\Exception\Exception
 	 */
@@ -493,7 +504,7 @@ class DBQuery {
 	/**
 	 * Add protection to field names (note that this protection only protects SQL keywords, not SQL injection protection)
 	 * Automatically ignore spaces and other query statements
-	 * @param $field
+	 * @param array|string $field
 	 * @return string|array
 	 */
 	public static function escapeKey($field){
